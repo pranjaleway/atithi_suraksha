@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HotelController;
 use App\Http\Controllers\MasterController;
+use App\Http\Controllers\PoliceStationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SPOfficeController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -11,9 +14,9 @@ Route::get('/clear', function () {
     Artisan::call('cache:clear');
     Artisan::call('route:clear');
     //Artisan::call('migrate');
- 
+
     return redirect()->back();
- });
+});
 
 Route::group(['middleware' => ['web']], function () {
     Route::controller(AuthController::class)->group(function () {
@@ -40,33 +43,89 @@ Route::group(['middleware' => ['auth']], function () {
     });
 
     Route::controller(ActivityLogController::class)->group(function () {
-        Route::get('activity-log', 'activityLog')->name('activity-log')->middleware('checkPermission:Activity Log,view');
-        Route::delete('delete-activity-log', 'deleteActivityLog')->name('delete-activity-log')->middleware('checkPermission:Activity Log,delete');
+        Route::get('activity-log', 'activityLog')->name('activity-log')->middleware('checkPermission:activity-log,view');
+        Route::delete('delete-activity-log', 'deleteActivityLog')->name('delete-activity-log')->middleware('checkPermission:activity-log,delete');
     });
 
     Route::controller(MasterController::class)->group(function () {
         //Menu
-        Route::get('menus', 'menus')->name('menus')->middleware('checkPermission:Menus,view');
-        Route::post('add-menu', 'storeMenu')->name('add-menu')->middleware('checkPermission:Menus,add');
-        Route::get('edit-menu/{id}', 'editMenu')->name('edit-menu')->middleware('checkPermission:Menus,edit');
-        Route::put('update-menu', 'updateMenu')->name('update-menu')->middleware('checkPermission:Menus,edit');
-        Route::post('change-menu-status', 'changeMenuStatus')->name('change-menu-status')->middleware('checkPermission:Menus,edit');
-        Route::delete('delete-menu', 'deleteMenu')->name('delete-menu')->middleware('checkPermission:Menus,delete');
+        Route::get('menus', 'menus')->name('menus')->middleware('checkPermission:menu,view');
+        Route::post('add-menu', 'storeMenu')->name('add-menu')->middleware('checkPermission:menu,add');
+        Route::get('edit-menu/{id}', 'editMenu')->name('edit-menu')->middleware('checkPermission:menu,edit');
+        Route::put('update-menu', 'updateMenu')->name('update-menu')->middleware('checkPermission:menu,edit');
+        Route::post('change-menu-status', 'changeMenuStatus')->name('change-menu-status')->middleware('checkPermission:menu,edit');
+        Route::delete('delete-menu', 'deleteMenu')->name('delete-menu')->middleware('checkPermission:menu,delete');
         Route::post('update-menu-order', 'updateMenuOrder')->name('update-menu-order');
-        Route::get('sub-menus/{id}', 'subMenus')->name('sub-menus')->middleware('checkPermission:Menus,view');
+        Route::get('sub-menus/{id}', 'subMenus')->name('sub-menus')->middleware('checkPermission:menu,view');
 
         //User Type
-        Route::get('user-type', 'userType')->name('user-type')->middleware('checkPermission:User Type,view');
-        Route::post('add-user-type', 'storeUserType')->name('add-user-type')->middleware('checkPermission:User Type,add');
-        Route::get('edit-user-type/{id}', 'editUserType')->name('edit-user-type')->middleware('checkPermission:User Type,edit');
-        Route::put('update-user-type', 'updateUserType')->name('update-user-type')->middleware('checkPermission:User Type,edit');
-        Route::post('change-user-type-status', 'changeUserTypeStatus')->name('change-user-type-status')->middleware('checkPermission:User Type,edit');
-        Route::delete('delete-user-type', 'deleteUserType')->name('delete-user-type')->middleware('checkPermission:User Type,delete');
+        Route::get('user-type', 'userType')->name('user-type')->middleware('checkPermission:user-type,view');
+        Route::post('add-user-type', 'storeUserType')->name('add-user-type')->middleware('checkPermission:user-type,add');
+        Route::get('edit-user-type/{id}', 'editUserType')->name('edit-user-type')->middleware('checkPermission:user-type,edit');
+        Route::put('update-user-type', 'updateUserType')->name('update-user-type')->middleware('checkPermission:user-type,edit');
+        Route::post('change-user-type-status', 'changeUserTypeStatus')->name('change-user-type-status')->middleware('checkPermission:user-type,edit');
+        Route::delete('delete-user-type', 'deleteUserType')->name('delete-user-type')->middleware('checkPermission:user-type,delete');
 
         //User Access
-        Route::get('user-access/{id}', 'userAccess')->name('user-access')->middleware('checkPermission:User Type,add');
-        Route::post('add-user-access', 'storeUserAccess')->name('add-user-access')->middleware('checkPermission:User Type,add');
-        Route::post('update-access-permission/{id}', 'updateAccessPermission')->name('update-access-permission')->middleware('checkPermission:User Type,add');
-        Route::delete('delete-user-access', 'deleteUserAccess')->name('delete-user-access')->middleware('checkPermission:User Type,add');
+        Route::get('user-access/{id}', 'userAccess')->name('user-access')->middleware('checkPermission:user-type,add');
+        Route::post('add-user-access', 'storeUserAccess')->name('add-user-access')->middleware('checkPermission:user-type,add');
+        Route::post('update-access-permission/{id}', 'updateAccessPermission')->name('update-access-permission')->middleware('checkPermission:user-type,edit');
+        Route::delete('delete-user-access', 'deleteUserAccess')->name('delete-user-access')->middleware('checkPermission:user-type,delete');
+
+        //State
+        Route::get('states', 'states')->name('states')->middleware('checkPermission:states,view');
+        Route::post('add-state', 'storeState')->name('add-state')->middleware('checkPermission:states,add');
+        Route::get('edit-state', 'editState')->name('edit-state')->middleware('checkPermission:states,edit');
+        Route::put('update-state', 'updateState')->name('update-state')->middleware('checkPermission:states,edit');
+        Route::post('change-state-status', 'changeStateStatus')->name('change-state-status')->middleware('checkPermission:states,edit');
+        Route::delete('delete-state', 'deleteState')->name('delete-state')->middleware('checkPermission:states,delete');
+
+        //City
+        Route::get('cities', 'cities')->name('cities')->middleware('checkPermission:cities,view');
+        Route::post('add-city', 'storeCity')->name('add-city')->middleware('checkPermission:cities,add');
+        Route::get('edit-city', 'editCity')->name('edit-city')->middleware('checkPermission:cities,edit');
+        Route::put('update-city', 'updateCity')->name('update-city')->middleware('checkPermission:cities,edit');
+        Route::post('change-city-status', 'changeCityStatus')->name('change-city-status')->middleware('checkPermission:cities,edit');
+        Route::delete('delete-city', 'deleteCity')->name('delete-city')->middleware('checkPermission:cities,delete');
+        Route::get('get-cities', 'getCitiesByState')->name('get-cities');
+
+        //Document
+        Route::get('documents', 'documents')->name('documents')->middleware('checkPermission:document,view');
+        Route::post('add-document', 'storeDocument')->name('add-document')->middleware('checkPermission:document,add');
+        Route::get('edit-document', 'editDocument')->name('edit-document')->middleware('checkPermission:document,edit');
+        Route::put('update-document', 'updateDocument')->name('update-document')->middleware('checkPermission:document,edit');
+        Route::post('change-document-status', 'changeDocumentStatus')->name('change-document-status')->middleware('checkPermission:document,edit');
+        Route::delete('delete-document', 'deleteDocument')->name('delete-document')->middleware('checkPermission:document,delete');
+    });
+
+
+    Route::controller(SPOfficeController::class)->group(function () {
+        Route::get('sp-offices', 'spOffices')->name('sp-offices')->middleware('checkPermission:sp-offices,view');
+        Route::get('add-sp-office', 'addSPOffice')->name('add-sp-office')->middleware('checkPermission:sp-offices,add');
+        Route::post('store-sp-office', 'storeSpOffice')->name('store-sp-office')->middleware('checkPermission:sp-offices,add');
+        Route::get('edit-sp-office/{id}', 'editSPOffice')->name('edit-sp-office')->middleware('checkPermission:sp-offices,edit');
+        Route::post('update-sp-office', 'updateSpOffice')->name('update-sp-office')->middleware('checkPermission:sp-offices,edit');
+        Route::post('change-sp-office-status', 'changeSpOfficeStatus')->name('change-sp-office-status')->middleware('checkPermission:sp-offices,edit');
+        Route::delete('delete-sp-office', 'deleteSpOffice')->name('delete-sp-office')->middleware('checkPermission:sp-offices,delete');
+    });
+
+    Route::controller(PoliceStationController::class)->group(function () {
+        Route::get('police-stations', 'policeStations')->name('police-stations')->middleware('checkPermission:police-stations,view');
+        Route::get('add-police-station', 'addPoliceStation')->name('add-police-station')->middleware('checkPermission:police-stations,add');
+        Route::post('store-police-station', 'storePoliceStation')->name('store-police-station')->middleware('checkPermission:police-stations,add');
+        Route::get('edit-police-station/{id}', 'editPoliceStation')->name('edit-police-station')->middleware('checkPermission:police-stations,edit');
+        Route::post('update-police-station', 'updatePoliceStation')->name('update-police-station')->middleware('checkPermission:police-stations,edit');
+        Route::post('change-police-station-status', 'changePoliceStationStatus')->name('change-police-station-status')->middleware('checkPermission:police-stations,edit');
+        Route::delete('delete-police-station', 'deletePoliceStation')->name('delete-police-station')->middleware('checkPermission:police-stations,delete');
+    });
+
+    Route::controller(HotelController::class)->group(function () {
+        Route::get('hotels', 'hotels')->name('hotels')->middleware('checkPermission:hotels,view');      
+        Route::get('add-hotel', 'addHotel')->name('add-hotel')->middleware('checkPermission:hotels,add');
+        Route::post('store-hotel', 'storeHotel')->name('store-hotel')->middleware('checkPermission:hotels,add');
+        Route::get('edit-hotel/{id}', 'editHotel')->name('edit-hotel')->middleware('checkPermission:hotels,edit'); 
+        Route::post('update-hotel', 'updateHotel')->name('update-hotel')->middleware('checkPermission:hotels,edit');
+        Route::post('change-hotel-status', 'changeHotelStatus')->name('change-hotel-status')->middleware('checkPermission:hotels,edit');
+        Route::delete('delete-hotel', 'deleteHotel')->name('delete-hotel')->middleware('checkPermission:hotels,delete');
     });
 });

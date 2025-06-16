@@ -1,8 +1,6 @@
-
-
 function changeStatus(id) {
-    var url = $('.status_' + id).data('url');
-    
+    var url = $(".status_" + id).data("url");
+
     $.ajax({
         url: url,
         type: "POST",
@@ -14,17 +12,15 @@ function changeStatus(id) {
             id: id,
         },
         success: function (response) {
-            if (response.status = "success") {
+            if ((response.status = "success")) {
                 toastr.success(response.message, "Success");
                 dt_basic.ajax.reload();
             } else if (response == 0) {
-              toastr.error(response.message, "Error");
+                toastr.error(response.message, "Error");
             }
         },
         error: function (xhr) {
-            toastr.error(
-                "An error occurred while changing the status."
-            );
+            toastr.error("An error occurred while changing the status.");
         },
     });
 }
@@ -42,9 +38,9 @@ $(document).on("click", ".delete-record", function () {
         cancelButtonText: "Cancel",
         customClass: {
             confirmButton: "btn btn-primary me-3 waves-effect waves-light",
-            cancelButton: "btn btn-outline-secondary waves-effect"
+            cancelButton: "btn btn-outline-secondary waves-effect",
         },
-        buttonsStyling: false
+        buttonsStyling: false,
     }).then((result) => {
         if (result.isConfirmed) {
             $.ajax({
@@ -52,20 +48,54 @@ $(document).on("click", ".delete-record", function () {
                 type: "DELETE",
                 data: {
                     id: id,
-                    _token: $('meta[name="csrf-token"]').attr("content")
+                    _token: $('meta[name="csrf-token"]').attr("content"),
                 },
                 success: function (response) {
                     if (response.status === "success") {
                         toastr.success(response.message, "Success");
                         dt_basic.ajax.reload();
                     } else {
-                        toastr.error('Something went wrong', "Error");
+                        toastr.error("Something went wrong", "Error");
                     }
                 },
                 error: function () {
-                    toastr.error('Something went wrong', "Error");
-                }
+                    toastr.error("Something went wrong", "Error");
+                },
             });
         }
     });
+});
+
+$(document).on("change", "#state_id", function () {
+    var stateId = $(this).val();
+    if (stateId) {
+        $.ajax({
+            url: cityUrl,
+            type: "GET",
+            data: { state_id: stateId },
+            dataType: "json",
+            success: function (response) {
+                $("#city_id")
+                    .empty()
+                    .append('<option value="">Select City</option>');
+
+                $.each(response.data, function (index, city) {
+                    $("#city_id").append(
+                        '<option value="' +
+                            city.id +
+                            '">' +
+                            city.name +
+                            "</option>"
+                    );
+                });
+            },
+            error: function () {
+                $("#city_id")
+                    .empty()
+                    .append("<option>Error loading cities</option>");
+            },
+        });
+    } else {
+        $("#city_id").empty().append('<option value="">Select City</option>');
+    }
 });

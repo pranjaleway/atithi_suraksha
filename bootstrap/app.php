@@ -16,8 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         'checkPermission' => \App\Http\Middleware\CheckPermission::class
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        //  if($exceptions instanceof UnauthorizedHttpException) {
-        //     return response()->json(['message' => $exceptions->getMessage()], 403);
-        // }
+    ->withExceptions(function (Exceptions $exceptions) {
+        if($exceptions instanceof UnauthorizedHttpException) {
+            return response()->json(['message' => $exceptions->getMessage()], 403);
+        }
     })->create();

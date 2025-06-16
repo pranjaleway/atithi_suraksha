@@ -84,7 +84,7 @@
             <div class="input-group input-group-merge">
                 <div class="form-floating form-floating-outline">
                     <input class="form-control" type="text" name="name" id="edit_name"
-                        placeholder="Name" />
+                        placeholder="Name" readonly/>
                     <label for="name">Name</label>
                 </div>   
             </div>

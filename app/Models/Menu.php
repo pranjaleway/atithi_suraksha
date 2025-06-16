@@ -18,6 +18,7 @@ class Menu extends Model
         'icon',
         'visible_at_web',
         'visible_at_app',
+        'slug',
     ];
 
     public function subMenus()

@@ -10,7 +10,7 @@ class ActivityLogController extends Controller
 {
     public function activityLog(Request $request)
     {
-        if (!hasPermission('Activity Log', 'view')) {
+        if (!hasPermission('activity-log', 'view')) {
             abort(403, 'Unauthorized');
         }
     
@@ -32,7 +32,7 @@ class ActivityLogController extends Controller
             }
     
             $data = $query->get();
-            $canDelete = hasPermission('Activity Log', 'delete');
+            $canDelete = hasPermission('activity-log', 'delete');
     
             return response()->json(['data' => $data, 'canDelete' => $canDelete]);
         }

@@ -1,5 +1,5 @@
 @extends('layouts.main')
-@section('title', 'User Type')
+@section('title', 'State')
 @section('content')
 
     <!-- Content -->
@@ -7,19 +7,17 @@
         <!-- DataTable with Buttons -->
         <div class="card">
             <div class="card-datatable table-responsive pt-0">
-                <table class="datatables-basic table table-bordered user_type_table">
+                <table class="datatables-basic table table-bordered menu_table">
                     <thead>
                         <tr>
                             <th>S.No.</th>
-                            <th>User Type</th>
+                            <th>Name</th>
                             <th>Status</th>
-                            @if (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2)
-                                <th>Access</th>
-                            @endif
                             <th>Actions</th>
                         </tr>
                     </thead>
                 </table>
+
             </div>
         </div>
         <!--/ DataTable with Buttons -->
@@ -27,18 +25,17 @@
         <!-- Modal to add new record -->
         <div class="offcanvas offcanvas-end" id="add-new-record">
             <div class="offcanvas-header border-bottom">
-                <h5 class="offcanvas-title" id="exampleModalLabel">New User Type</h5>
+                <h5 class="offcanvas-title" id="exampleModalLabel">New State</h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body flex-grow-1">
-                <form class="add-new-record pt-0 row g-3" action="{{ route('add-user-type') }}" id="userTypeForm">
+                <form class="add-new-record pt-0 row g-3" action="{{ route('add-state') }}" id="stateForm">
                     @csrf
                     @method('post')
                     <div class="input-group input-group-merge">
                         <div class="form-floating form-floating-outline">
-                            <input class="form-control" type="text" name="user_type" id="user_type"
-                                placeholder="User Type" />
-                            <label for="user_type">User Type</label>
+                            <input class="form-control" type="text" name="name" id="name" placeholder="Name" />
+                            <label for="name">Name</label>
                         </div>
                     </div>
                     <div class="col-sm-12">
@@ -52,20 +49,19 @@
 
         <!-- Edit Modal -->
 
-        <div class="offcanvas offcanvas-end" id="userTypeEdit">
+        <div class="offcanvas offcanvas-end" id="stateEdit">
             <div class="offcanvas-header border-bottom">
-                <h5 class="offcanvas-title">Edit User Type</h5>
+                <h5 class="offcanvas-title">Edit State</h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body flex-grow-1">
-                <form id="userTypeEditForm" action="{{ route('update-user-type') }}" class="pt-0 row g-3">
+                <form id="stateEditForm" action="{{ route('update-state') }}" class="pt-0 row g-3">
                     @csrf
                     @method('put')
                     <div class="input-group input-group-merge">
                         <div class="form-floating form-floating-outline">
-                            <input class="form-control" type="text" name="user_type" id="edit_user_type"
-                                placeholder="User Type" />
-                            <label for="user_type">User Type</label>
+                            <input class="form-control" type="text" name="name" id="edit_name" placeholder="Name" />
+                            <label for="name">Name</label>
                         </div>
                     </div>
                     <input type="hidden" name="id" id="edit_id">
@@ -83,10 +79,10 @@
 @endsection
 @section('scripts')
     <script>
-        var changeStatusURl = "{{ route('change-user-type-status') }}";
-        var deleteUrl = "{{ route('delete-user-type') }}";
-        var userRole = @json(Auth::user()->user_type_id);
+        var changeStatusURl = "{{ route('change-state-status') }}";
+        var deleteUrl = "{{ route('delete-state') }}";
+        var listUrl = "{{ route('states') }}";
     </script>
-    <script src="{{ asset('assets/custom-js/tables-datatables-user-type.js') }}"></script>
+    <script src="{{ asset('assets/custom-js/tables-datatables-state.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>
 @endsection

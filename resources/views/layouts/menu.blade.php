@@ -60,7 +60,7 @@
 
      <ul class="menu-inner py-1">
          <!-- Dashboard -->
-         @if (hasPermission('Dashboard', 'view'))
+         @if (hasPermission('dashboard', 'view'))
              <li class="menu-item {{ Request::is('dashboard') ? 'active' : '' }}">
                  <a href="{{ route('dashboard') }}" class="menu-link text-white">
                      <i class="menu-icon tf-icons mdi mdi-home-outline"></i>
@@ -72,27 +72,52 @@
          <!-- Masters -->
 
          @php
-             $mastersVisible =
-                 hasPermission('Menus', 'view')
+             $mastersVisible = hasPermission('menu', 'view')
+                 || hasPermission('states', 'view')
+                 || hasPermission('cities', 'view')
+                 || hasPermission('document', 'view');
          @endphp
 
          @if ($mastersVisible)
              <li
-                 class="menu-item {{ Request::is([
-                     'menus',
-                     'sub-menus/*',
-                 ])
-                     ? 'active open'
-                     : '' }}">
+                 class="menu-item {{ Request::is(['menus', 'sub-menus/*', 'states', 'cities', 'documents']) ? 'active open' : '' }}">
                  <a href="javascript:void(0);" class="menu-link text-white menu-toggle">
                      <i class="menu-icon tf-icons mdi mdi-grid"></i>
                      <div data-i18n="Master">Master</div>
                  </a>
                  <ul class="menu-sub">
-                     @if (hasPermission('Menus', 'view'))
+                     <!-- Menus -->
+                     @if (hasPermission('menu', 'view'))
                          <li class="menu-item {{ Request::is(['menus', 'sub-menus/*']) ? 'active' : '' }}">
                              <a href="{{ route('menus') }}" class="text-white menu-link">
                                  <div data-i18n="Menu Master">Menu Master</div>
+                             </a>
+                         </li>
+                     @endif
+
+                     <!-- States -->
+                     @if (hasPermission('states', 'view'))
+                         <li class="menu-item {{ Request::is('states') ? 'active' : '' }}">
+                             <a href="{{ route('states') }}" class="text-white menu-link">
+                                 <div data-i18n="State Master">State Master</div>
+                             </a>
+                         </li>
+                     @endif
+
+                     <!-- Cities -->
+                     @if (hasPermission('cities', 'view'))
+                         <li class="menu-item {{ Request::is('cities') ? 'active' : '' }}">
+                             <a href="{{ route('cities') }}" class="text-white menu-link">
+                                 <div data-i18n="City Master">City Master</div>
+                             </a>
+                         </li>
+                     @endif
+
+                     <!-- Documents -->
+                     @if (hasPermission('document', 'view'))
+                         <li class="menu-item {{ Request::is('documents') ? 'active' : '' }}">
+                             <a href="{{ route('documents') }}" class="text-white menu-link">
+                                 <div data-i18n="Document Master">Document Master</div>
                              </a>
                          </li>
                      @endif
@@ -101,27 +126,55 @@
          @endif
 
          <!-- User Type -->
-         @if (hasPermission('User Type', 'view'))
-            <li class="menu-item {{ Request::is(['user-type', 'user-access/*']) ? 'active' : '' }}">
-                <a href="{{ route('user-type') }}" class="text-white menu-link">
-                    <i class="menu-icon tf-icons mdi mdi-account-details-outline"></i>
-                    <div data-i18n="User Type">User Type</div>
-                </a>
-            </li>
-        @endif
+         @if (hasPermission('user-type', 'view'))
+             <li class="menu-item {{ Request::is(['user-type', 'user-access/*']) ? 'active' : '' }}">
+                 <a href="{{ route('user-type') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-account-details-outline"></i>
+                     <div data-i18n="User Type">User Type</div>
+                 </a>
+             </li>
+         @endif
 
-        <!-- Activity Log -->
-        @if (hasPermission('Activity Log', 'view'))
-            <li
-                class="menu-item {{ Request::is('activity-log') ? 'active' : '' }}">
-                <a href="{{ route('activity-log') }}" class="menu-link text-white">
-                    <i class="menu-icon tf-icons mdi mdi-playlist-edit"></i>
-                    <div data-i18n="Activity Log">Activity Log</div>
-                </a>
-            </li>
-        @endif
+         <!-- SP Offices -->
+         @if(hasPermission('sp-offices', 'view'))
+             <li class="menu-item {{ Request::is('sp-offices') || Request::is('add-sp-office') || Request::is('edit-sp-office/*') ? 'active' : '' }}">
+                 <a href="{{ route('sp-offices') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-office-building-outline"></i>
+                     <div data-i18n="SP Offices">SP Offices</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- Police Stations -->
+         @if(hasPermission('police-stations', 'view'))
+             <li class="menu-item {{ Request::is('police-stations') || Request::is('add-police-station') || Request::is('edit-police-station/*') ? 'active' : '' }}">
+                 <a href="{{ route('police-stations') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-police-station"></i>
+                     <div data-i18n="Police Stations">Police Stations</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- Hotels -->
+         @if(hasPermission('hotels', 'view'))
+             <li class="menu-item {{ Request::is('hotels') || Request::is('add-hotel') || Request::is('edit-hotel/*') ? 'active' : '' }}">
+                 <a href="{{ route('hotels') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-bed-outline"></i>
+                     <div data-i18n="Hotels">Hotels</div>
+                 </a>
+             </li>             
+         @endif
+
+         <!-- Activity Log -->
+         @if (hasPermission('activity-log', 'view'))
+             <li class="menu-item {{ Request::is('activity-log') ? 'active' : '' }}">
+                 <a href="{{ route('activity-log') }}" class="menu-link text-white">
+                     <i class="menu-icon tf-icons mdi mdi-playlist-edit"></i>
+                     <div data-i18n="Activity Log">Activity Log</div>
+                 </a>
+             </li>
+         @endif
 
      </ul>
-
  </aside>
  <!-- / Menu -->

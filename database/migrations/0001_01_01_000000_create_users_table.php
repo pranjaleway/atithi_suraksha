@@ -25,6 +25,7 @@ return new class extends Migration
             $table->boolean('login_via_app')->nullable();
             $table->boolean('status')->default(1);
             $table->rememberToken();
+            $table->softDeletes();
             $table->timestamps();
         });
 

@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('user_type_id')->nullable()->after('phone')->constrained('user_types')->onDelete('cascade');
+        Schema::create('documents', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->boolean('status')->default(1);
+            $table->softDeletes();
+            $table->timestamps();
         });
     }
 
@@ -21,9 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['user_type_id']);
-            $table->dropColumn('user_type_id');
-        });
+        Schema::dropIfExists('documents');
     }
 };

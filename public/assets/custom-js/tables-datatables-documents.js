@@ -7,7 +7,7 @@
 let offCanvasEl, fv;
 
 document.addEventListener("DOMContentLoaded", function () {
-    const formAddNewRecord = document.getElementById("userTypeForm");
+    const formAddNewRecord = document.getElementById("documentForm");
 
     setTimeout(() => {
         const newRecord = document.querySelector(".create-new"),
@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 offCanvasEl = new bootstrap.Offcanvas(offCanvasElement);
                 $(".form-control").removeClass("is-invalid");
                 $(".invalid-feedback").empty();
-                $("#userTypeForm").trigger("reset");
+                $("#documentForm").trigger("reset");
                 // Reset validation messages
                 if (typeof fv !== "undefined") {
                     fv.resetForm(true);
@@ -32,10 +32,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (formAddNewRecord) {
         fv = FormValidation.formValidation(formAddNewRecord, {
             fields: {
-                user_type: {
+                name: {
                     validators: {
                         notEmpty: {
-                            message: "Please enter user type",
+                            message: "Please enter bank name",
                         },
                     },
                 },
@@ -53,11 +53,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+
 var dt_basic_table = $(".datatables-basic"),
-    dt_basic,
-    canAdd;
+dt_basic, canAdd;
 // datatable (jquery)
 $(function () {
+   
+
     // DataTable with buttons
     // --------------------------------------------------------------------
 
@@ -65,88 +67,76 @@ $(function () {
         dt_basic = dt_basic_table.DataTable({
             ordering: true,
             ajax: {
-                url: "/user-type",
+                url: "/documents",
                 dataSrc: function (json) {
-                    json.data.forEach((element, index) => {
+                   json.data.forEach((element, index) => {
                         element.sequence_number = index + 1;
-                        element.canEdit = json.canEdit || false;
+                        element.canEdit = json.canEdit || false; 
                         element.canDelete = json.canDelete || false;
-                    });
+                   })
 
-                    if (json.canAdd) {
-                        $(".create-new").removeClass("d-none");
-                    }
+                   if (json.canAdd) {
+                    $(".create-new").removeClass("d-none");
+                   }
                     return json.data;
                 },
                 type: "GET",
                 datatype: "json",
             },
             columns: [
-                { data: "sequence_number" },
-                { data: "user_type" },
+                {
+                    data: "sequence_number",
+                    
+                },
+                { data: "name" },
                 {
                     data: "status",
                     render: function (data, type, row) {
                         return data == 0
-                            ? `<label class="switch switch-primary">
-                                <input type="checkbox" class="switch-input status_${row.id}" onclick="changeStatus(${row.id})" data-id="${row.id}" data-url="${changeStatusURl}" name="status">
-                                <span class="switch-toggle-slider">
-                                    <span class="switch-on"></span>
-                                    <span class="switch-off"></span>
-                                </span>
-                            </label>`
-                            : `<label class="switch switch-primary">
-                                <input type="checkbox" class="switch-input status_${row.id}" onclick="changeStatus(${row.id})" data-id="${row.id}" data-url="${changeStatusURl}" checked name="status">
-                                <span class="switch-toggle-slider">
-                                    <span class="switch-on"></span>
-                                    <span class="switch-off"></span>
-                                </span>
-                            </label>`;
+                            ? `
+           <label class="switch switch-primary">
+           <input type="checkbox" class="switch-input status_${row.id}" onclick="changeStatus(${row.id})" data-id="${row.id}" data-url="${changeStatusURl}" name="status">
+           <span class="switch-toggle-slider">
+           <span class="switch-on"></span>
+           <span class="switch-off"></span>
+           </span>
+           </label>`
+                            : `
+           <label class="switch switch-primary">
+           <input type="checkbox" class="switch-input status_${row.id}" onclick="changeStatus(${row.id})" data-id="${row.id}" data-url="${changeStatusURl}" checked name="status">
+           <span class="switch-toggle-slider">
+           <span class="switch-on"></span>
+           <span class="switch-off"></span>
+           </span>
+           </label>`;
                     },
                 },
             ],
             columnDefs: [
-                ...(userRole == 1 || userRole == 2
-                    ? [
-                          {
-                              targets: 3,
-                              title: "Access",
-                              orderable: false,
-                              searchable: false,
-                              render: function (data, type, full, meta) {
-                                  return (
-                                      '<a href="/user-access/' +
-                                      btoa(full.id) +
-                                      '" target="_blank" class="btn btn-primary btn-sm rounded-pill access-record" data-id="' +
-                                      full.id +
-                                      '">User Access</a>'
-                                  );
-                              },
-                          },
-                      ]
-                    : []), // Conditionally add "Access" column only if role is 0
                 {
-                    targets: userRole == 1 || userRole == 2 ? 4 : 3, // Adjust index if "Access" column is hidden
+                    // Actions
+                    targets: 3,
                     title: "Actions",
                     orderable: false,
                     searchable: false,
                     render: function (data, type, full, meta) {
                         var deleteBtn = full.canDelete
-                            ? '<div class="d-inline-block">' +
-                              '<a href="javascript:;" class="dropdown-item text-danger delete-record" data-url="' +
-                              deleteUrl +
-                              '" data-id="' +
-                              full.id +
-                              '"><i class="mdi mdi-delete"></i></a></div>'
-                            : "";
+                        ?
+                        '<div class="d-inline-block">' +
+                        '<a href="javascript:;" class="dropdown-item text-danger delete-record" data-url = "' + deleteUrl + '"  data-id="' +
+                        full.id +
+                        '" ><i class="mdi mdi-delete"></i></a>' +
+                        "</div>"
+                        : "";
 
                         var editBtn = full.canEdit
-                            ? '<a href="javascript:;" data-id="' +
-                              full.id +
-                              '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record"><i class="mdi mdi-pencil-outline"></i></a>'
-                            : "";
+                        ?
+                        '<a href="javascript:;" data-id="' +
+                        full.id +
+                        '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record"><i class="mdi mdi-pencil-outline"></i></a>'
+                        : "";
 
-                        if (deleteBtn == "" && editBtn == "") {
+                        if(deleteBtn == "" && editBtn == "") {
                             return "Permission Denied";
                         } else {
                             return editBtn + deleteBtn;
@@ -159,8 +149,9 @@ $(function () {
                 var currentPage = pageInfo.page + 1;
                 var pageSize = pageInfo.length;
                 var sequenceNumber = (currentPage - 1) * pageSize + index + 1;
-
+        
                 $(row).find("td:eq(0)").html(sequenceNumber);
+                
             },
             dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
             displayLength: 7,
@@ -174,7 +165,7 @@ $(function () {
                     buttons: [
                         {
                             extend: "csv",
-                            text: '<i class="mdi mdi-file-document-outline me-1"></i>Csv',
+                            text: '<i class="mdi mdi-file-document-outline me-1" ></i>Csv',
                             className: "dropdown-item",
                         },
                         {
@@ -182,9 +173,10 @@ $(function () {
                             text: '<i class="mdi mdi-file-excel-outline me-1"></i>Excel',
                             className: "dropdown-item",
                         },
+
                         {
                             extend: "copy",
-                            text: '<i class="mdi mdi-content-copy me-1"></i>Copy',
+                            text: '<i class="mdi mdi-content-copy me-1" ></i>Copy',
                             className: "dropdown-item",
                         },
                     ],
@@ -197,14 +189,13 @@ $(function () {
             ],
             scrollX: true,
         });
-
-        $("div.head-label").html('<h5 class="card-title mb-0">User Type</h5>');
+        $("div.head-label").html('<h5 class="card-title mb-0">Documents</h5>');
     }
 
     //Submit Add form
     fv.on("core.form.valid", function () {
-        var user_type = $("#user_type").val();
-        var url = $("#userTypeForm").attr("action");
+        var name = $("#name").val();
+        var url = $("#documentForm").attr("action");
         var submitButton = $("button[type='submit']");
         $(".invalid-feedback").empty();
 
@@ -214,7 +205,7 @@ $(function () {
             url: url,
             type: "POST",
             data: {
-                user_type: user_type,
+                name: name,
             },
             headers: {
                 "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
@@ -253,7 +244,7 @@ $(function () {
 
     //Edit record
 
-    const offCanvasElementEdit = document.querySelector("#userTypeEdit");
+    const offCanvasElementEdit = document.querySelector("#documentEdit");
     const offCanvasElEdit = new bootstrap.Offcanvas(offCanvasElementEdit);
 
     $(".datatables-basic tbody").on("click", ".edit-record", function () {
@@ -264,11 +255,11 @@ $(function () {
             $(".invalid-feedback").empty();
 
             $.ajax({
-                url: "/edit-user-type/" + id,
+                url: "/edit-document/" + id,
                 type: "GET",
                 dataType: "json",
                 success: function (response) {
-                    $("#edit_user_type").val(response.data.user_type);
+                    $("#edit_name").val(response.data.name);
                     $("#edit_id").val(response.data.id);
                 },
                 error: function (xhr) {
@@ -280,17 +271,17 @@ $(function () {
 
     //Submit edit form
 
-    const formEditRecord = document.getElementById("userTypeEditForm");
+    const formEditRecord = document.getElementById("documentEditForm");
     let fve;
 
     // Initialize form validation only once
 
     fve = FormValidation.formValidation(formEditRecord, {
         fields: {
-            user_type: {
+            name: {
                 validators: {
                     notEmpty: {
-                        message: "Please enter user type",
+                        message: "Please enter bank name",
                     },
                 },
             },
@@ -308,8 +299,8 @@ $(function () {
 
     fve.on("core.form.valid", function () {
         var id = $("#edit_id").val();
-        var user_type = $("#edit_user_type").val();
-        var url = $("#userTypeEditForm").attr("action");
+        var name = $("#edit_name").val();
+        var url = $("#documentEditForm").attr("action");
         var submitButton = $("button[type='submit']");
         toggleButtonLoadingState(submitButton, true);
 
@@ -318,7 +309,7 @@ $(function () {
             type: "PUT",
             data: {
                 id: id,
-                user_type: user_type,
+                name: name,
             },
             headers: {
                 "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
@@ -353,6 +344,7 @@ $(function () {
             },
         });
     });
+    
 
     // Filter form control to default size
     // ? setTimeout used for multilingual table initialization

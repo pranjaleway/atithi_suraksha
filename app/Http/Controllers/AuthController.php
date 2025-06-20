@@ -4,8 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\Customer;
+use App\Models\Document;
+use App\Models\Hotel;
+use App\Models\HotelOwnerDoc;
 use App\Models\Referral;
+use App\Models\State;
 use App\Models\User;
+use App\Models\UserType;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -197,6 +202,80 @@ class AuthController extends Controller
             'success' => false,
             'message' => 'Invalid or expired reset token.'
         ], 422);
+    }
+
+    public function hotelSignup() {
+        $states = State::where('status', 1)->orderBy('name', 'asc')->get();
+        $documents = Document::where('status', 1)->get();
+        return view('auth.hotel-signup', compact('states', 'documents'));
+    }
+
+    public function postHotelSignup(Request $request) {
+        $request->validate([
+            'hotel_name' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'contact_number' => 'required|numeric|digits:10|unique:hotels,contact_number',
+            'owner_contact_number' => 'required|numeric|digits:10|unique:users,phone',
+            'aadhar_number' => 'required|numeric|digits:12|unique:hotels,aadhar_number',
+            'pan_number' => 'required|string|max:10|unique:hotels,pan_number',
+            'license_number' => 'required|string|max:255|unique:hotels,license_number',
+            'address' => 'required|string',
+            'state_id' => 'required|exists:states,id',
+            'city_id' => 'required|exists:cities,id',
+            'pincode' => 'required|numeric|digits:6',
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'email.unique' => 'This email has already been taken.',
+            'contact_number.unique' => 'This contact number has already been taken.',
+            'city_id.exists' => 'The selected city is invalid.',
+            'state_id.exists' => 'The selected state is invalid.',
+            'password.confirmed' => 'The confirmed password does not match.',
+        ]);
+
+        $hotels = Hotel::create($request->only([
+            'hotel_name',
+            'owner_name',
+            'email',
+            'contact_number',
+            'owner_contact_number',
+            'aadhar_number',
+            'pan_number',
+            'license_number',
+            'address',
+            'state_id',
+            'city_id',
+            'pincode'
+        ]));
+
+        if ($request->hasFile('document')) {
+            foreach ($request->file('document') as $documentId => $file) {
+                $path = $file->store('hotel_owner_documents', 'public'); // stores in storage/app/public/hotel_documents
+
+                HotelOwnerDoc::create([
+                    'hotel_id' => $hotels->id,
+                    'document_id' => $documentId,
+                    'document_path' => $path,
+                ]);
+            }
+        }
+
+        $user = $hotels->user()->create([
+            'name' => $request->owner_name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'user_type_id' => 4,
+            'role' => UserType::where('id', 4)->value('user_type'),
+            'phone' => $request->owner_contact_number,
+            'status' => 0
+        ]);
+
+        $hotels->update(['user_id' => $user->id, 'status' => 0]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Please wait for admin approval',
+        ]);
     }
 
 }

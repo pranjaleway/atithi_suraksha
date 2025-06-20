@@ -6,17 +6,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (formAuthentication) {
         const fv = FormValidation.formValidation(formAuthentication, {
             fields: {
-                hotel_name: {
+                employee_name: {
                     validators: {
                         notEmpty: {
-                            message: "Please enter hotel name",
-                        },
-                    },
-                },
-                owner_name: {
-                    validators: {
-                        notEmpty: {
-                            message: "Please enter hotel owner name",
+                            message: "Please enter employee name",
                         },
                     },
                 },
@@ -33,22 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 contact_number: {
                     validators: {
                         notEmpty: {
-                            message: "Please enter hotel contact  number",
-                        },
-                        stringLength: {
-                            min: 10,
-                            max: 10,
-                            message: "Mobile number must be 10 digits",
-                        },
-                        digits: {
-                            message: "Please enter a valid mobile number",
-                        },
-                    },
-                },
-                owner_contact_number: {
-                    validators: {
-                        notEmpty: {
-                            message: "Please enter hotel owner contact  number",
+                            message: "Please enter contact  number",
                         },
                         stringLength: {
                             min: 10,
@@ -87,20 +65,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                         digits: {
                             message: "Please enter a valid pan number",
-                        },
-                    },
-                },
-                license_number: {
-                    validators: {
-                        notEmpty: {
-                            message: "Please enter license  number",
-                        },
-                    },
-                },
-                police_station_id: {
-                    validators: {
-                        notEmpty: {
-                            message: "Please select police station",
                         },
                     },
                 },

@@ -109,7 +109,7 @@ class SPOfficeController extends Controller
         $validatedData = $request->validate([
             'office_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $spOffice->user_id,
-            'contact_number' => 'required|numeric|digits:10|unique:users,contact_number,' . $spOffice->user_id,
+            'contact_number' => 'required|numeric|digits:10|unique:users,phone,' . $spOffice->user_id,
             'address' => 'required|string',
             'state_id' => 'required|exists:states,id',
             'city_id' => 'required|exists:cities,id',

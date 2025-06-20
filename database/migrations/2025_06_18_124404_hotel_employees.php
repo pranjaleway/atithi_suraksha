@@ -11,22 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('hotels', function (Blueprint $table) {
+        Schema::create('hotel_employees', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
-            $table->foreignId('police_station_id')->nullable()->constrained('police_stations')->onDelete('cascade');
-            $table->string('hotel_name');
-            $table->string('owner_name');
-            $table->string('owner_contact_number');
+            $table->foreignId('hotel_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->string('employee_name');
+            $table->string('contact_number');
+            $table->string('email');
             $table->string('aadhar_number');
             $table->string('pan_number');
-            $table->string('license_number');
             $table->text('address');
             $table->foreignId('state_id')->constrained('states')->onDelete('cascade');
             $table->foreignId('city_id')->constrained('cities')->onDelete('cascade');
-            $table->string('pincode')->nullable();
-            $table->string('contact_number')->nullable();
-            $table->string('email')->nullable();
+            $table->string('pincode');
             $table->tinyInteger('status')->default(1);
             $table->softDeletes();
             $table->timestamps();
@@ -38,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('hotels');
+        Schema::dropIfExists('hotel_employees');
     }
 };

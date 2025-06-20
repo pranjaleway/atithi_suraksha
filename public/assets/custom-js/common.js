@@ -99,3 +99,59 @@ $(document).on("change", "#state_id", function () {
         $("#city_id").empty().append('<option value="">Select City</option>');
     }
 });
+
+$(document).ready(function () {
+    const $inputs = $(".document-input");
+    const $previewContainer = $("#all-preview-row");
+
+    $inputs.on("change", function () {
+        const file = this.files[0];
+        const label = $(this).data("label");
+        const id = this.id;
+        const previewId = "preview_" + id;
+
+        // Remove existing preview if file is reselected
+        $("#" + previewId).remove();
+
+        if (file) {
+            const $col = $("<div>", {
+                class: "col-md-4 mb-3",
+                id: previewId,
+            });
+
+            const $title = $("<p>", {
+                text: label,
+                class: "fw-bold",
+            });
+
+            const fileType = file.type;
+            const fileURL = URL.createObjectURL(file);
+            let $previewEl;
+
+            if (fileType.startsWith("image/")) {
+                $previewEl = $("<img>", {
+                    src: fileURL,
+                    alt: label,
+                    css: {
+                        maxWidth: "100%",
+                        maxHeight: "200px",
+                    },
+                });
+            } else if (fileType === "application/pdf") {
+                $previewEl = $("<iframe>", {
+                    src: fileURL,
+                    width: "100%",
+                    height: "200px",
+                    css: {
+                        border: "1px solid #ccc",
+                    },
+                });
+            } else {
+                $previewEl = $("<p>").text("Preview not available");
+            }
+
+            $col.append($title, $previewEl);
+            $previewContainer.append($col);
+        }
+    });
+});

@@ -139,10 +139,10 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
-    const formChangePass = document.querySelector('#profile-details-form');
+    const formUpdateProfile = document.querySelector('#profile-details-form');
   
-    if (formChangePass) {
-      const fv = FormValidation.formValidation(formChangePass, {
+    if (formUpdateProfile) {
+      const fvp = FormValidation.formValidation(formUpdateProfile, {
           fields: {
             name: {
               validators: {
@@ -161,6 +161,137 @@ document.addEventListener('DOMContentLoaded', function () {
                   }
                 }
               },
+              office_name: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter office name'
+                  }
+                }
+              },
+              police_station_name: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter police station name'
+                  }
+                }
+              },
+              hotel_name: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter hotel name'
+                  }
+                }
+              },
+              owner_name: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter hotel owner name'
+                  }
+                }
+              },
+              owner_contact_number: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter hotel owner contact number'
+                  },
+                  stringLength: {
+                    min: 10,
+                    max: 10,
+                    message: 'Mobile number must be 10 digits'
+                  },
+                  digits: {
+                    message: 'Please enter a valid mobile number'
+                  }
+                }
+              },
+              contact_number: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter contact number'
+                  },
+                  stringLength: {
+                    min: 10,
+                    max: 10,
+                    message: 'Mobile number must be 10 digits'
+                  },
+                  digits: {
+                    message: 'Please enter a valid mobile number'
+                  }
+                }
+              },
+              aadhar_number: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter aadhar number'
+                  },
+                  stringLength: {
+                    min: 12,
+                    max: 12,
+                    message: 'Aadhar number must be 12 digits'
+                  },
+                  digits: {
+                    message: 'Please enter a valid aadhar number'
+                  }
+                }
+              },
+              pan_number: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter pan number'
+                  },
+                  stringLength: {
+                    min: 10,
+                    max: 10,
+                    message: 'Pan number must be 10 digits'
+                  },
+                  digits: {
+                    message: 'Please enter a valid pan number'
+                  }
+                }
+              },
+              license_number: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter license number'
+                  }
+                }
+              },
+              address: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter address'
+                  }
+                }
+              },
+              state_id: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please select state'
+                  }
+                }
+              },
+              city_id: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please select city'
+                  }
+                }
+              },
+              pincode: {
+                validators: {
+                  notEmpty: {
+                    message: 'Please enter pincode'
+                  },
+                  stringLength: {
+                    min: 6,
+                    max: 6,
+                    message: 'Pincode must be 6 digits'
+                  },
+                  digits: {
+                    message: 'Please enter a valid pincode'
+                  }
+                }
+              }
           },
           plugins: {
             trigger: new FormValidation.plugins.Trigger(),
@@ -185,10 +316,9 @@ document.addEventListener('DOMContentLoaded', function () {
       // Prevent normal form submission
      
   
-      fv.on("core.form.valid", function () { 
-        var name = $("#name").val();
-        var email = $("#email").val();
-        var url = formChangePass.getAttribute('action');
+      fvp.on("core.form.valid", function () { 
+        var formdata = new FormData(formUpdateProfile);
+        var url = formUpdateProfile.getAttribute('action');
         var submitButton = $("button[type='submit']");
         
         toggleButtonLoadingState(submitButton, true);
@@ -196,21 +326,19 @@ document.addEventListener('DOMContentLoaded', function () {
         $.ajax({
             url: url,
             type: 'POST',
-            data: {
-                name: name,
-                email: email
-            },
+            processData: false, 
+            contentType: false, 
+            data: formdata,
             headers: {
                 "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
             },
-            success: function (data) {            
-                if (data.success) {
-                    fv.resetForm();
+            success: function (response) {            
+                if (response.status === "success") {
                     $(".is-invalid").removeClass("is-invalid"); // Remove validation error classes
                     $(".invalid-feedback").empty(); // Remove previous error messages
-                    toastr.success(data.message, 'Success');
+                    toastr.success(response.message, 'Success');
                 } else {
-                    toastr.error(data.message, 'Error');
+                    toastr.error(response.message, 'Error');
                 }
             },
             error: function (xhr, status, error) {

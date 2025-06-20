@@ -3,6 +3,7 @@
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HotelController;
+use App\Http\Controllers\HotelEmployeeController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\PoliceStationController;
 use App\Http\Controllers\ProfileController;
@@ -26,7 +27,13 @@ Route::group(['middleware' => ['web']], function () {
         Route::post('post-forgot-password', 'postForgotPassword')->name('post-forgot-password');
         Route::get('reset-password/{token}', 'resetPassword')->name('password.reset');
         Route::post('post-reset-password', 'postResetPassword')->name('post-reset-password');
+        Route::get('hotel-signup', 'hotelSignup')->name('hotel-signup');
+        Route::post('post-hotel-signup', 'postHotelSignup')->name('post-hotel-signup');
     });
+     Route::controller(MasterController::class)->group(function () {
+        Route::get('get-cities', 'getCitiesByState')->name('get-cities');
+    });
+
 });
 Route::group(['middleware' => ['auth']], function () {
 
@@ -87,7 +94,6 @@ Route::group(['middleware' => ['auth']], function () {
         Route::put('update-city', 'updateCity')->name('update-city')->middleware('checkPermission:cities,edit');
         Route::post('change-city-status', 'changeCityStatus')->name('change-city-status')->middleware('checkPermission:cities,edit');
         Route::delete('delete-city', 'deleteCity')->name('delete-city')->middleware('checkPermission:cities,delete');
-        Route::get('get-cities', 'getCitiesByState')->name('get-cities');
 
         //Document
         Route::get('documents', 'documents')->name('documents')->middleware('checkPermission:document,view');
@@ -107,6 +113,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('update-sp-office', 'updateSpOffice')->name('update-sp-office')->middleware('checkPermission:sp-offices,edit');
         Route::post('change-sp-office-status', 'changeSpOfficeStatus')->name('change-sp-office-status')->middleware('checkPermission:sp-offices,edit');
         Route::delete('delete-sp-office', 'deleteSpOffice')->name('delete-sp-office')->middleware('checkPermission:sp-offices,delete');
+
+        Route::post('update-sp-profile', 'updateSpOffice')->name('update-sp-profile');
     });
 
     Route::controller(PoliceStationController::class)->group(function () {
@@ -117,6 +125,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('update-police-station', 'updatePoliceStation')->name('update-police-station')->middleware('checkPermission:police-stations,edit');
         Route::post('change-police-station-status', 'changePoliceStationStatus')->name('change-police-station-status')->middleware('checkPermission:police-stations,edit');
         Route::delete('delete-police-station', 'deletePoliceStation')->name('delete-police-station')->middleware('checkPermission:police-stations,delete');
+
+        Route::post('update-police-station-profile', 'updatePoliceStation')->name('update-police-station-profile');
+
     });
 
     Route::controller(HotelController::class)->group(function () {
@@ -127,5 +138,23 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('update-hotel', 'updateHotel')->name('update-hotel')->middleware('checkPermission:hotels,edit');
         Route::post('change-hotel-status', 'changeHotelStatus')->name('change-hotel-status')->middleware('checkPermission:hotels,edit');
         Route::delete('delete-hotel', 'deleteHotel')->name('delete-hotel')->middleware('checkPermission:hotels,delete');
+        Route::get('view-hotel-details/{id}', 'viewHotelDetails')->name('view-hotel-details')->middleware('checkPermission:hotels,view'); 
+        Route::post('assign-police-station', 'assignPoliceStation')->name('assign-police-station')->middleware('checkPermission:hotels,edit');
+
+
+        Route::post('update-hotel-profile', 'updateHotel')->name('update-hotel-profile');
+    });
+
+    Route::controller(HotelEmployeeController::class)->group(function () {
+        Route::get('hotel-employees/{id?}', 'hotelEmployees')->name('hotel-employees')->middleware('checkPermission:hotel-employees,view');
+        Route::get('add-hotel-employee', 'addHotelEmployee')->name('add-hotel-employee')->middleware('checkPermission:hotel-employees,add');
+        Route::post('store-hotel-employee', 'storeHotelEmployee')->name('store-hotel-employee')->middleware('checkPermission:hotel-employees,add');
+        Route::get('edit-hotel-employee/{id}', 'editHotelEmployee')->name('edit-hotel-employee')->middleware('checkPermission:hotel-employees,edit');
+        Route::post('update-hotel-employee', 'updateHotelEmployee')->name('update-hotel-employee')->middleware('checkPermission:hotel-employees,edit');
+        Route::post('change-hotel-employee-status', 'changeHotelEmployeeStatus')->name('change-hotel-employee-status')->middleware('checkPermission:hotel-employees,edit');
+        Route::delete('delete-hotel-employee', 'deleteHotelEmployee')->name('delete-hotel-employee')->middleware('checkPermission:hotel-employees,delete');
+        Route::get('view-hotel-employee-details/{id}', 'viewHotelEmployeeDetails')->name('view-hotel-employee-details')->middleware('checkPermission:hotel-employees,view'); 
+        
+        Route::post('update-hotel-employee-profile', 'updateHotelEmployee')->name('update-hotel-employee-profile');
     });
 });

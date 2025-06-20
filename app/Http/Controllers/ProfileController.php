@@ -2,6 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\City;
+use App\Models\Document;
+use App\Models\Hotel;
+use App\Models\HotelEmployee;
+use App\Models\PoliceStation;
+use App\Models\SpOffice;
+use App\Models\State;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -11,7 +18,29 @@ class ProfileController extends Controller
 {
     public function profile()
     {
-        return view('profile.profile');
+        $states = State::where('status', 1)->orderBy('name', 'asc')->get();
+        if(Auth::user()->user_type_id == 1){
+            return view('profile.profile');
+        } else if (Auth::user()->user_type_id == 2) {
+            $spOffice = SpOffice::where('user_id', Auth::user()->id)->first();
+            $cities = City::where('status', 1)->where('state_id', $spOffice->state_id)->orderBy('name', 'asc')->get();
+            return view('profile.sp-profile', compact('states', 'cities', 'spOffice'));
+        } else if (Auth::user()->user_type_id == 3) {
+            $policeStation = PoliceStation::where('user_id', Auth::user()->id)->first();
+            $cities = City::where('status', 1)->where('state_id', $policeStation->state_id)->orderBy('name', 'asc')->get();
+            return view('profile.police-station-profile', compact('states', 'cities', 'policeStation'));
+        } else if(Auth::user()->user_type_id == 4){
+            $hotel = Hotel::with('ownerDocuments.document')->where('user_id', Auth::user()->id)->first();
+            $cities = City::where('status', 1)->where('state_id', $hotel->state_id)->orderBy('name', 'asc')->get();
+            $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
+            return view('profile.hotel-profile', compact('states', 'cities', 'hotel', 'documents'));
+        } else if(Auth::user()->user_type_id == 5){
+            $employee = HotelEmployee::with('user', 'employeeDocuments.document')->where('user_id', Auth::user()->id)->first();
+            $cities = City::where('status', 1)->where('state_id', $employee->state_id)->orderBy('name', 'asc')->get();
+            $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
+            return view('profile.hotel-employee-profile', compact('states', 'cities', 'employee', 'documents'));
+        }
+        
     }
 
     public function postChangePassword(Request $request)

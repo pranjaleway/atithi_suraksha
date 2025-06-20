@@ -3,28 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Hotel extends Model
+class HotelEmployee extends Model
 {
-    use SoftDeletes;
-    protected $table = 'hotels';
+    protected $table = 'hotel_employees';
 
     protected $fillable = [
         'user_id',
-        'police_station_id',
-        'hotel_name',
-        'owner_name',
-        'owner_contact_number',
+        'hotel_id',
+        'employee_name',
+        'contact_number',
+        'email',
         'aadhar_number',
         'pan_number',
-        'license_number',
         'address',
         'state_id',
         'city_id',
         'pincode',
-        'contact_number',
-        'email',
         'status',
     ];
 
@@ -33,14 +28,9 @@ class Hotel extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function police_station()
+    public function hotel()
     {
-        return $this->belongsTo(PoliceStation::class, 'police_station_id');
-    }
-
-    public function ownerDocuments()
-    {
-        return $this->hasMany(HotelOwnerDoc::class, 'hotel_id')->with('document');
+        return $this->belongsTo(Hotel::class, 'hotel_id');
     }
 
     public function state()
@@ -53,5 +43,8 @@ class Hotel extends Model
         return $this->belongsTo(City::class, 'city_id');
     }
 
-
+    public function employeeDocuments()
+    {
+        return $this->hasMany(HotelEmployeeDoc::class, 'hotel_employee_id')->with('document');
+    }
 }

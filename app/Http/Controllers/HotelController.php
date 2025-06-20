@@ -130,7 +130,7 @@ class HotelController extends Controller
     public function editHotel($id)
     {
         $id = base64_decode($id);
-        $hotels = Hotel::with('ownerDocuments.document')->find($id);
+        $hotels = Hotel::with('ownerDocuments.document', 'police_station:id,police_station_name')->find($id);
         $states = State::where('status', 1)->orderBy('name', 'asc')->get();
         $cities = City::where('status', 1)
             ->where('state_id', $hotels->state_id)
@@ -155,7 +155,7 @@ class HotelController extends Controller
             'aadhar_number' => 'required|numeric|digits:12|unique:hotels,aadhar_number,' . $request->id,
             'pan_number' => 'required|string|max:10|unique:hotels,pan_number,' . $request->id,
             'license_number' => 'required|string|max:255|unique:hotels,license_number,' . $request->id,
-            'police_station_id' => 'required|exists:police_stations,id',
+            'police_station_id' => 'nullable|exists:police_stations,id',
             'address' => 'required|string',
             'state_id' => 'required|exists:states,id',
             'city_id' => 'required|exists:cities,id',
@@ -169,6 +169,11 @@ class HotelController extends Controller
             'password.confirmed' => 'The confirmed password does not match.',
             'police_station_id.exists' => 'The selected police station is invalid.'
         ]);
+
+        if(Auth::user()->user_type_id == 4){
+            $hotel->status = 0;
+            Auth::user()->status = 0;
+        }
 
         $hotel->update($request->all());
 
@@ -201,7 +206,7 @@ class HotelController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Hotel updated successfully',
+            'message' => Auth::user()->user_type_id == 4 ? 'Profile updated successfully. Please wait for admin approval' : 'Hotel updated successfully',
             'redirect' => route('hotels')
         ]);
     }
@@ -225,8 +230,31 @@ class HotelController extends Controller
         $hotel = Hotel::find($request->id);
         if ($hotel) {
             $newStatus = $hotel->status == 1 ? 0 : 1;
+            Auth::user()->status = $newStatus;
             $hotel->update(['status' => $newStatus]);
             return response()->json(['status' => 'success', 'message' => 'Hotel status updated successfully']);
+        }
+        return response()->json(['status' => 'error', 'message' => 'Hotel not found'], 404);
+    }
+
+    public function viewHotelDetails($id)
+    {
+        $id = base64_decode($id);
+        $hotels = Hotel::with('ownerDocuments.document', 'police_station:id,police_station_name', 'state:id,name', 'city:id,name')->find($id);
+        $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
+        $policeStations = PoliceStation::where('status', 1)->get();
+        if (!$hotels) {
+            abort(404, 'Hotel not found');
+        }
+        return view('hotel.view-hotel-details', compact('hotels', 'documents', 'policeStations'));
+    }
+
+    public function assignPoliceStation(Request $request)
+    {
+        $hotel = Hotel::find($request->hotel_id);
+        if ($hotel) {
+            $hotel->update(['police_station_id' => $request->police_station_id]);
+            return response()->json(['status' => 'success', 'message' => 'Police station assigned successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Hotel not found'], 404);
     }

@@ -157,12 +157,22 @@
 
          <!-- Hotels -->
          @if(hasPermission('hotels', 'view'))
-             <li class="menu-item {{ Request::is('hotels') || Request::is('add-hotel') || Request::is('edit-hotel/*') ? 'active' : '' }}">
+             <li class="menu-item {{ Request::is('hotels') || Request::is('add-hotel') || Request::is('edit-hotel/*') || Request::is('view-hotel-details/*') || Request::is('hotel-employees/*') ? 'active' : '' }}">
                  <a href="{{ route('hotels') }}" class="text-white menu-link">
                      <i class="menu-icon tf-icons mdi mdi-bed-outline"></i>
                      <div data-i18n="Hotels">Hotels</div>
                  </a>
              </li>             
+         @endif
+
+         <!-- Hotel Employees -->
+         @if(hasPermission('hotel-employees', 'view') && Auth::user()->user_type_id == 4)
+             <li class="menu-item {{ Request::is('hotel-employees') || Request::is('add-hotel-employee') || Request::is('edit-hotel-employee/*') || Request::is('view-hotel-employee-details/*') ? 'active' : '' }}">
+                 <a href="{{ route('hotel-employees') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-account-group-outline"></i>
+                     <div data-i18n="Hotel Employees">Hotel Employees</div>
+                 </a>
+             </li>
          @endif
 
          <!-- Activity Log -->

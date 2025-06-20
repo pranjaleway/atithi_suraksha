@@ -44,6 +44,8 @@
 <script src="{{ asset('assets/vendor/libs/flatpickr/flatpickr.js') }}"></script>
 <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
 <script src="{{ asset('assets/vendor/libs/block-ui/block-ui.js') }}"></script>
+<script src="{{ asset('assets/vendor/libs/bs-stepper/bs-stepper.js')}}"></script>
+
 
 <!-- Main JS -->
 <script src="{{ asset('assets/js/main.js') }}"></script>

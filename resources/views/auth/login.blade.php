@@ -62,6 +62,9 @@
             </div>
             <button type="submit" id="submit" class="btn btn-primary d-grid w-100">Sign in</button>
           </form>
+          <a href="{{ route('hotel-signup')}}" class="btn btn-outline-primary d-grid w-100">
+                <span>Sign Up as Hotel</span>
+            </a>
         </div>
       </div>
       <!-- /Login -->

@@ -13,6 +13,36 @@ $(function () {
     // --------------------------------------------------------------------
 
     if (dt_basic_table.length) {
+        let columnDefs = [];
+        if (!isSuperAdmin) {
+            columnDefs.push({
+                targets: 6, // next index
+                title: "Actions",
+                orderable: false,
+                searchable: false,
+                render: function (data, type, full, meta) {
+                    var id = btoa(full.id);
+                    var deleteBtn = full.canDelete
+                        ? `<div class="d-inline-block">
+                    <a href="javascript:;" class="dropdown-item text-danger delete-record" data-url="${deleteUrl}" data-id="${full.id}">
+                        <i class="mdi mdi-delete"></i>
+                    </a></div>`
+                        : "";
+
+                    var editBtn = full.canEdit
+                        ? `<a href="edit-hotel-employee/${id}" data-id="${full.id}" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record">
+                        <i class="mdi mdi-pencil-outline"></i>
+                   </a>`
+                        : "";
+
+                    var viewBtn = `<a href="view-hotel-employee-details/${id}" data-id="${full.id}" class="btn btn-sm btn-text-secondary rounded-pill btn-icon view-record">
+                              <i class="mdi mdi-eye-outline"></i>
+                           </a>`;
+
+                    return viewBtn + editBtn + deleteBtn;
+                },
+            });
+        }
         dt_basic = dt_basic_table.DataTable({
             ordering: true,
             ajax: {
@@ -24,7 +54,7 @@ $(function () {
                         element.canDelete = json.canDelete || false;
                     });
 
-                    if (json.canAdd) {
+                    if (json.canAdd && !isSuperAdmin) {
                         $(".create-new").removeClass("d-none");
                     }
 
@@ -40,23 +70,10 @@ $(function () {
                         return meta.row + 1; // sequence number
                     },
                 },
-                { data: "hotel_name", name: "hotel_name" },
-                { data: "owner_name", name: "owner_name" },
+                { data: "employee_name", name: "employee_name" },
                 { data: "contact_number", name: "contact_number" },
+                { data: "email", name: "email" },
                 { data: "address", name: "address" },
-                {
-                    data: "employee", // or the correct data field
-                    render: function (data, type, row) {
-                        var encodedId = btoa(row.id); // row.id = hotel_id
-                        var url = employeeUrl.replace(":id", encodedId); // dynamically inject base64 id
-                        return (
-                            '<a href="' +
-                            url +
-                            '" target="_blank" class="btn btn-primary btn-sm rounded-pill">View Employees</a>'
-                        );
-                    },
-                },
-
                 {
                     data: "status",
                     render: function (data, type, row) {
@@ -80,47 +97,7 @@ $(function () {
                     },
                 },
             ],
-            columnDefs: [
-                {
-                    // Actions
-                    targets: 7,
-                    title: "Actions",
-                    orderable: false,
-                    searchable: false,
-                    render: function (data, type, full, meta) {
-                        var id = btoa(full.id);
-                        var deleteBtn = full.canDelete
-                            ? '<div class="d-inline-block">' +
-                              '<a href="javascript:;" class="dropdown-item text-danger delete-record" data-url = "' +
-                              deleteUrl +
-                              '"  data-id="' +
-                              full.id +
-                              '" ><i class="mdi mdi-delete"></i></a>' +
-                              "</div>"
-                            : "";
-                        var editBtn = full.canEdit
-                            ? '<a href="edit-hotel/' +
-                              id +
-                              '" data-id="' +
-                              full.id +
-                              '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record"><i class="mdi mdi-pencil-outline"></i></a>'
-                            : "";
-
-                        var viewBtn =
-                            '<a href="view-hotel-details/' +
-                            id +
-                            '" data-id="' +
-                            full.id +
-                            '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon view-record"><i class="mdi mdi-eye-outline"></i></a>';
-
-                        if (deleteBtn == "" && editBtn == "") {
-                            return viewBtn;
-                        } else {
-                            return viewBtn + editBtn + deleteBtn;
-                        }
-                    },
-                },
-            ],
+            columnDefs: columnDefs,
             dom: '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>><"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>t<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
             displayLength: 7,
             lengthMenu: [7, 10, 25, 50, 75, 100],
@@ -154,14 +131,16 @@ $(function () {
                     className:
                         "create-new btn btn-primary waves-effect waves-light d-none",
                     action: function (e, dt, node, config) {
-                        window.location.href = "add-hotel";
+                        window.location.href = "add-hotel-employee";
                     },
                 },
             ],
             scrollX: true,
         });
 
-        $("div.head-label").html('<h5 class="card-title mb-0">Hotels</h5>');
+        $("div.head-label").html(
+            '<h5 class="card-title mb-0">Hotel Employees</h5>'
+        );
     }
 
     // Filter form control to default size

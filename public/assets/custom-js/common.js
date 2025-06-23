@@ -105,53 +105,58 @@ $(document).ready(function () {
     const $previewContainer = $("#all-preview-row");
 
     $inputs.on("change", function () {
-        const file = this.files[0];
+        const files = this.files;
         const label = $(this).data("label");
         const id = this.id;
-        const previewId = "preview_" + id;
 
-        // Remove existing preview if file is reselected
-        $("#" + previewId).remove();
+        // Remove existing previews for this input
+        $previewContainer.find(`[data-source="${id}"]`).remove();
 
-        if (file) {
-            const $col = $("<div>", {
-                class: "col-md-4 mb-3",
-                id: previewId,
-            });
+        if (files.length > 0) {
+            Array.from(files).forEach((file, index) => {
+                const previewId = `preview_${id}_${index}`;
 
-            const $title = $("<p>", {
-                text: label,
-                class: "fw-bold",
-            });
-
-            const fileType = file.type;
-            const fileURL = URL.createObjectURL(file);
-            let $previewEl;
-
-            if (fileType.startsWith("image/")) {
-                $previewEl = $("<img>", {
-                    src: fileURL,
-                    alt: label,
-                    css: {
-                        maxWidth: "100%",
-                        maxHeight: "200px",
-                    },
+                const $col = $("<div>", {
+                    class: "col-md-4 mb-3",
+                    id: previewId,
+                    "data-source": id, // So we can remove previews for this input on reselect
                 });
-            } else if (fileType === "application/pdf") {
-                $previewEl = $("<iframe>", {
-                    src: fileURL,
-                    width: "100%",
-                    height: "200px",
-                    css: {
-                        border: "1px solid #ccc",
-                    },
-                });
-            } else {
-                $previewEl = $("<p>").text("Preview not available");
-            }
 
-            $col.append($title, $previewEl);
-            $previewContainer.append($col);
+                const $title = $("<p>", {
+                    text: `${label}`,
+                    class: "fw-bold",
+                });
+
+                const fileType = file.type;
+                const fileURL = URL.createObjectURL(file);
+                let $previewEl;
+
+                if (fileType.startsWith("image/")) {
+                    $previewEl = $("<img>", {
+                        src: fileURL,
+                        alt: `${label} ${index + 1}`,
+                        css: {
+                            maxWidth: "100%",
+                            maxHeight: "200px",
+                        },
+                    });
+                } else if (fileType === "application/pdf") {
+                    $previewEl = $("<iframe>", {
+                        src: fileURL,
+                        width: "100%",
+                        height: "200px",
+                        css: {
+                            border: "1px solid #ccc",
+                        },
+                    });
+                } else {
+                    $previewEl = $("<p>").text("Preview not available");
+                }
+
+                $col.append($title, $previewEl);
+                $previewContainer.append($col);
+            });
         }
     });
 });
+

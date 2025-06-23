@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HotelBookingController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\HotelEmployeeController;
 use App\Http\Controllers\MasterController;
@@ -141,6 +142,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('view-hotel-details/{id}', 'viewHotelDetails')->name('view-hotel-details')->middleware('checkPermission:hotels,view'); 
         Route::post('assign-police-station', 'assignPoliceStation')->name('assign-police-station')->middleware('checkPermission:hotels,edit');
 
+        Route::get('hotel-booking-entries', 'hotelBookingEntries')->name('hotel-booking-entries')->middleware('checkPermission:hotels,view');
+
 
         Route::post('update-hotel-profile', 'updateHotel')->name('update-hotel-profile');
     });
@@ -156,5 +159,24 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('view-hotel-employee-details/{id}', 'viewHotelEmployeeDetails')->name('view-hotel-employee-details')->middleware('checkPermission:hotel-employees,view'); 
         
         Route::post('update-hotel-employee-profile', 'updateHotelEmployee')->name('update-hotel-employee-profile');
+    });
+
+    Route::controller(HotelBookingController::class)->group(function () {
+        Route::get('bookings/{id?}', 'booking')->name('bookings')->middleware('checkPermission:bookings,view');
+        Route::get('add-booking', 'addBooking')->name('add-booking')->middleware('checkPermission:bookings,add');
+        Route::post('store-booking', 'storeBooking')->name('store-booking')->middleware('checkPermission:bookings,add');
+        Route::delete('delete-booking', 'deleteBooking')->name('delete-booking')->middleware('checkPermission:bookings,delete');
+        Route::get('members/{id}', 'getMembers')->name('members')->middleware('checkPermission:bookings,view');
+        Route::get('edit-booking-details/{id}', 'editBooking')->name('edit-booking-details')->middleware('checkPermission:bookings,edit');
+        Route::get('add-member/{id}', 'addMember')->name('add-member')->middleware('checkPermission:bookings,add');
+        Route::post('store-member', 'storeMember')->name('store-member')->middleware('checkPermission:bookings,add');
+        Route::delete('delete-member', 'deleteMember')->name('delete-member')->middleware('checkPermission:bookings,delete');
+        Route::get('view-booking-details/{id}', 'viewDetails')->name('view-booking-details')->middleware('checkPermission:bookings,view');
+
+        //Uploaded Entries
+        Route::get('uploaded-entries/{id?}', 'uploadedEntries')->name('uploaded-entries')->middleware('checkPermission:uploaded-entries,view');
+        Route::post('store-uploaded-entry', 'storeUploadedEntry')->name('store-uploaded-entry')->middleware('checkPermission:uploaded-entries,add');
+        Route::delete('delete-uploaded-entry', 'deleteUploadedEntry')->name('delete-uploaded-entry')->middleware('checkPermission:uploaded-entries,delete');
+
     });
 });

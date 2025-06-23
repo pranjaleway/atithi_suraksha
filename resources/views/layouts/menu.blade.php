@@ -175,6 +175,38 @@
              </li>
          @endif
 
+         <!-- Booking -->
+         @if(hasPermission('bookings', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
+             <li class="menu-item {{ Request::is('bookings') || Request::is('add-booking')
+                 || Request::is('members/*') || Request::is(patterns: 'add-member/*')
+                 || Request::is('view-booking-details/*') ? 'active' : '' }}">
+                 <a href="{{ route('bookings') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-account-group-outline"></i>
+                     <div data-i18n="Bookings">Bookings</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- Upload Entries -->
+         @if(hasPermission('uploaded-entries', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
+             <li class="menu-item {{ Request::is('uploaded-entries') ? 'active' : '' }}">
+                 <a href="{{ route('uploaded-entries') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-upload-box-outline"></i>
+                     <div data-i18n="Upload Entries">Upload Entries</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- Hotel Booking/Upload Entries -->
+         @if(hasPermission('hotels', 'view') && (Auth::user()->user_type_id == 1 ||Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3))
+             <li class="menu-item {{ Request::is('hotel-booking-entries') || Request::is('uploaded-entries/*') || Request::is('bookings/*') ? 'active' : '' }}">
+                 <a href="{{ route('hotel-booking-entries') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-upload-box-outline"></i>
+                     <div data-i18n="Booking/Upload Entries">Booking/Upload Entries</div>
+                 </a>
+             </li>
+         @endif
+
          <!-- Activity Log -->
          @if (hasPermission('activity-log', 'view'))
              <li class="menu-item {{ Request::is('activity-log') ? 'active' : '' }}">

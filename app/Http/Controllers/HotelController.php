@@ -11,6 +11,7 @@ use App\Models\HotelEmployee;
 use App\Models\HotelOwnerDoc;
 use App\Models\PoliceStation;
 use App\Models\State;
+use App\Models\TransferEntry;
 use App\Models\UploadedEntry;
 use App\Models\User;
 use App\Models\UserType;
@@ -233,8 +234,11 @@ class HotelController extends Controller
         $hotel = Hotel::find($request->id);
         if ($hotel) {
             $newStatus = $hotel->status == 1 ? 0 : 1;
-            Auth::user()->status = $newStatus;
             $hotel->update(['status' => $newStatus]);
+            $user = User::find($hotel->user_id);
+            if ($user) {
+                $user->update(['status' => $newStatus]);
+            }
             return response()->json(['status' => 'success', 'message' => 'Hotel status updated successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Hotel not found'], 404);
@@ -282,53 +286,5 @@ class HotelController extends Controller
             return response()->json(['data' => $data, 'canAdd' => $canAdd, 'canEdit' => $canEdit, 'canDelete' => $canDelete]);
         }
         return view('hotel.hotel-booking-entries');
-    }
-
-    public function viewHotelBookings(Request $request, $id)
-    {
-         if (!hasPermission('hotels', 'view')) {
-            abort(403, 'Unauthorized');
-        }
-        $id = base64_decode($id);
-
-        if ($request->ajax()) {
-            $query = HotelBooking::with(['hotel', 'hotelEmployee', 'state', 'city'])->where('parent_id', null);
-            if (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2) {
-                $data = $query->where('hotel_id', $id)->orderBy('id', 'desc')->get();
-            } else if (Auth::user()->user_type_id == 3) {
-                $hotelId = Hotel::where('police_station_id', Auth::user()->id)->value('id');
-                $data = $query->where('hotel_id', $hotelId)->get();
-            } else if (Auth::user()->user_type_id == 4) {
-                $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
-                $data = $query->where('hotel_id', $hotelId)->get();
-            } else if (Auth::user()->user_type_id == 5) {
-                $employeeID = HotelEmployee::where('user_id', Auth::user()->id)->value('id');
-                $data = $query->where('hotel_employee_id', $employeeID)->get();
-            } else {
-                $data = [];
-            }
-
-            $canAdd = hasPermission('bookings', 'add');
-            $canEdit = hasPermission('bookings', 'edit');
-            $canDelete = hasPermission('bookings', 'delete');
-            return response()->json(['data' => $data, 'canAdd' => $canAdd, 'canEdit' => $canEdit, 'canDelete' => $canDelete]);
-        }
-        return view('hotel.bookings');
-    }
-
-    public function viewHotelUploadedEntries(Request $request, $id){
-         if (!hasPermission('hotels', 'view')) {
-            abort(403, 'Unauthorized');
-        }
-        $id = base64_decode($id);
-
-        if($request->ajax()){
-            $data = UploadedEntry::where('hotel_id', $id)->get();
-            $canAdd = hasPermission('hotels', 'add');
-            $canEdit = hasPermission('hotels', 'edit');
-            $canDelete = hasPermission('hotels', 'delete');
-            return response()->json(['data' => $data, 'canAdd' => $canAdd, 'canEdit' => $canEdit, 'canDelete' => $canDelete]);
-        }
-        return view('hotel.uploaded-entries');
     }
 }

@@ -12,6 +12,7 @@
                         <tr>
                             <th>S.No.</th>
                             <th>Document</th>
+                            <th>Date and Time</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -65,7 +66,8 @@
 @section('scripts')
     <script>
         var deleteUrl = "{{ route('delete-uploaded-entry') }}";
-        var listUrl = "{{ route('uploaded-entries', $hotel_id ?? '') }}";
+        var listUrl = "{{ route('uploaded-entries', [$hotel_id ?? '', $date ?? '']) }}";
+        var uploadedUrl = "{{ asset('storage') }}/";
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-uploaded-entries.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

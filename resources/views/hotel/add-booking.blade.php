@@ -118,7 +118,7 @@
                                         <div class="preview mt-2"></div>
                                     </div>
                                     
-                                    <div class="mb-3 col-lg-12 col-xl-2 col-12 d-flex align-items-center mb-0">
+                                    <div class="mb-3 deleteDiv d-none col-lg-12 col-xl-2 col-12 d-flex align-items-center mb-0">
                                         <button class="btn btn-outline-danger" data-repeater-delete type="button">
                                             <i class="mdi mdi-close me-1"></i>
                                             <span class="align-middle">Delete</span>

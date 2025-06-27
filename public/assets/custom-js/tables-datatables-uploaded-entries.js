@@ -41,38 +41,69 @@ $(function () {
                     },
                 },
                 {
-    data: "file_path",
-    name: "file_path",
-    render: function (data, type, row) {
-        if (!data) return "-";
+                    data: "file_path",
+                    name: "file_path",
+                    render: function (data, type, row) {
+                        if (!data) return "-";
 
-        const fileUrl = `/storage/${data}`;
-        const fileExtension = data.split('.').pop().toLowerCase();
+                        const fileUrl = `${uploadedUrl}${data}`;
+                        const fileExtension = data
+                            .split(".")
+                            .pop()
+                            .toLowerCase();
 
-        let previewType = 'pdf';
-        if (["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(fileExtension)) {
-            previewType = 'image';
-        }
+                        let previewType = "pdf";
+                        if (
+                            [
+                                "jpg",
+                                "jpeg",
+                                "png",
+                                "gif",
+                                "bmp",
+                                "webp",
+                            ].includes(fileExtension)
+                        ) {
+                            previewType = "image";
+                        }
 
-        return `
+                        return `
             <a href="${fileUrl}" target="_blank" class="preview-file" data-url="${fileUrl}" data-type="${previewType}">
                 Open File
             </a>
         `;
-    }
-}
+                    },
+                },
+                {
+                    data: "created_at",
+                    name: "created_at",
+                    render: function (data, type, row) {
+                        if (!data) return "-";
 
+                        // Format using JavaScript's Date object
+                        const dateObj = new Date(data);
+                        const options = {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                        };
+
+                        return dateObj.toLocaleString("en-IN", options); // or "en-US" if preferred
+                    },
+                },
             ],
             columnDefs: [
                 {
                     // Actions
-                    targets: 2,
+                    targets: 3,
                     title: "Actions",
                     orderable: false,
                     searchable: false,
                     render: function (data, type, full, meta) {
                         var id = btoa(full.id);
-                       // var viewUrl = viewDetailsUrl.replace(":id", id);
+                        // var viewUrl = viewDetailsUrl.replace(":id", id);
                         var deleteBtn = full.canDelete
                             ? '<div class="d-inline-block">' +
                               '<a href="javascript:;" class="dropdown-item text-danger delete-record" data-url = "' +
@@ -94,7 +125,7 @@ $(function () {
                         //     '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon view-record"><i class="mdi mdi-eye-outline"></i></a>';
 
                         if (deleteBtn == "") {
-                            return 'Permission Denied';
+                            return "Permission Denied";
                         } else {
                             return deleteBtn;
                         }
@@ -220,7 +251,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (response.status === "success") {
                         toastr.success(response.message, "Success");
                         formAuthentication.reset(); // Reset form on success
-                       $('#add-form')[0].reset();
+                        $("#add-form")[0].reset();
                         dt_basic.ajax.reload();
                         $("#addModal").modal("hide");
                     }

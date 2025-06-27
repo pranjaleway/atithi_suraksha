@@ -8,7 +8,7 @@
       <!-- /Left Section -->
       <div class="d-none d-lg-flex col-lg-7 col-xl-7 align-items-center imageDiv bg-white justify-content-center p-5">
         <img
-          src="{{ asset('assets/img/login.jpg')}}"
+          src="{{ asset('assets/img/cyber.jpg')}}"
           class="w-100"
           alt="auth-illustration">
       

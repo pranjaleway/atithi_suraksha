@@ -28,39 +28,52 @@ class AuthController extends Controller
     }
 
     public function authenticate(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|min:6',
-        ]);
+{
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required|min:6',
+    ]);
 
-        $user = User::where('email', $request->email)->first();
+    $user = User::where('email', $request->email)->first();
 
-        // Ensure user exists and password is correct
-        if ($user && Hash::check($request->password, $user->password)) {
-            // Allow only roles 0, 1, 2
-            // Super admin, admin, employee
-            // if (in_array($user->role, [0, 1,2 ])) {
-            Auth::login($user);
-            activiyLog(ucfirst($user->name) . ' logged in');
-            return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'redirect' => route('dashboard')
-            ]);
-            // } else {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Unauthorized Access'
-            //     ], 401);
-            // }
-        } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid credentials'
-            ], 401);
+    if ($user) {
+        // Check if password is correct
+        if (Hash::check($request->password, $user->password)) {
+            // Check if account is deactivated
+            if ($user->status == 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account is deactivated, please contact to the administrator.'
+                ], 403);
+            }
+
+            // Allow login only for active accounts
+            if ($user->status == 1) {
+                Auth::login($user);
+                activiyLog(ucfirst($user->name) . ' logged in');
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'redirect' => route('dashboard')
+                ]);
+            }
         }
+
+        // If password is incorrect
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid credentials'
+        ], 401);
     }
+
+    // If user not found
+    return response()->json([
+        'success' => false,
+        'message' => 'Invalid credentials'
+    ], 401);
+}
+
 
     public function dashboard()
     {

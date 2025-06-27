@@ -28,7 +28,7 @@ return new class extends Migration
             $table->foreignId('state_id')->nullable()->constrained('states')->onDelete('cascade');
             $table->foreignId('city_id')->nullable()->constrained('cities')->onDelete('cascade');
             $table->string('pincode')->nullable();
-            $table->tinyInteger('status')->default(1);
+            $table->tinyInteger('status')->default(0)->comment('1 = sent, 0 = not sent');
             $table->softDeletes();
             $table->timestamps();
         });

@@ -40,7 +40,7 @@
                      </svg>
                  </span>
              </span>
-             <span class="app-brand-text text-white demo menu-text fw-bold ms-2">DSA</span>
+             <span class="app-brand-text text-white demo menu-text fw-bold ms-2">Atithi Suraksha</span>
          </a>
 
          <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
@@ -69,13 +69,120 @@
              </li>
          @endif
 
+         {{-- <!-- Hotel Booking/Upload Entries -->
+         @if (hasPermission('hotels', 'view') &&
+                 (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3))
+             <li
+                 class="menu-item {{ Request::is('hotel-booking-entries') || Request::is('uploaded-entries/*') || Request::is('bookings/*') ? 'active' : '' }}">
+                 <a href="{{ route('hotel-booking-entries') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-upload-box-outline"></i>
+                     <div data-i18n="Booking/Upload Entries">Booking/Upload Entries</div>
+                 </a>
+             </li>
+         @endif --}}
+
+         <!-- Hotels -->
+         @if (hasPermission('hotels', 'view'))
+             <li
+                 class="menu-item {{ Request::is('hotels') || Request::is('add-hotel') || Request::is('edit-hotel/*') || Request::is('view-hotel-details/*') || Request::is('hotel-employees/*') ? 'active' : '' }}">
+                 <a href="{{ route('hotels') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-bed-outline"></i>
+                     <div data-i18n="Hotels">Hotels</div>
+                 </a>
+             </li>
+         @endif
+
+
+         <!-- Booking -->
+         @if (hasPermission('bookings', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
+             <li
+                 class="menu-item {{ Request::is('bookings') ||
+                 Request::is('add-booking') ||
+                 Request::is('members/*') ||
+                 Request::is(patterns: 'add-member/*') ||
+                 Request::is('view-booking-details/*')
+                     ? 'active'
+                     : '' }}">
+                 <a href="{{ route('bookings') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-account-group-outline"></i>
+                     <div data-i18n="Bookings">Bookings</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- Upload Entries -->
+         @if (hasPermission('uploaded-entries', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
+             <li class="menu-item {{ Request::is('uploaded-entries') ? 'active' : '' }}">
+                 <a href="{{ route('uploaded-entries') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-upload-box-outline"></i>
+                     <div data-i18n="Upload Entries">Upload Entries</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- Transfer Entries -->
+         @if (hasPermission('transfer-entries', 'view'))
+             <li class="menu-item {{ Request::is('transfer-entries') || Request::is('uploaded-entries/*') || Request::is('bookings/*')
+             || Request::is('transfer-manual-entries') || Request::is('transfer-uploaded-entries') ? 'active' : '' }}">
+                 <a href="{{ route('transfer-entries') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-file-arrow-left-right-outline"></i>
+                     <div data-i18n="Transfer Entries">Transfer Entries</div>
+                 </a>
+             </li>
+         @endif
+
+
+         <!-- Hotel Employees -->
+         @if (hasPermission('hotel-employees', 'view') && Auth::user()->user_type_id == 4)
+             <li
+                 class="menu-item {{ Request::is('hotel-employees') || Request::is('add-hotel-employee') || Request::is('edit-hotel-employee/*') || Request::is('view-hotel-employee-details/*') ? 'active' : '' }}">
+                 <a href="{{ route('hotel-employees') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-account-group-outline"></i>
+                     <div data-i18n="Hotel Employees">Hotel Employees</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- Police Stations -->
+         @if (hasPermission('police-stations', 'view'))
+             <li
+                 class="menu-item {{ Request::is('police-stations') || Request::is('add-police-station') || Request::is('edit-police-station/*') ? 'active' : '' }}">
+                 <a href="{{ route('police-stations') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-police-station"></i>
+                     <div data-i18n="Police Stations">Police Stations</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- SP Offices -->
+         @if (hasPermission('sp-offices', 'view'))
+             <li
+                 class="menu-item {{ Request::is('sp-offices') || Request::is('add-sp-office') || Request::is('edit-sp-office/*') ? 'active' : '' }}">
+                 <a href="{{ route('sp-offices') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-office-building-outline"></i>
+                     <div data-i18n="SP Offices">SP Offices</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- User Type -->
+         @if (hasPermission('user-type', 'view'))
+             <li class="menu-item {{ Request::is(['user-type', 'user-access/*']) ? 'active' : '' }}">
+                 <a href="{{ route('user-type') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-account-details-outline"></i>
+                     <div data-i18n="User Type">User Type</div>
+                 </a>
+             </li>
+         @endif
+
          <!-- Masters -->
 
          @php
-             $mastersVisible = hasPermission('menu', 'view')
-                 || hasPermission('states', 'view')
-                 || hasPermission('cities', 'view')
-                 || hasPermission('document', 'view');
+             $mastersVisible =
+                 hasPermission('menu', 'view') ||
+                 hasPermission('states', 'view') ||
+                 hasPermission('cities', 'view') ||
+                 hasPermission('document', 'view');
          @endphp
 
          @if ($mastersVisible)
@@ -122,88 +229,6 @@
                          </li>
                      @endif
                  </ul>
-             </li>
-         @endif
-
-         <!-- User Type -->
-         @if (hasPermission('user-type', 'view'))
-             <li class="menu-item {{ Request::is(['user-type', 'user-access/*']) ? 'active' : '' }}">
-                 <a href="{{ route('user-type') }}" class="text-white menu-link">
-                     <i class="menu-icon tf-icons mdi mdi-account-details-outline"></i>
-                     <div data-i18n="User Type">User Type</div>
-                 </a>
-             </li>
-         @endif
-
-         <!-- SP Offices -->
-         @if(hasPermission('sp-offices', 'view'))
-             <li class="menu-item {{ Request::is('sp-offices') || Request::is('add-sp-office') || Request::is('edit-sp-office/*') ? 'active' : '' }}">
-                 <a href="{{ route('sp-offices') }}" class="text-white menu-link">
-                     <i class="menu-icon tf-icons mdi mdi-office-building-outline"></i>
-                     <div data-i18n="SP Offices">SP Offices</div>
-                 </a>
-             </li>
-         @endif
-
-         <!-- Police Stations -->
-         @if(hasPermission('police-stations', 'view'))
-             <li class="menu-item {{ Request::is('police-stations') || Request::is('add-police-station') || Request::is('edit-police-station/*') ? 'active' : '' }}">
-                 <a href="{{ route('police-stations') }}" class="text-white menu-link">
-                     <i class="menu-icon tf-icons mdi mdi-police-station"></i>
-                     <div data-i18n="Police Stations">Police Stations</div>
-                 </a>
-             </li>
-         @endif
-
-         <!-- Hotels -->
-         @if(hasPermission('hotels', 'view'))
-             <li class="menu-item {{ Request::is('hotels') || Request::is('add-hotel') || Request::is('edit-hotel/*') || Request::is('view-hotel-details/*') || Request::is('hotel-employees/*') ? 'active' : '' }}">
-                 <a href="{{ route('hotels') }}" class="text-white menu-link">
-                     <i class="menu-icon tf-icons mdi mdi-bed-outline"></i>
-                     <div data-i18n="Hotels">Hotels</div>
-                 </a>
-             </li>             
-         @endif
-
-         <!-- Hotel Employees -->
-         @if(hasPermission('hotel-employees', 'view') && Auth::user()->user_type_id == 4)
-             <li class="menu-item {{ Request::is('hotel-employees') || Request::is('add-hotel-employee') || Request::is('edit-hotel-employee/*') || Request::is('view-hotel-employee-details/*') ? 'active' : '' }}">
-                 <a href="{{ route('hotel-employees') }}" class="text-white menu-link">
-                     <i class="menu-icon tf-icons mdi mdi-account-group-outline"></i>
-                     <div data-i18n="Hotel Employees">Hotel Employees</div>
-                 </a>
-             </li>
-         @endif
-
-         <!-- Booking -->
-         @if(hasPermission('bookings', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
-             <li class="menu-item {{ Request::is('bookings') || Request::is('add-booking')
-                 || Request::is('members/*') || Request::is(patterns: 'add-member/*')
-                 || Request::is('view-booking-details/*') ? 'active' : '' }}">
-                 <a href="{{ route('bookings') }}" class="text-white menu-link">
-                     <i class="menu-icon tf-icons mdi mdi-account-group-outline"></i>
-                     <div data-i18n="Bookings">Bookings</div>
-                 </a>
-             </li>
-         @endif
-
-         <!-- Upload Entries -->
-         @if(hasPermission('uploaded-entries', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
-             <li class="menu-item {{ Request::is('uploaded-entries') ? 'active' : '' }}">
-                 <a href="{{ route('uploaded-entries') }}" class="text-white menu-link">
-                     <i class="menu-icon tf-icons mdi mdi-upload-box-outline"></i>
-                     <div data-i18n="Upload Entries">Upload Entries</div>
-                 </a>
-             </li>
-         @endif
-
-         <!-- Hotel Booking/Upload Entries -->
-         @if(hasPermission('hotels', 'view') && (Auth::user()->user_type_id == 1 ||Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3))
-             <li class="menu-item {{ Request::is('hotel-booking-entries') || Request::is('uploaded-entries/*') || Request::is('bookings/*') ? 'active' : '' }}">
-                 <a href="{{ route('hotel-booking-entries') }}" class="text-white menu-link">
-                     <i class="menu-icon tf-icons mdi mdi-upload-box-outline"></i>
-                     <div data-i18n="Booking/Upload Entries">Booking/Upload Entries</div>
-                 </a>
              </li>
          @endif
 

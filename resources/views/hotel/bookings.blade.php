@@ -15,7 +15,7 @@
                             <th>Aadhar Number</th>
                             <th>Contact Number</th>
                             <th>Room Number</th>
-                            <th>Address</th>
+                            <th>Date and Time</th>
                             <th>Members</th>
                             <th>Actions</th>
                         </tr>
@@ -32,7 +32,7 @@
 @section('scripts')
     <script>
         var deleteUrl = "{{ route('delete-booking') }}";
-        var listUrl = "{{ route('bookings', $hotel_id ?? '') }}";
+        var listUrl = "{{ route('bookings', [$hotel_id ?? '', $date ?? '']) }}";
         var membersUrl = "{{ route('members', ':id') }}";
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-booking.js') }}"></script>

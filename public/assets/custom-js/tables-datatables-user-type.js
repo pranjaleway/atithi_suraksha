@@ -131,14 +131,6 @@ $(function () {
                     orderable: false,
                     searchable: false,
                     render: function (data, type, full, meta) {
-                        var deleteBtn = full.canDelete
-                            ? '<div class="d-inline-block">' +
-                              '<a href="javascript:;" class="dropdown-item text-danger delete-record" data-url="' +
-                              deleteUrl +
-                              '" data-id="' +
-                              full.id +
-                              '"><i class="mdi mdi-delete"></i></a></div>'
-                            : "";
 
                         var editBtn = full.canEdit
                             ? '<a href="javascript:;" data-id="' +
@@ -146,10 +138,10 @@ $(function () {
                               '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record"><i class="mdi mdi-pencil-outline"></i></a>'
                             : "";
 
-                        if (deleteBtn == "" && editBtn == "") {
+                        if (editBtn == "") {
                             return "Permission Denied";
                         } else {
-                            return editBtn + deleteBtn;
+                            return editBtn;
                         }
                     },
                 },

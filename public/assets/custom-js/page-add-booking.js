@@ -78,6 +78,7 @@ $(function () {
                     formLabel.eq(i).attr("for", id);
                     col++;
                 });
+                 $newGroup.find('.deleteDiv').removeClass("d-none");
 
                 row++;
 

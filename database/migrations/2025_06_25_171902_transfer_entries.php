@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('uploaded_entries', function (Blueprint $table) {
+        Schema::create('transfer_entries', function (Blueprint $table) {
             $table->id();
             $table->foreignId('hotel_id')->constrained('hotels')->onDelete('cascade');
             $table->foreignId('hotel_employee_id')->nullable()->constrained('hotel_employees')->onDelete('cascade');
-            $table->text('file_path');
             $table->date('transfer_date')->nullable();
-            $table->boolean('status')->default(0)->comment('1 = sent, 0 = not sent');
+            $table->enum('transfer_type', ['manual', 'uploaded']);
+            $table->boolean('status')->default(0);
             $table->softDeletes();
             $table->timestamps();
         });
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('uploaded_entries');
+        Schema::dropIfExists('transfer_entries');
     }
 };

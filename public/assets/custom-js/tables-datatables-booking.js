@@ -44,7 +44,26 @@ $(function () {
                 { data: "aadhar_number", name: "aadhar_number" },
                 { data: "contact_number", name: "contact_number" },
                 { data: "room_number", name: "room_number" },
-                { data: "address", name: "address" },
+                {
+                data: "created_at",
+                name: "created_at",
+                render: function (data, type, row) {
+                        if (!data) return "-";
+
+                        // Format using JavaScript's Date object
+                        const dateObj = new Date(data);
+                        const options = {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                        };
+
+                        return dateObj.toLocaleString("en-IN", options); // or "en-US" if preferred
+                    }
+                },
                 { data:'parent_id',
                     render : function(data, type, row) {
                          var encodedId = btoa(row.id); // row.id = hotel_id

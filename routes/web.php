@@ -162,7 +162,7 @@ Route::group(['middleware' => ['auth']], function () {
     });
 
     Route::controller(HotelBookingController::class)->group(function () {
-        Route::get('bookings/{id?}', 'booking')->name('bookings')->middleware('checkPermission:bookings,view');
+        Route::get('bookings/{id?}/{date?}', 'booking')->name('bookings')->middleware('checkPermission:bookings,view');
         Route::get('add-booking', 'addBooking')->name('add-booking')->middleware('checkPermission:bookings,add');
         Route::post('store-booking', 'storeBooking')->name('store-booking')->middleware('checkPermission:bookings,add');
         Route::delete('delete-booking', 'deleteBooking')->name('delete-booking')->middleware('checkPermission:bookings,delete');
@@ -174,9 +174,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('view-booking-details/{id}', 'viewDetails')->name('view-booking-details')->middleware('checkPermission:bookings,view');
 
         //Uploaded Entries
-        Route::get('uploaded-entries/{id?}', 'uploadedEntries')->name('uploaded-entries')->middleware('checkPermission:uploaded-entries,view');
+        Route::get('uploaded-entries/{id?}/{date?}', 'uploadedEntries')->name('uploaded-entries')->middleware('checkPermission:uploaded-entries,view');
         Route::post('store-uploaded-entry', 'storeUploadedEntry')->name('store-uploaded-entry')->middleware('checkPermission:uploaded-entries,add');
         Route::delete('delete-uploaded-entry', 'deleteUploadedEntry')->name('delete-uploaded-entry')->middleware('checkPermission:uploaded-entries,delete');
 
+        //Transfer Entries
+        Route::get('transfer-entries/', 'transferEntries')->name('transfer-entries')->middleware('checkPermission:transfer-entries,view');
+        Route::get('transfer-manual-entries/', 'addTranserManualEntries')->name('transfer-manual-entries')->middleware('checkPermission:transfer-entries,add');
+        Route::get('transfer-uploaded-entries/', 'addTranserUploadedEntries')->name('transfer-uploaded-entries')->middleware('checkPermission:transfer-entries,add');
+        Route::post('store-manual-transfer-entry', 'storeManualTransferEntries')->name('store-manual-transfer-entry')->middleware('checkPermission:transfer-entries,add');
+        Route::post('store-uploaded-transfer-entry', 'storeUploadedTransferEntries')->name('store-uploaded-transfer-entry')->middleware('checkPermission:transfer-entries,add');
     });
 });

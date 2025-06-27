@@ -40,11 +40,12 @@ class HotelBookingController extends Controller
         }
 
         if ($request->ajax()) {
-            if ((Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2)) {
+            if ($id && $date && (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3)) {
                 $data = $query->where('hotel_id', $id)->get();
             } else if (Auth::user()->user_type_id == 3) {
-                $hotelId = Hotel::where('police_station_id', Auth::user()->id)->value('id');
-                $data = $query->where('hotel_id', $hotelId)->get();
+                $policeStation = PoliceStation::where('user_id', Auth::id())->first();
+                $hotelIDs = Hotel::where('police_station_id', $policeStation->id)->pluck('id');
+                $query->whereIn('hotel_id', $hotelIDs);
             } else if (Auth::user()->user_type_id == 4) {
                 $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
                 $data = $query->where('hotel_id', $hotelId)->get();
@@ -333,8 +334,17 @@ class HotelBookingController extends Controller
 
             if ($id && $date && (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3)) {
                 $data = $query->where('hotel_id', $id)->get();
+            }  else if (Auth::user()->user_type_id == 3) {
+                $hotelId = Hotel::where('police_station_id', Auth::user()->id)->value('id');
+                $data = $query->where('hotel_id', $hotelId)->get();
+            } else if (Auth::user()->user_type_id == 4) {
+                $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
+                $data = $query->where('hotel_id', $hotelId)->get();
+            } else if (Auth::user()->user_type_id == 5) {
+                $employeeID = HotelEmployee::where('user_id', Auth::user()->id)->value('id');
+                $data = $query->where('hotel_employee_id', $employeeID)->get();
             } else {
-                $data = $query->get();
+                $data = [];
             }
 
             return response()->json([

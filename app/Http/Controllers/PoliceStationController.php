@@ -157,6 +157,10 @@ class PoliceStationController extends Controller
         if ($policeStation) {
             $newStatus = $policeStation->status == 1 ? 0 : 1;
             $policeStation->update(['status' => $newStatus]);
+            if($policeStation->user_id) {
+                $user = User::find($policeStation->user_id);
+                $user->update(['status' => $newStatus]);
+            }
             return response()->json(['status' => 'success', 'message' => 'Police Station status updated successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Police Station not found'], 404);

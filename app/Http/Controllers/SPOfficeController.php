@@ -158,6 +158,10 @@ class SPOfficeController extends Controller
         if ($spOffice) {
             $newStatus = $spOffice->status == 1 ? 0 : 1;
             $spOffice->update(['status' => $newStatus]);
+            if($spOffice->user_id) {
+                $user = User::find($spOffice->user_id);
+                $user->update(['status' => $newStatus]);
+            }
             return response()->json(['status' => 'success', 'message' => 'SP Office status updated successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Menu not found'], 404);

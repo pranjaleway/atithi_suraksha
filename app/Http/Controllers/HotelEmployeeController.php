@@ -219,6 +219,10 @@ class HotelEmployeeController extends Controller
         if ($employee) {
             $newStatus = $employee->status == 1 ? 0 : 1;
             $employee->update(['status' => $newStatus]);
+            if($employee->user_id) {
+                $user = User::find($employee->user_id);
+                $user->update(['status' => $newStatus]);
+            }
             return response()->json(['status' => 'success', 'message' => 'Hotel employee status updated successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Hotel not found'], 404);

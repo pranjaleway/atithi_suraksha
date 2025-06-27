@@ -146,6 +146,7 @@ class ProfileController extends Controller
         activiyLog('Profile updated by ' . ucfirst(Auth::user()->name));
 
         return response()->json([
+            'status' => 'success',
             'success' => true,
             'message' => 'Profile updated successfully.',
             'data' => $user

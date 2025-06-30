@@ -33,6 +33,8 @@
         var changeStatusURl = "{{ route('change-police-station-status') }}";
         var deleteUrl = "{{ route('delete-police-station') }}";
         var listUrl = "{{ route('police-stations') }}";
+        var addUrl = "{{ route('add-police-station') }}";
+        var editUrl = "{{ route('edit-police-station', ':id') }}";
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-police-station.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

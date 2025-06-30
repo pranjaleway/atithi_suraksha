@@ -9,17 +9,18 @@ use App\Models\State;
 use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class PoliceStationController extends Controller
 {
     public function policeStations(Request $request)
     {
-        if(!hasPermission('police-stations', 'view')) {
+        if (!hasPermission('police-stations', 'view')) {
             abort(403, 'Unauthorized');
         }
 
-        if($request->ajax()) {
+        if ($request->ajax()) {
             $data = PoliceStation::orderBy('id', 'desc')->get();
             $canAdd = hasPermission('police-stations', 'add');
             $canEdit = hasPermission('police-stations', 'edit');
@@ -78,6 +79,8 @@ class PoliceStationController extends Controller
 
         $policeStation->update(['user_id' => $user->id]);
 
+        activiyLog('Police Station ' . $policeStation->police_station_name . ' created by ' . ucfirst(Auth::user()->name));
+
         return response()->json([
             'status' => 'success',
             'message' => 'Police Station created successfully',
@@ -104,6 +107,7 @@ class PoliceStationController extends Controller
     public function updatePoliceStation(Request $request)
     {
         $policeStation = PoliceStation::find($request->id);
+
         $request->validate([
             'police_station_name' => 'required|string|max:255',
             'officer_in_charge' => 'nullable|string|max:255',
@@ -120,8 +124,32 @@ class PoliceStationController extends Controller
             'state_id.exists' => 'The selected state is invalid.',
         ]);
 
-        $policeStation->update($request->all());
+        // === Track changes ===
+        $excludedKeys = ['_token'];
+        $originalData = $policeStation->toArray();
+        $inputData = $request->except($excludedKeys);
+        $changes = array_diff_assoc($inputData, $originalData);
 
+        // Replace state and city IDs with names for better logging
+        if (isset($changes['state_id'])) {
+            $state = State::find($changes['state_id']);
+            if ($state) {
+                unset($changes['state_id']);
+                $changes['state_name'] = $state->name;
+            }
+        }
+
+        if (isset($changes['city_id'])) {
+            $city = City::find($changes['city_id']);
+            if ($city) {
+                unset($changes['city_id']);
+                $changes['city_name'] = $city->name;
+            }
+        }
+
+        $policeStation->update($inputData);
+
+        // Update associated user
         $user = User::find($policeStation->user_id);
         if ($user) {
             $user->update([
@@ -131,6 +159,15 @@ class PoliceStationController extends Controller
             ]);
         }
 
+        // Format updated fields for logging
+        $updatedChanges = implode(', ', array_map(function ($key) use ($changes) {
+            $readableKey = ucwords(str_replace('_', ' ', $key));
+            return $readableKey . ': ' . (isset($changes[$key]) ? $changes[$key] : 'NULL');
+        }, array_keys($changes)));
+
+        // Log the activity
+        activiyLog('Police Station "' . $policeStation->police_station_name . '" updated by ' . ucfirst(Auth::user()->name) . '. Updated fields: ' . $updatedChanges);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Police Station updated successfully',
@@ -138,29 +175,32 @@ class PoliceStationController extends Controller
         ]);
     }
 
+
     public function deletePoliceStation(Request $request)
     {
-       $policeStation = PoliceStation::find($request->id);
-       if($policeStation->user_id) {
-           User::find($policeStation->user_id)->delete();
-           $policeStation->delete();
-       }
-       return response()->json([
-           'status' => 'success',
-           'message' => 'Police Station deleted successfully',
-       ]);
+        $policeStation = PoliceStation::find($request->id);
+        if ($policeStation->user_id) {
+            User::find($policeStation->user_id)->delete();
+            $policeStation->delete();
+            activiyLog('Police Station ' . $policeStation->police_station_name . ' deleted by ' . ucfirst(Auth::user()->name));
+        }
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Police Station deleted successfully',
+        ]);
     }
 
     public function changePoliceStationStatus(Request $request)
     {
-         $policeStation = PoliceStation::find($request->id);
+        $policeStation = PoliceStation::find($request->id);
         if ($policeStation) {
             $newStatus = $policeStation->status == 1 ? 0 : 1;
             $policeStation->update(['status' => $newStatus]);
-            if($policeStation->user_id) {
+            if ($policeStation->user_id) {
                 $user = User::find($policeStation->user_id);
                 $user->update(['status' => $newStatus]);
             }
+            activiyLog('Police Station ' . $policeStation->police_station_name . ' status changed to ' . ($newStatus == 1 ? 'Active' : 'Inactive') . ' by ' . ucfirst(Auth::user()->name));
             return response()->json(['status' => 'success', 'message' => 'Police Station status updated successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Police Station not found'], 404);

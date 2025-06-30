@@ -18,44 +18,44 @@ use Illuminate\Support\Facades\Storage;
 
 class HotelEmployeeController extends Controller
 {
-   public function hotelEmployees(Request $request, $id = null)
-{
-    if (!hasPermission('hotel-employees', 'view')) {
-        abort(403, 'Unauthorized');
-    }
+    public function hotelEmployees(Request $request, $id = null)
+    {
+        if (!hasPermission('hotel-employees', 'view')) {
+            abort(403, 'Unauthorized');
+        }
 
 
-    // Decode only if $id is provided
-    $decodedId = $id ? base64_decode($id) : null;
+        // Decode only if $id is provided
+        $decodedId = $id ? base64_decode($id) : null;
 
-    // Fallback to logged-in user's ID if $id is not passed
-    if ($decodedId === null) {
-        $hotelId = Hotel::where('user_id', $request->user()->id)->value('id');
-        $decodedId = $hotelId;
-    }
+        // Fallback to logged-in user's ID if $id is not passed
+        if ($decodedId === null) {
+            $hotelId = Hotel::where('user_id', $request->user()->id)->value('id');
+            $decodedId = $hotelId;
+        }
 
 
 
-    if ($request->ajax()) {
-        $hotelEmployee = HotelEmployee::with('user')->where('hotel_id', $decodedId)->get();
+        if ($request->ajax()) {
+            $hotelEmployee = HotelEmployee::with('user')->where('hotel_id', $decodedId)->get();
 
-        return response()->json([
-            'data' => $hotelEmployee,
-            'canAdd' => hasPermission('hotel-employees', 'add'),
-            'canEdit' => hasPermission('hotel-employees', 'edit'),
-            'canDelete' => hasPermission('hotel-employees', 'delete')
+            return response()->json([
+                'data' => $hotelEmployee,
+                'canAdd' => hasPermission('hotel-employees', 'add'),
+                'canEdit' => hasPermission('hotel-employees', 'edit'),
+                'canDelete' => hasPermission('hotel-employees', 'delete')
+            ]);
+        }
+
+        $isSuperAdmin = Auth::user()->user_type_id == 1;
+
+        return view('hotel.hotel-employees', [
+            'id' => $decodedId,
+            'isSuperAdmin' => $isSuperAdmin
         ]);
     }
 
-    $isSuperAdmin = Auth::user()->user_type_id == 1;
-
-    return view('hotel.hotel-employees', [
-        'id' => $decodedId,
-        'isSuperAdmin' => $isSuperAdmin
-    ]);
-}
-
- public function addHotelEmployee()
+    public function addHotelEmployee()
     {
         $states = State::where('status', 1)->orderBy('name', 'asc')->get();
         $cities = City::where('status', 1)->orderBy('name', 'asc')->get();
@@ -122,6 +122,8 @@ class HotelEmployeeController extends Controller
 
         $employee->update(['user_id' => $user->id]);
 
+        activiyLog('Hotel employee ' . $employee->employee_name . ' created by ' . ucfirst(Auth::user()->name));
+
         return response()->json([
             'status' => 'success',
             'message' => 'Hotel employee created successfully',
@@ -129,19 +131,20 @@ class HotelEmployeeController extends Controller
         ]);
     }
 
-     public function editHotelEmployee($id)
+    public function editHotelEmployee($id)
     {
         $id = base64_decode($id);
         $employee = HotelEmployee::with('user', 'employeeDocuments.document')->find($id);
         $states = State::where('status', 1)->orderBy('name', 'asc')->get();
         $cities = City::where('status', 1)->orderBy('name', 'asc')->get();
         $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
-        return view('hotel.add-edit-hotel-employee', compact('states', 'cities', 'documents','employee'));
+        return view('hotel.add-edit-hotel-employee', compact('states', 'cities', 'documents', 'employee'));
     }
 
     public function updateHotelEmployee(Request $request)
     {
         $employee = HotelEmployee::find($request->id);
+
         $request->validate([
             'employee_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $employee->user_id,
@@ -152,37 +155,64 @@ class HotelEmployeeController extends Controller
             'state_id' => 'required|exists:states,id',
             'city_id' => 'required|exists:cities,id',
             'pincode' => 'required|numeric|digits:6',
-            'password' => 'nullable|string|min:6|confirmed',
         ], [
             'email.unique' => 'This email has already been taken.',
             'contact_number.unique' => 'This contact number has already been taken.',
             'city_id.exists' => 'The selected city is invalid.',
             'state_id.exists' => 'The selected state is invalid.',
-            'password.confirmed' => 'The confirmed password does not match.',
         ]);
 
+        // Track changes before update
+        $excludedKeys = ['_token', 'password', 'password_confirmation', 'document'];
+        $originalData = $employee->toArray();
+        $inputData = $request->except($excludedKeys);
+        $changes = array_diff_assoc($inputData, $originalData);
 
+        // Replace state and city ids with names for log
+        if (isset($changes['state_id'])) {
+            $state = State::find($changes['state_id']);
+            if ($state) {
+                unset($changes['state_id']);
+                $changes['state_name'] = $state->name;
+            }
+        }
+        if (isset($changes['city_id'])) {
+            $city = City::find($changes['city_id']);
+            if ($city) {
+                unset($changes['city_id']);
+                $changes['city_name'] = $city->name;
+            }
+        }
 
-        $employee->update($request->all());
+        // Perform update
+        $employee->update($inputData);
 
+        // Handle documents
+        $updatedDocumentIds = [];
         if ($request->hasFile('document')) {
             foreach ($request->file('document') as $documentId => $file) {
-                $existingDocument = HotelEmployeeDoc::where('hotel_employee_id', $employee->id)->where('document_id', $documentId)->first();
+                $existingDocument = HotelEmployeeDoc::where('hotel_employee_id', $employee->id)
+                    ->where('document_id', $documentId)
+                    ->first();
 
                 if ($existingDocument) {
                     Storage::disk('public')->delete($existingDocument->document_path);
                     $existingDocument->delete();
                 }
-                $path = $file->store('hotel_employee_documents', 'public'); // stores in storage/app/public/hotel_documents
+
+                $path = $file->store('hotel_employee_documents', 'public');
 
                 HotelEmployeeDoc::create([
                     'hotel_employee_id' => $employee->id,
                     'document_id' => $documentId,
                     'document_path' => $path,
                 ]);
+
+                $updatedDocumentIds[] = $documentId;
             }
         }
 
+        // Update associated user
         $user = User::find($employee->user_id);
         if ($user) {
             $user->update([
@@ -192,12 +222,32 @@ class HotelEmployeeController extends Controller
             ]);
         }
 
+        // Prepare readable field changes
+        $updatedChanges = implode(', ', array_map(function ($key) use ($changes) {
+            $readableKey = ucwords(str_replace('_', ' ', $key));
+            return $readableKey . ': ' . (isset($changes[$key]) ? $changes[$key] : 'NULL');
+        }, array_keys($changes)));
+
+        // Add document names to activity log
+        $documentNames = Document::pluck('name', 'id')->toArray();
+
+        if (!empty($updatedDocumentIds)) {
+            $documentList = collect($updatedDocumentIds)
+                ->map(fn($id) => $documentNames[$id] ?? "Document ID $id")
+                ->implode(', ');
+            $updatedChanges .= ($updatedChanges ? ', ' : '') . 'Updated Documents: ' . $documentList;
+        }
+
+        // Activity log
+        activiyLog('Hotel Employee ' . ucfirst($employee->employee_name) . ' updated by ' . ucfirst(Auth::user()->name) . '. Updated fields: ' . $updatedChanges);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Hotel employee updated successfully',
             'redirect' => route('hotel-employees')
         ]);
     }
+
 
     public function deleteHotelEmployee(Request $request)
     {
@@ -207,6 +257,7 @@ class HotelEmployeeController extends Controller
             $employee->employeeDocuments()->delete();
             $employee->delete();
         }
+        activiyLog('Hotel employee ' . $employee->employee_name . ' deleted by ' . ucfirst(Auth::user()->name));
         return response()->json([
             'status' => 'success',
             'message' => 'Hotel employee deleted successfully',
@@ -219,10 +270,11 @@ class HotelEmployeeController extends Controller
         if ($employee) {
             $newStatus = $employee->status == 1 ? 0 : 1;
             $employee->update(['status' => $newStatus]);
-            if($employee->user_id) {
+            if ($employee->user_id) {
                 $user = User::find($employee->user_id);
                 $user->update(['status' => $newStatus]);
             }
+            activiyLog('Hotel employee ' . $employee->employee_name . ' status changed to ' . ($newStatus == 1 ? 'Active' : 'Inactive') . ' by ' . ucfirst(Auth::user()->name));
             return response()->json(['status' => 'success', 'message' => 'Hotel employee status updated successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Hotel not found'], 404);
@@ -231,7 +283,7 @@ class HotelEmployeeController extends Controller
     public function viewHotelEmployeeDetails($id)
     {
         $id = base64_decode($id);
-        $employee = HotelEmployee::with( 'employeeDocuments.document', 'state:id,name', 'city:id,name')->find($id);
+        $employee = HotelEmployee::with('employeeDocuments.document', 'state:id,name', 'city:id,name')->find($id);
         $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
         if (!$employee) {
             abort(404, 'Hotel Employee not found');

@@ -28,51 +28,51 @@ class AuthController extends Controller
     }
 
     public function authenticate(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required|min:6',
-    ]);
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|min:6',
+        ]);
 
-    $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
-    if ($user) {
-        // Check if password is correct
-        if (Hash::check($request->password, $user->password)) {
-            // Check if account is deactivated
-            if ($user->status == 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Your account is deactivated, please contact to the administrator.'
-                ], 403);
+        if ($user) {
+            // Check if password is correct
+            if (Hash::check($request->password, $user->password)) {
+                // Check if account is deactivated
+                if ($user->status == 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Your account is deactivated, please contact to the administrator.'
+                    ], 403);
+                }
+
+                // Allow login only for active accounts
+                if ($user->status == 1) {
+                    Auth::login($user);
+                    activiyLog(ucfirst($user->name) . ' logged in');
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Login successful',
+                        'redirect' => route('dashboard')
+                    ]);
+                }
             }
 
-            // Allow login only for active accounts
-            if ($user->status == 1) {
-                Auth::login($user);
-                activiyLog(ucfirst($user->name) . ' logged in');
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Login successful',
-                    'redirect' => route('dashboard')
-                ]);
-            }
+            // If password is incorrect
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
         }
 
-        // If password is incorrect
+        // If user not found
         return response()->json([
             'success' => false,
             'message' => 'Invalid credentials'
         ], 401);
     }
-
-    // If user not found
-    return response()->json([
-        'success' => false,
-        'message' => 'Invalid credentials'
-    ], 401);
-}
 
 
     public function dashboard()
@@ -217,13 +217,15 @@ class AuthController extends Controller
         ], 422);
     }
 
-    public function hotelSignup() {
+    public function hotelSignup()
+    {
         $states = State::where('status', 1)->orderBy('name', 'asc')->get();
         $documents = Document::where('status', 1)->get();
         return view('auth.hotel-signup', compact('states', 'documents'));
     }
 
-    public function postHotelSignup(Request $request) {
+    public function postHotelSignup(Request $request)
+    {
         $request->validate([
             'hotel_name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
@@ -284,6 +286,19 @@ class AuthController extends Controller
         ]);
 
         $hotels->update(['user_id' => $user->id, 'status' => 0]);
+
+        if ($user) {
+            $ipAddress = $request->ip() ?? '127.0.0.1';
+            $currentTime = Carbon::now('Asia/Kolkata');
+            $formattedDate = $currentTime->format('m-d-Y h:i A');
+            ActivityLog::create([
+                'activity' => 'New hotel ' . $hotels->hotel_name . ' has been registered.',
+                'ip_address' => $ipAddress,
+                'user_id' => $user->id,
+                'user_name' => $user->name,
+                'date' => $formattedDate,
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',

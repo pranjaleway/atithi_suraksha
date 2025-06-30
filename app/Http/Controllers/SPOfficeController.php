@@ -9,6 +9,7 @@ use App\Models\State;
 use App\Models\User;
 use App\Models\UserType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class SPOfficeController extends Controller
@@ -75,6 +76,8 @@ class SPOfficeController extends Controller
 
         $spOffice->update(['user_id' => $user->id]);
 
+        activiyLog('SP Office ' . $spOffice->office_name . ' created by ' . ucfirst(Auth::user()->name));
+
         return response()->json([
             'status' => 'success',
             'message' => 'SP Office created successfully',
@@ -105,7 +108,6 @@ class SPOfficeController extends Controller
         $id = $request->id;
         $spOffice = SpOffice::find($id);
 
-
         $validatedData = $request->validate([
             'office_name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $spOffice->user_id,
@@ -121,8 +123,34 @@ class SPOfficeController extends Controller
             'state_id.exists' => 'The selected state is invalid.',
         ]);
 
+        // Track changes before update
+        $excludedKeys = ['_token'];
+        $originalData = $spOffice->toArray();
+        $inputData = $request->except($excludedKeys);
+        $changes = array_diff_assoc($inputData, $originalData);
+
+        // Replace state_id with name
+        if (isset($changes['state_id'])) {
+            $state = State::find($changes['state_id']);
+            if ($state) {
+                unset($changes['state_id']);
+                $changes['state_name'] = $state->name;
+            }
+        }
+
+        // Replace city_id with name
+        if (isset($changes['city_id'])) {
+            $city = City::find($changes['city_id']);
+            if ($city) {
+                unset($changes['city_id']);
+                $changes['city_name'] = $city->name;
+            }
+        }
+
+        // Update the SP Office
         $spOffice->update($validatedData);
 
+        // Update linked user record
         $user = User::find($spOffice->user_id);
         if ($user) {
             $user->update([
@@ -132,6 +160,14 @@ class SPOfficeController extends Controller
             ]);
         }
 
+        // Prepare readable field changes
+        $updatedChanges = implode(', ', array_map(function ($key) use ($changes) {
+            $readableKey = ucwords(str_replace('_', ' ', $key));
+            return $readableKey . ': ' . (isset($changes[$key]) ? $changes[$key] : 'NULL');
+        }, array_keys($changes)));
+
+        // Activity log
+        activiyLog('SP Office "' . $spOffice->office_name . '" updated by ' . ucfirst(Auth::user()->name) . '. Updated fields: ' . $updatedChanges);
 
         return response()->json([
             'status' => 'success',
@@ -140,12 +176,14 @@ class SPOfficeController extends Controller
         ]);
     }
 
+
     public function deleteSpOffice(Request $request)
     {
         $SpOffice = SpOffice::find($request->id);
-        if($SpOffice->user_id) {
+        if ($SpOffice->user_id) {
             User::find($SpOffice->user_id)->delete();
             $SpOffice->delete();
+            activiyLog('SP Office ' . $SpOffice->office_name . ' deleted by ' . ucfirst(Auth::user()->name));
         }
         return response()->json([
             'status' => 'success',
@@ -158,10 +196,11 @@ class SPOfficeController extends Controller
         if ($spOffice) {
             $newStatus = $spOffice->status == 1 ? 0 : 1;
             $spOffice->update(['status' => $newStatus]);
-            if($spOffice->user_id) {
+            if ($spOffice->user_id) {
                 $user = User::find($spOffice->user_id);
                 $user->update(['status' => $newStatus]);
             }
+            activiyLog('SP Office ' . $spOffice->office_name . ' status changed to ' . ($newStatus == 1 ? 'Active' : 'Inactive') . ' by ' . ucfirst(Auth::user()->name));
             return response()->json(['status' => 'success', 'message' => 'SP Office status updated successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Menu not found'], 404);

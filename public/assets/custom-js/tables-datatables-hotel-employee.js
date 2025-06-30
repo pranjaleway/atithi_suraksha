@@ -22,6 +22,8 @@ $(function () {
                 searchable: false,
                 render: function (data, type, full, meta) {
                     var id = btoa(full.id);
+                    var viewUrl = viewDetailsUrl.replace(":id", id);
+                    var editROute = editUrl.replace(":id", id);
                     var deleteBtn = full.canDelete
                         ? `<div class="d-inline-block">
                     <a href="javascript:;" class="dropdown-item text-danger delete-record" data-url="${deleteUrl}" data-id="${full.id}">
@@ -30,12 +32,12 @@ $(function () {
                         : "";
 
                     var editBtn = full.canEdit
-                        ? `<a href="edit-hotel-employee/${id}" data-id="${full.id}" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record">
+                        ? `<a href="${editROute}" data-id="${full.id}" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record">
                         <i class="mdi mdi-pencil-outline"></i>
                    </a>`
                         : "";
 
-                    var viewBtn = `<a href="view-hotel-employee-details/${id}" data-id="${full.id}" class="btn btn-sm btn-text-secondary rounded-pill btn-icon view-record">
+                    var viewBtn = `<a href="${viewUrl}" data-id="${full.id}" class="btn btn-sm btn-text-secondary rounded-pill btn-icon view-record">
                               <i class="mdi mdi-eye-outline"></i>
                            </a>`;
 
@@ -131,7 +133,7 @@ $(function () {
                     className:
                         "create-new btn btn-primary waves-effect waves-light d-none",
                     action: function (e, dt, node, config) {
-                        window.location.href = "add-hotel-employee";
+                        window.location.href = addUrl;
                     },
                 },
             ],

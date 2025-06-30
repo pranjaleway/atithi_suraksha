@@ -165,6 +165,8 @@ class HotelBookingController extends Controller
             $savedIds[] = $booking->id;
         }
 
+        activiyLog('New booking added by ' . ucfirst($user->name));
+
         return response()->json([
             'status' => 'success',
             'message' => 'Hotel booking added successfully',
@@ -198,6 +200,7 @@ class HotelBookingController extends Controller
                 $member->delete();
             }
             $booking->delete();
+            activiyLog('Hotel booking deleted by ' . ucfirst(Auth::user()->name));
         }
         return response()->json([
             'status' => 'success',
@@ -278,6 +281,10 @@ class HotelBookingController extends Controller
             'parent_id' => $guestData['parent_id'],
         ]);
 
+        if ($booking) {
+            activiyLog('Member added by ' . ucfirst(Auth::user()->name));
+        }
+
         return response()->json([
             'status' => 'success',
             'message' => 'Member added successfully',
@@ -290,6 +297,7 @@ class HotelBookingController extends Controller
         $member = HotelBooking::find($request->id);
         if ($member) {
             $member->delete();
+            activiyLog('Member deleted by ' . ucfirst(Auth::user()->name));
         }
         return response()->json([
             'status' => 'success',
@@ -334,7 +342,7 @@ class HotelBookingController extends Controller
 
             if ($id && $date && (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3)) {
                 $data = $query->where('hotel_id', $id)->get();
-            }  else if (Auth::user()->user_type_id == 3) {
+            } else if (Auth::user()->user_type_id == 3) {
                 $hotelId = Hotel::where('police_station_id', Auth::user()->id)->value('id');
                 $data = $query->where('hotel_id', $hotelId)->get();
             } else if (Auth::user()->user_type_id == 4) {
@@ -394,6 +402,7 @@ class HotelBookingController extends Controller
                 'file_path' => $filePath,
             ]);
         }
+        activiyLog('Entries uploaded by ' . ucfirst(Auth::user()->name));
 
         return response()->json([
             'status' => 'success',
@@ -406,6 +415,7 @@ class HotelBookingController extends Controller
         $entry = UploadedEntry::find($request->id);
         if ($entry) {
             $entry->delete();
+            activiyLog('File deleted by ' . ucfirst(Auth::user()->name));
         }
         return response()->json([
             'status' => 'success',
@@ -415,74 +425,74 @@ class HotelBookingController extends Controller
 
     //Transfer Entries
     public function TransferEntries(Request $request)
-{
-    if (!hasPermission('transfer-entries', 'view')) {
-        abort(403, 'Unauthorized');
-    }
+    {
+        if (!hasPermission('transfer-entries', 'view')) {
+            abort(403, 'Unauthorized');
+        }
 
-    if ($request->ajax()) {
-        $query = TransferEntry::with(['hotel', 'hotelEmployee']);
+        if ($request->ajax()) {
+            $query = TransferEntry::with(['hotel', 'hotelEmployee']);
+
+            if (Auth::user()->user_type_id == 3) {
+                $policeStation = PoliceStation::where('user_id', Auth::id())->first();
+                $hotelIDs = Hotel::where('police_station_id', $policeStation->id)->pluck('id');
+                $query->whereIn('hotel_id', $hotelIDs);
+            } else if (Auth::user()->user_type_id == 4) {
+                $hotelIDs = Hotel::where('user_id', Auth::id())->pluck('id');
+                $query->whereIn('hotel_id', $hotelIDs);
+            } else if (Auth::user()->user_type_id == 5) {
+                $employeeID = HotelEmployee::where('user_id', Auth::id())->value('id');
+                $query->where('hotel_employee_id', $employeeID);
+            }
+
+            if ($request->filled('from_date') && $request->filled('to_date')) {
+                $from = Carbon::createFromFormat('Y-m-d', $request->from_date)->startOfDay();
+                $to = Carbon::createFromFormat('Y-m-d', $request->to_date)->endOfDay();
+                $query->whereBetween('transfer_date', [$from, $to]);
+            }
+            if ($request->filled('hotel_id')) {
+                $query->where('hotel_id', $request->hotel_id);
+            }
+
+            $entries = $query->get();
+
+            // Group by hotel and transfer_date
+            $grouped = $entries->groupBy(function ($item) {
+                return $item->hotel_id . '|' . $item->transfer_date;
+            });
+
+            $result = $grouped->map(function ($items, $key) {
+                $first = $items->first();
+                [$hotelId, $transferDate] = explode('|', $key);
+                $types = $items->pluck('transfer_type')->unique()->values();
+
+                return [
+                    'id' => $first->id,
+                    'hotel_id' => $hotelId,
+                    'transfer_date' => $transferDate,
+                    'hotel' => $first->hotel,
+                    'hotelEmployee' => $first->hotelEmployee,
+                    'transfer_types' => $types,
+                ];
+            })->values();
+
+            return response()->json([
+                'data' => $result,
+                'canAdd' => hasPermission('transfer-entries', 'add'),
+                'canEdit' => hasPermission('transfer-entries', 'edit'),
+                'canDelete' => hasPermission('transfer-entries', 'delete'),
+            ]);
+        }
 
         if (Auth::user()->user_type_id == 3) {
             $policeStation = PoliceStation::where('user_id', Auth::id())->first();
-            $hotelIDs = Hotel::where('police_station_id', $policeStation->id)->pluck('id');
-            $query->whereIn('hotel_id', $hotelIDs);
-        } else if (Auth::user()->user_type_id == 4) {
-            $hotelIDs = Hotel::where('user_id', Auth::id())->pluck('id');
-            $query->whereIn('hotel_id', $hotelIDs);
-        } else if (Auth::user()->user_type_id == 5) {
-            $employeeID = HotelEmployee::where('user_id', Auth::id())->value('id');
-            $query->where('hotel_employee_id', $employeeID);
+            $hotels = Hotel::where('police_station_id', $policeStation->id)->get();
+        } else {
+            $hotels = Hotel::all();
         }
 
-        if ($request->filled('from_date') && $request->filled('to_date')) {
-            $from = Carbon::createFromFormat('Y-m-d', $request->from_date)->startOfDay();
-            $to = Carbon::createFromFormat('Y-m-d', $request->to_date)->endOfDay();
-            $query->whereBetween('transfer_date', [$from, $to]);
-        }
-          if ($request->filled('hotel_id')) {
-            $query->where('hotel_id', $request->hotel_id);
-        }
-
-        $entries = $query->get();
-
-        // Group by hotel and transfer_date
-        $grouped = $entries->groupBy(function ($item) {
-            return $item->hotel_id . '|' . $item->transfer_date;
-        });
-
-        $result = $grouped->map(function ($items, $key) {
-            $first = $items->first();
-            [$hotelId, $transferDate] = explode('|', $key);
-            $types = $items->pluck('transfer_type')->unique()->values();
-
-            return [
-                'id' => $first->id,
-                'hotel_id' => $hotelId,
-                'transfer_date' => $transferDate,
-                'hotel' => $first->hotel,
-                'hotelEmployee' => $first->hotelEmployee,
-                'transfer_types' => $types,
-            ];
-        })->values();
-
-        return response()->json([
-            'data' => $result,
-            'canAdd' => hasPermission('transfer-entries', 'add'),
-            'canEdit' => hasPermission('transfer-entries', 'edit'),
-            'canDelete' => hasPermission('transfer-entries', 'delete'),
-        ]);
+        return view('hotel.transfer-entries', compact('hotels'));
     }
-
-    if(Auth::user()->user_type_id == 3){
-        $policeStation = PoliceStation::where('user_id', Auth::id())->first();
-        $hotels = Hotel::where('police_station_id', $policeStation->id)->get();
-    } else {
-        $hotels = Hotel::all();
-    }
-
-    return view('hotel.transfer-entries', compact('hotels'));
-}
 
 
 
@@ -525,6 +535,9 @@ class HotelBookingController extends Controller
             'transfer_date' => now(),
             'transfer_type' => 'manual',
         ]);
+
+        // Log the action
+        activiyLog('Manual Entries Transferred by ' . ucfirst(Auth::user()->name));
 
         // Return JSON response
         return response()->json([
@@ -574,6 +587,9 @@ class HotelBookingController extends Controller
             'transfer_date' => now(),
             'transfer_type' => 'uploaded',
         ]);
+
+        // Log the action
+        activiyLog('Uploaded Entries Transferred by ' . ucfirst(Auth::user()->name));
 
         // Return JSON response
         return response()->json([

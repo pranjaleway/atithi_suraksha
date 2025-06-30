@@ -81,6 +81,7 @@ $(function () {
                     searchable: false,
                     render: function (data, type, full, meta) {
                         var id = btoa(full.id);
+                        var viewRoute = viewDetailsUrl.replace(":id", id);
                         var deleteBtn = full.canDelete
                             ? '<div class="d-inline-block">' +
                               '<a href="javascript:;" class="dropdown-item text-danger delete-record" data-url = "' +
@@ -97,7 +98,7 @@ $(function () {
                         //     : "";
 
                         var viewBtn =
-                            '<a href="view-booking-details/'+ id +'" data-id="' +
+                            '<a href="'+ viewRoute +'" data-id="' +
                             full.id +
                             '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon view-record"><i class="mdi mdi-eye-outline"></i></a>';
 
@@ -142,7 +143,7 @@ $(function () {
                     className:
                         "create-new btn btn-primary waves-effect waves-light d-none",
                     action: function (e, dt, node, config) {
-                        window.location.href = "add-booking";
+                        window.location.href = addBookingUrl;
                     },
                 },
             ],

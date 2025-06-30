@@ -34,6 +34,8 @@
         var deleteUrl = "{{ route('delete-booking') }}";
         var listUrl = "{{ route('bookings', [$hotel_id ?? '', $date ?? '']) }}";
         var membersUrl = "{{ route('members', ':id') }}";
+        var viewDetailsUrl = "{{ route('view-booking-details', ':id') }}";
+        var addBookingUrl = "{{ route('add-booking') }}";
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-booking.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

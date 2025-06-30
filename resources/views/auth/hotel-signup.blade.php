@@ -4,7 +4,7 @@
 
 <div class="authentication-wrapper authentication-cover">
     <!-- Logo -->
-    <a href="index.html" class="auth-cover-brand d-flex align-items-center gap-2">
+    <a href="{{ route('login')}}" class="auth-cover-brand d-flex align-items-center gap-2">
         <span class="app-brand-logo demo">
             <span style="color: var(--bs-primary)">
                 <svg width="268" height="150" viewBox="0 0 38 20" fill="none" xmlns="http://www.w3.org/2000/svg">

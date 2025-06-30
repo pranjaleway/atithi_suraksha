@@ -35,6 +35,9 @@
         var changeStatusURl = "{{ route('change-hotel-employee-status') }}";
         var deleteUrl = "{{ route('delete-hotel-employee') }}";
        var listUrl = "{{ route('hotel-employees', base64_encode($id)) }}";
+       var viewDetailsUrl = "{{ route('view-hotel-employee-details', ':id') }}";
+       var editUrl = "{{ route('edit-hotel-employee', ':id') }}";
+       var addUrl = "{{ route('add-hotel-employee') }}";
 
         var isSuperAdmin ={{ $isSuperAdmin ? 'true' : 'false' }};
     </script>

@@ -19,7 +19,7 @@ class ProfileController extends Controller
     public function profile()
     {
         $states = State::where('status', 1)->orderBy('name', 'asc')->get();
-        if(Auth::user()->user_type_id == 1){
+        if (Auth::user()->user_type_id == 1) {
             return view('profile.profile');
         } else if (Auth::user()->user_type_id == 2) {
             $spOffice = SpOffice::where('user_id', Auth::user()->id)->first();
@@ -29,18 +29,18 @@ class ProfileController extends Controller
             $policeStation = PoliceStation::where('user_id', Auth::user()->id)->first();
             $cities = City::where('status', 1)->where('state_id', $policeStation->state_id)->orderBy('name', 'asc')->get();
             return view('profile.police-station-profile', compact('states', 'cities', 'policeStation'));
-        } else if(Auth::user()->user_type_id == 4){
+        } else if (Auth::user()->user_type_id == 4) {
             $hotel = Hotel::with('ownerDocuments.document')->where('user_id', Auth::user()->id)->first();
             $cities = City::where('status', 1)->where('state_id', $hotel->state_id)->orderBy('name', 'asc')->get();
             $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
             return view('profile.hotel-profile', compact('states', 'cities', 'hotel', 'documents'));
-        } else if(Auth::user()->user_type_id == 5){
+        } else if (Auth::user()->user_type_id == 5) {
             $employee = HotelEmployee::with('user', 'employeeDocuments.document')->where('user_id', Auth::user()->id)->first();
             $cities = City::where('status', 1)->where('state_id', $employee->state_id)->orderBy('name', 'asc')->get();
             $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
             return view('profile.hotel-employee-profile', compact('states', 'cities', 'employee', 'documents'));
         }
-        
+
     }
 
     public function postChangePassword(Request $request)
@@ -79,49 +79,49 @@ class ProfileController extends Controller
     }
 
     /**
- * @OA\Post(
- *     path="/update-admin-profile",
- *     summary="Update authenticated user's profile",
- *     tags={"Profile"},
- *     operationId="updateProfile",
- *     security={{"bearerAuth":{}}},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"name", "email"},
- *             @OA\Property(property="name", type="string", example="John Doe"),
- *             @OA\Property(property="email", type="string", format="email", example="johndoe@example.com")
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Profile updated successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Profile updated successfully.")
- *         )
- *     ),
- *     @OA\Response(
- *         response=422,
- *         description="Validation error",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(
- *                 property="errors",
- *                 type="object",
- *                 @OA\Property(property="email", type="array", @OA\Items(type="string", example="The email field is required."))
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthenticated",
- *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="Unauthenticated.")
- *         )
- *     )
- * )
- */
+     * @OA\Post(
+     *     path="/update-admin-profile",
+     *     summary="Update authenticated user's profile",
+     *     tags={"Profile"},
+     *     operationId="updateProfile",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "email"},
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="johndoe@example.com")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Profile updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Profile updated successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="email", type="array", @OA\Items(type="string", example="The email field is required."))
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
+     */
 
 
     public function updateProfile(Request $request)

@@ -124,6 +124,8 @@ class HotelController extends Controller
 
         $hotels->update(['user_id' => $user->id]);
 
+        activiyLog('New hotel ' . $hotels->hotel_name . ' registered by ' . ucfirst(Auth::user()->name));
+
         return response()->json([
             'status' => 'success',
             'message' => 'Hotel created successfully',
@@ -150,6 +152,7 @@ class HotelController extends Controller
     public function updateHotel(Request $request)
     {
         $hotel = Hotel::find($request->id);
+
         $request->validate([
             'hotel_name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
@@ -174,31 +177,65 @@ class HotelController extends Controller
             'police_station_id.exists' => 'The selected police station is invalid.'
         ]);
 
-        if(Auth::user()->user_type_id == 4){
+        if (Auth::user()->user_type_id == 4) {
             $hotel->status = 0;
-            Auth::user()->status = 0;
+            $hotel->save();
+
+            $authUser = Auth::user();
+            $authUser->status = 0;
+            $authUser->save();
+        } else {
+            $hotel->status = 1;
+            $hotel->save();
+
+            $user = User::find($hotel->user_id);
+            $user->status = 1;
+            $user->save();
         }
 
-        $hotel->update($request->all());
+        // === Compare changes ===
+        $excludedKeys = ['_token', 'password', 'password_confirmation', 'document'];
+        $originalData = $hotel->toArray();
+        $inputData = $request->except($excludedKeys);
+        $changes = array_diff_assoc($inputData, $originalData);
 
+        if (isset($changes['police_station_id'])) {
+            $ps = PoliceStation::find($changes['police_station_id']);
+            if ($ps) {
+                unset($changes['police_station_id']);
+                $changes['police_station_name'] = $ps->police_station_name;
+            }
+        }
+
+
+        $hotel->update($inputData);
+
+        // === Document update tracking ===
+        $updatedDocumentIds = [];
         if ($request->hasFile('document')) {
             foreach ($request->file('document') as $documentId => $file) {
-                $existingDocument = HotelOwnerDoc::where('hotel_id', $hotel->id)->where('document_id', $documentId)->first();
+                $existingDocument = HotelOwnerDoc::where('hotel_id', $hotel->id)
+                    ->where('document_id', $documentId)
+                    ->first();
 
                 if ($existingDocument) {
                     Storage::disk('public')->delete($existingDocument->document_path);
                     $existingDocument->delete();
                 }
-                $path = $file->store('hotel_owner_documents', 'public'); // stores in storage/app/public/hotel_documents
+
+                $path = $file->store('hotel_owner_documents', 'public');
 
                 HotelOwnerDoc::create([
                     'hotel_id' => $hotel->id,
                     'document_id' => $documentId,
                     'document_path' => $path,
                 ]);
+
+                $updatedDocumentIds[] = $documentId;
             }
         }
 
+        // === Update user linked to hotel ===
         $user = User::find($hotel->user_id);
         if ($user) {
             $user->update([
@@ -208,12 +245,37 @@ class HotelController extends Controller
             ]);
         }
 
+        // === Generate updated field message ===
+        $updatedChanges = implode(', ', array_map(function ($key) use ($changes) {
+            $readableKey = ucwords(str_replace('_', ' ', $key));
+            return $readableKey . ': ' . (isset($changes[$key]) ? $changes[$key] : 'NULL');
+        }, array_filter(array_keys($changes), function ($key) use ($excludedKeys) {
+            return !in_array($key, $excludedKeys);
+        })));
+
+        // === Fetch document names dynamically ===
+        $documentNames = Document::pluck('name', 'id')->toArray();
+
+        if (!empty($updatedDocumentIds)) {
+            $documentList = collect($updatedDocumentIds)
+                ->map(fn($id) => $documentNames[$id] ?? "Document ID $id")
+                ->implode(', ');
+
+            $updatedChanges .= ($updatedChanges ? ', ' : '') . 'Updated Documents: ' . $documentList;
+        }
+
+        // === Activity log ===
+        activiyLog('Hotel ' . ucfirst($hotel->hotel_name) . ' updated by ' . ucfirst(Auth::user()->name) . '. Updated fields: ' . $updatedChanges);
+
         return response()->json([
             'status' => 'success',
             'message' => Auth::user()->user_type_id == 4 ? 'Profile updated successfully. Please wait for admin approval' : 'Hotel updated successfully',
             'redirect' => route('hotels')
         ]);
     }
+
+
+
 
     public function deleteHotel(Request $request)
     {
@@ -222,6 +284,7 @@ class HotelController extends Controller
             User::find($hotel->user_id)->delete();
             $hotel->ownerDocuments()->delete();
             $hotel->delete();
+            activiyLog('Hotel ' . $hotel->hotel_name . ' deleted by ' . ucfirst(Auth::user()->name));
         }
         return response()->json([
             'status' => 'success',
@@ -239,6 +302,7 @@ class HotelController extends Controller
             if ($user) {
                 $user->update(['status' => $newStatus]);
             }
+            activiyLog('Hotel status ' . $hotel->hotel_name . ' changed to ' . ($newStatus == 1 ? 'Active' : 'Inactive') . ' by ' . ucfirst(Auth::user()->name));
             return response()->json(['status' => 'success', 'message' => 'Hotel status updated successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Hotel not found'], 404);
@@ -261,6 +325,7 @@ class HotelController extends Controller
         $hotel = Hotel::find($request->hotel_id);
         if ($hotel) {
             $hotel->update(['police_station_id' => $request->police_station_id]);
+            activiyLog('Police station assigned to ' . $hotel->name . ' by ' . ucfirst(Auth::user()->name));
             return response()->json(['status' => 'success', 'message' => 'Police station assigned successfully']);
         }
         return response()->json(['status' => 'error', 'message' => 'Hotel not found'], 404);

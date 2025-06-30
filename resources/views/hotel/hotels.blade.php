@@ -35,6 +35,9 @@
         var deleteUrl = "{{ route('delete-hotel') }}";
         var listUrl = "{{ route('hotels') }}";
         var employeeUrl = "{{ route('hotel-employees', ':id') }}";
+        var addUrl = "{{ route('add-hotel') }}";
+        var editUrl = "{{ route('edit-hotel', ':id') }}";
+        var viewDetailsUrl = "{{ route('view-hotel-details', ':id') }}";
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-hotel.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

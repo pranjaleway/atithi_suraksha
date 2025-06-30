@@ -70,8 +70,7 @@
          @endif
 
          {{-- <!-- Hotel Booking/Upload Entries -->
-         @if (hasPermission('hotels', 'view') &&
-                 (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3))
+         @if (hasPermission('hotels', 'view') && (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3))
              <li
                  class="menu-item {{ Request::is('hotel-booking-entries') || Request::is('uploaded-entries/*') || Request::is('bookings/*') ? 'active' : '' }}">
                  <a href="{{ route('hotel-booking-entries') }}" class="text-white menu-link">
@@ -121,15 +120,28 @@
          @endif
 
          <!-- Transfer Entries -->
+         @php
+             $userTypeId = Auth::user()->user_type_id;
+             $isActive =
+                 Request::is('transfer-entries') ||
+                 Request::is('uploaded-entries/*') ||
+                 Request::is('bookings/*') ||
+                 Request::is('transfer-manual-entries') ||
+                 Request::is('transfer-uploaded-entries') ||
+                 ($userTypeId != 4 &&
+                     $userTypeId != 5 &&
+                     (Request::is('view-booking-details/*') || Request::is('members/*')));
+         @endphp
+
          @if (hasPermission('transfer-entries', 'view'))
-             <li class="menu-item {{ Request::is('transfer-entries') || Request::is('uploaded-entries/*') || Request::is('bookings/*')
-             || Request::is('transfer-manual-entries') || Request::is('transfer-uploaded-entries') ? 'active' : '' }}">
+             <li class="menu-item {{ $isActive ? 'active' : '' }}">
                  <a href="{{ route('transfer-entries') }}" class="text-white menu-link">
                      <i class="menu-icon tf-icons mdi mdi-file-arrow-left-right-outline"></i>
                      <div data-i18n="Transfer Entries">Transfer Entries</div>
                  </a>
              </li>
          @endif
+
 
 
          <!-- Hotel Employees -->

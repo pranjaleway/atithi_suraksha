@@ -67,7 +67,7 @@ $(function () {
         dt_basic = dt_basic_table.DataTable({
             ordering: true,
             ajax: {
-                url: "/documents",
+                url: listUrl,
                 dataSrc: function (json) {
                    json.data.forEach((element, index) => {
                         element.sequence_number = index + 1;
@@ -249,13 +249,14 @@ $(function () {
 
     $(".datatables-basic tbody").on("click", ".edit-record", function () {
         const id = $(this).data("id");
+        var editRoute = editUrl.replace(":id", id);
         if (id) {
             offCanvasElEdit.show();
             $(".form-control").removeClass("is-invalid");
             $(".invalid-feedback").empty();
 
             $.ajax({
-                url: "/edit-document/" + id,
+                url: editRoute,
                 type: "GET",
                 dataType: "json",
                 success: function (response) {

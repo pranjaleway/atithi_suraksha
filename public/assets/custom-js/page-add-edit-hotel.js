@@ -84,10 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             min: 10,
                             max: 10,
                             message: "Pan number must be 10 digits",
-                        },
-                        digits: {
-                            message: "Please enter a valid pan number",
-                        },
+                        }
                     },
                 },
                 license_number: {

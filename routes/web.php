@@ -99,7 +99,7 @@ Route::group(['middleware' => ['auth']], function () {
         //Document
         Route::get('documents', 'documents')->name('documents')->middleware('checkPermission:document,view');
         Route::post('add-document', 'storeDocument')->name('add-document')->middleware('checkPermission:document,add');
-        Route::get('edit-document', 'editDocument')->name('edit-document')->middleware('checkPermission:document,edit');
+        Route::get('edit-document/{id}', 'editDocument')->name('edit-document')->middleware('checkPermission:document,edit');
         Route::put('update-document', 'updateDocument')->name('update-document')->middleware('checkPermission:document,edit');
         Route::post('change-document-status', 'changeDocumentStatus')->name('change-document-status')->middleware('checkPermission:document,edit');
         Route::delete('delete-document', 'deleteDocument')->name('delete-document')->middleware('checkPermission:document,delete');

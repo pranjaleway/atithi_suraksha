@@ -82,6 +82,8 @@
 <script>
     var changeStatusURl = "{{ route('change-document-status') }}";
     var deleteUrl = "{{ route('delete-document') }}";
+    var listUrl = "{{ route('documents') }}";
+    var editUrl = "{{ route('edit-document', ':id') }}";
 </script>
 <script src="{{ asset('assets/custom-js/tables-datatables-documents.js') }}"></script>
 <script src="{{ asset('assets/custom-js/common.js') }}"></script>

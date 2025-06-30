@@ -649,8 +649,8 @@ class MasterController extends Controller
         return response()->json(['status' => 'error', 'message' => 'Document not found'], 404);
     }
 
-    public function editDocument(Request $request){
-        $data = Document::find($request->id);
+    public function editDocument(Request $request, $id){
+        $data = Document::find($id);
         return response()->json(['data' => $data]);
     }
 

@@ -24,49 +24,54 @@ $(function () {
 
     if ($(".form-repeater").length) {
         let row = 2;
-        $(".form-repeater").repeater({
-            show: function () {
-                const $newGroup = $(this);
+       $(".form-repeater").repeater({
+    show: function () {
+        const $newGroup = $(this);
 
-                // Hide common fields and show checkbox wrapper
-                if ($(".repeat").length > 1) {
-                    $newGroup.find(".common-fields").hide();
-                    $newGroup
-                        .find(".same-address-wrapper")
-                        .removeClass("d-none");
-                }
-
-                // Fix name attribute of checkbox if it has []
-                const checkbox = $newGroup.find(".same-address-checkbox");
-                checkbox.attr(
-                    "name",
-                    checkbox.attr("name").replace(/\[\]$/, "")
-                );
-
-                checkbox.prop("checked", true).trigger("change");
-
-                checkbox.on("change", function () {
-                    const checked = $(this).is(":checked");
-                    $newGroup.find(".address-fields").toggle(!checked);
-                });
-
-                // Reset other inputs
-                $newGroup
-                    .find("input, textarea, select")
-                    .not(checkbox)
-                    .val("")
-                    .prop("checked", false);
-                $newGroup.find(".address-fields").hide();
-
-                $(this).slideDown();
-            },
-
-            hide: function (deleteElement) {
-                if (confirm("Are you sure you want to delete this entry?")) {
-                    $(this).slideUp(deleteElement);
-                }
-            },
+        // Fix ALL checkboxes from index 0 to current count
+        $(".repeat").each(function (i) {
+            const checkbox = $(this).find(".same-address-checkbox");
+            checkbox.attr("name", `guests[${i}][same_address]`);
         });
+
+        const currentIndex = $(".repeat").length - 1;
+
+        // Show checkbox section only for additional guests
+        if (currentIndex >= 1) {
+            $newGroup.find(".common-fields").hide();
+            $newGroup.find(".same-address-wrapper").removeClass("d-none");
+        }
+
+        // Checkbox logic
+        const checkbox = $newGroup.find(".same-address-checkbox");
+        checkbox.prop("checked", true);
+
+        checkbox.off("change").on("change", function () {
+            const isChecked = $(this).is(":checked");
+            $newGroup.find(".address-fields").toggle(!isChecked);
+        });
+
+        // Reset all other inputs in the new form
+        $newGroup
+            .find("input, textarea, select")
+            .not(checkbox)
+            .val("")
+            .prop("checked", false);
+
+        $newGroup.find(".address-fields").hide();
+     $newGroup.find('.deleteDiv').removeClass("d-none");
+
+        $(this).slideDown();
+    },
+
+    hide: function (deleteElement) {
+        if (confirm("Are you sure you want to delete this entry?")) {
+            $(this).slideUp(deleteElement);
+        }
+    },
+});
+
+
     }
 });
 

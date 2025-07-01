@@ -34,16 +34,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                     },
                 },
-                email: {
-                    validators: {
-                        notEmpty: {
-                            message: "Please enter email",
-                        },
-                        emailAddress: {
-                            message: "Please enter a valid email address",
-                        },
-                    },
-                },
                 contact_number: {
                     validators: {
                         notEmpty: {
@@ -232,4 +222,3 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-

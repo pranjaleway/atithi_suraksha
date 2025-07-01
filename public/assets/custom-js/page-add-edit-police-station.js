@@ -53,13 +53,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                     },
                 },
-                state_id: {
-                    validators: {
-                        notEmpty: {
-                            message: "Please select state",
-                        },
-                    },
-                },
+                // state_id: {
+                //     validators: {
+                //         notEmpty: {
+                //             message: "Please select state",
+                //         },
+                //     },
+                // },
                 address: {
                     validators: {
                         notEmpty: {
@@ -67,13 +67,20 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                     },
                 },
-                city_id: {
+                sp_office_id: {
                     validators: {
                         notEmpty: {
-                            message: "Please select city",
+                            message: "Please select sp office",
                         },
                     },
                 },
+                // city_id: {
+                //     validators: {
+                //         notEmpty: {
+                //             message: "Please select city",
+                //         },
+                //     },
+                // },
                 password: {
                     validators: {
                         notEmpty: {
@@ -85,7 +92,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                     },
                 },
-                password_confirmation : {
+                password_confirmation: {
                     validators: {
                         notEmpty: {
                             message: "Please confirm your password",

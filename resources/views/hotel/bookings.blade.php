@@ -16,7 +16,9 @@
                             <th>Contact Number</th>
                             <th>Room Number</th>
                             <th>Date and Time</th>
-                            <th>Members</th>
+                            @if (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5)
+                                <th>Members</th>
+                            @endif
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -26,7 +28,7 @@
         </div>
         <!--/ DataTable with Buttons -->
 
-       
+
     </div>
 @endsection
 @section('scripts')
@@ -36,6 +38,7 @@
         var membersUrl = "{{ route('members', ':id') }}";
         var viewDetailsUrl = "{{ route('view-booking-details', ':id') }}";
         var addBookingUrl = "{{ route('add-booking') }}";
+        var userRole = @json(Auth::user()->user_type_id);
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-booking.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

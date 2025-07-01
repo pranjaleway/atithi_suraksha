@@ -13,10 +13,9 @@
 
 
             <div class="card-body">
-                <form id="add-edit-form" action="{{ route('store-member') }}"
-                    method="POST">
+                <form id="add-edit-form" action="{{ route('store-member') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="parent_id" value="{{$booking->id}}">
+                    <input type="hidden" name="parent_id" value="{{ $booking->id }}">
                     <div class="row">
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
@@ -30,27 +29,9 @@
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
-                                    <input class="form-control" type="date" name="check_in" id="check_in"
-                                        placeholder="YYYY-MM-DD" value="" min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" />
-                                    <label for="check_in">Check In</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <div class="input-group input-group-merge">
-                                <div class="form-floating form-floating-outline">
-                                    <input class="form-control" type="date" name="check_out" id="check_out"
-                                        placeholder="YYYY-MM-DD" value="" min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" />
-                                    <label for="check_out">Check Out</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <div class="input-group input-group-merge">
-                                <div class="form-floating form-floating-outline">
-                                    <input class="form-control" type="text" name="room_number" id="room_number"
-                                        placeholder="Room Number" value="" />
-                                    <label for="room_number">Room Number</label>
+                                    <input class="form-control" type="number" id="contact_number" name="contact_number"
+                                        placeholder="Contact Number" value="" />
+                                    <label for="contact_number">Contact Number</label>
                                 </div>
                             </div>
                         </div>
@@ -66,10 +47,18 @@
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
-                                    <input class="form-control" type="number" id="contact_number" name="contact_number"
-                                        placeholder="Contact Number"
-                                        value="" />
-                                    <label for="contact_number">Contact Number</label>
+                                    <input class="form-control" type="date" name="dob" id="dob"
+                                        placeholder="YYYY-MM-DD" value="" />
+                                    <label for="dob">Date of Birth</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input class="form-control" type="number" id="aadhar_number" name="aadhar_number"
+                                        placeholder="Aadhar Number" value="" />
+                                    <label for="aadhar_number">Aadhar Number</label>
                                 </div>
                             </div>
                         </div>
@@ -77,10 +66,31 @@
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
-                                    <input class="form-control" type="number" id="aadhar_number" name="aadhar_number"
-                                        placeholder="Aadhar Number"
-                                        value="" />
-                                    <label for="aadhar_number">Aadhar Number</label>
+                                    <input class="form-control" type="text" name="room_number" id="room_number"
+                                        placeholder="Room Number" value="" />
+                                    <label for="room_number">Room Number</label>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="col-md-6 mb-2">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input class="form-control" type="date" name="check_in" id="check_in"
+                                        placeholder="YYYY-MM-DD" value=""
+                                        min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" />
+                                    <label for="check_in">Check In</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input class="form-control" type="date" name="check_out" id="check_out"
+                                        placeholder="YYYY-MM-DD" value=""
+                                        min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" />
+                                    <label for="check_out">Check Out</label>
                                 </div>
                             </div>
                         </div>
@@ -135,16 +145,15 @@
                             </div>
                         </div>
 
-                            <div class="col-md-6 mb-3">
-                                <div class="input-group input-group-merge">
-                                    <div class="form-floating form-floating-outline">
-                                        <input type="file" class="form-control document-input"
-                                            id="id_proof_path" data-label="ID Proof"
-                                            name="id_proof_path" accept="image/*,application/pdf">
-                                        <label for="id_proof_path">ID Proof</label>
-                                    </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="file" class="form-control document-input" id="id_proof_path"
+                                        data-label="ID Proof" name="id_proof_path" accept="image/*,application/pdf">
+                                    <label for="id_proof_path">ID Proof</label>
                                 </div>
                             </div>
+                        </div>
 
                         <!-- Preview section for all selected documents -->
                         <div class="row mt-4" id="all-preview-row"></div>

@@ -12,6 +12,7 @@ class PoliceStation extends Model
 
     protected $fillable = [
         'user_id',
+        'sp_office_id',
         'police_station_name',
         'address',
         'state_id',

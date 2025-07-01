@@ -18,7 +18,7 @@ $(function () {
         if (![1, 2, 3].includes(userRole)) {
             actionButtons = [
                 {
-                    text: '<i class="mdi mdi-plus me-sm-1"></i> <span class="d-none d-sm-inline-block">Add Mannual Record</span>',
+                    text: '<i class="mdi mdi-plus me-sm-1"></i> <span class="d-none d-sm-inline-block">Transfer Bookings</span>',
                     className:
                         "create-new btn btn-primary waves-effect waves-light d-none me-2",
                     action: function () {
@@ -26,11 +26,15 @@ $(function () {
                     },
                 },
                 {
-                    text: '<i class="mdi mdi-plus me-sm-1"></i> <span class="d-none d-sm-inline-block">Add Uploaded Record</span>',
+                    text: '<i class="mdi mdi-plus me-sm-1"></i> <span class="d-none d-sm-inline-block">Add Register Record</span>',
                     className:
                         "create-new btn btn-label-primary waves-effect waves-light d-none",
                     action: function () {
-                        window.location.href = uploadedTransferEntriesUrl;
+                        //window.location.href = uploadedTransferEntriesUrl;
+                        $("#addModal").modal("show");
+                        $("#all-preview-row").empty();
+                        $(".invalid-feedback").empty();
+                        $(".is-invalid").removeClass("is-invalid");
                     },
                 },
             ];
@@ -132,7 +136,7 @@ $(function () {
         });
 
         $("div.head-label").html(
-            '<h5 class="card-title mb-0">Transfer Entries</h5>'
+            '<h5 class="card-title mb-0">Transfer Bookings</h5>'
         );
 
         // 👇 Inject Flatpickr date range picker in the middle column
@@ -178,4 +182,134 @@ $(function () {
         $(".dataTables_filter .form-control").removeClass("form-control-sm");
         $(".dataTables_length .form-select").removeClass("form-select-sm");
     }, 300);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    const formAuthentication = document.querySelector("#add-form");
+
+    if (formAuthentication) {
+        const fv = FormValidation.formValidation(formAuthentication, {
+            fields: {
+                file_path: {
+                    validators: {
+                        notEmpty: {
+                            message: "Please upload at least one file",
+                        },
+                    },
+                },
+            },
+            plugins: {
+                trigger: new FormValidation.plugins.Trigger(),
+                bootstrap5: new FormValidation.plugins.Bootstrap5({
+                    eleValidClass: "",
+                    rowSelector: ".col-md-6",
+                }),
+                submitButton: new FormValidation.plugins.SubmitButton(),
+                // Submit the form when all fields are valid
+                // defaultSubmit: new FormValidation.plugins.DefaultSubmit(),
+                autoFocus: new FormValidation.plugins.AutoFocus(),
+            },
+            init: (instance) => {
+                instance.on("plugins.message.placed", function (e) {
+                    if (
+                        e.element.parentElement.classList.contains(
+                            "input-group"
+                        )
+                    ) {
+                        e.element.parentElement.insertAdjacentElement(
+                            "afterend",
+                            e.messageElement
+                        );
+                    }
+                });
+            },
+        });
+
+        // Prevent normal form submission
+        fv.on("core.form.valid", function () {
+            var formdata = new FormData(formAuthentication);
+            var url = formAuthentication.getAttribute("action");
+            var submitButton = $("button[type='submit']");
+            $(".invalid-feedback").empty();
+
+            toggleButtonLoadingState(submitButton, true);
+
+            $.ajax({
+                url: url,
+                type: "POST",
+                data: formdata,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                        "content"
+                    ),
+                },
+                processData: false,
+                contentType: false,
+                dataType: "json",
+                success: function (response) {
+                    if (response.status === "success") {
+                        toastr.success(response.message, "Success");
+                        formAuthentication.reset(); // Reset form on success
+                        $("#add-form")[0].reset();
+                        dt_basic.ajax.reload();
+                        $("#addModal").modal("hide");
+                    }
+                },
+                error: function (xhr) {
+                    if (xhr.status === 422) {
+                        let errors = xhr.responseJSON.errors;
+                        $(".invalid-feedback").remove(); // Remove previous errors
+                        $(".is-invalid").removeClass("is-invalid"); // Reset validation classes
+
+                        let firstErrorElement = null;
+
+                        $.each(errors, function (key, value) {
+                            let inputField = $("#" + key);
+                            inputField.addClass("is-invalid");
+                            inputField.after(
+                                `<div class="invalid-feedback">${value}</div>`
+                            );
+                            if (!firstErrorElement) {
+                                firstErrorElement = inputField;
+                            }
+                        });
+
+                        // Scroll to the first error field smoothly
+                        if (firstErrorElement) {
+                            $("html, body").animate(
+                                {
+                                    scrollTop:
+                                        firstErrorElement.offset().top - 100, // Adjust offset if needed
+                                },
+                                200
+                            );
+                        }
+                    } else if (
+                        xhr.responseJSON &&
+                        xhr.responseJSON.message.includes("Duplicate entry")
+                    ) {
+                        let inputField = $("#email");
+                        inputField.addClass("is-invalid");
+                        inputField.after(
+                            `<div class="invalid-feedback">This email is already in use.</div>`
+                        );
+
+                        // Scroll to the email field
+                        $("html, body").animate(
+                            {
+                                scrollTop: inputField.offset().top - 100,
+                            },
+                            200
+                        );
+                    } else {
+                        toastr.error("Something went wrong", "Error");
+                    }
+                },
+
+                complete: function () {
+                    toggleButtonLoadingState(submitButton, false);
+                },
+            });
+        });
+    }
 });

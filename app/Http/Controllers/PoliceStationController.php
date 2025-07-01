@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\PoliceStation;
+use App\Models\SpOffice;
 use App\Models\State;
 use App\Models\User;
 use App\Models\UserType;
@@ -34,39 +35,62 @@ class PoliceStationController extends Controller
     {
         $states = State::where('status', 1)->orderBy('name', 'asc')->get();
         $cities = City::where('status', 1)->orderBy('name', 'asc')->get();
-        return view('policeStation.add-edit-police-station', compact('states', 'cities', ));
+        $spOffices = SpOffice::where('status', 1)->get();
+        return view('policeStation.add-edit-police-station', compact('states', 'cities', 'spOffices'));
     }
 
     public function storePoliceStation(Request $request)
     {
-        $request->validate([
+        $rules = [
             'police_station_name' => 'required|string|max:255',
             'officer_in_charge' => 'nullable|string|max:255',
             'email' => 'required|email|unique:users,email',
             'contact_number' => 'required|numeric|digits:10|unique:users,phone',
             'address' => 'required|string',
-            'state_id' => 'required|exists:states,id',
-            'city_id' => 'required|exists:cities,id',
             'pincode' => 'required|numeric|digits:6',
             'password' => 'required|string|min:6|confirmed',
-        ], [
+        ];
+
+        if (Auth::user()->user_type_id != 2) {
+            $rules['sp_office_id'] = 'required|exists:sp_offices,id';
+        }
+
+        $messages = [
             'email.unique' => 'This email has already been taken.',
             'contact_number.unique' => 'This contact number has already been taken.',
-            'city_id.exists' => 'The selected city is invalid.',
-            'state_id.exists' => 'The selected state is invalid.',
+            'sp_office_id.required' => 'SP Office is required.',
+            'sp_office_id.exists' => 'The selected SP Office is invalid.',
             'password.confirmed' => 'The confirmed password does not match.',
-        ]);
+        ];
 
-        $policeStation = PoliceStation::create($request->only([
+        $request->validate($rules, $messages);
+
+        // Retrieve SP Office info based on user type
+        $spOffice = Auth::user()->user_type_id == 2
+            ? SpOffice::where('user_id', Auth::id())->first()
+            : SpOffice::find($request->sp_office_id);
+
+        if (!$spOffice) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'SP Office not found.'
+            ], 422);
+        }
+
+        $policeStationData = $request->only([
             'police_station_name',
             'officer_in_charge',
             'email',
             'contact_number',
             'address',
-            'state_id',
-            'city_id',
             'pincode'
-        ]));
+        ]);
+
+        $policeStationData['sp_office_id'] = $spOffice->id;
+        $policeStationData['state_id'] = $spOffice->state_id;
+        $policeStationData['city_id'] = $spOffice->city_id;
+
+        $policeStation = PoliceStation::create($policeStationData);
 
         $user = $policeStation->user()->create([
             'name' => $request->police_station_name,
@@ -87,6 +111,9 @@ class PoliceStationController extends Controller
             'redirect' => route('police-stations')
         ]);
     }
+
+
+
     public function editPoliceStation($id)
     {
         $id = base64_decode($id);
@@ -98,74 +125,81 @@ class PoliceStationController extends Controller
             ->where('state_id', $policeStations->state_id)
             ->orderBy('name', 'asc')->get();
 
+        $spOffices = SpOffice::where('status', 1)->get();
+
         if (!$policeStations) {
             abort(404, 'Police Station not found');
         }
-        return view('policeStation.add-edit-police-station', compact('policeStations', 'states', 'cities'));
+        return view('policeStation.add-edit-police-station', compact('policeStations', 'states', 'cities', 'spOffices'));
     }
 
     public function updatePoliceStation(Request $request)
     {
-        $policeStation = PoliceStation::find($request->id);
+        $policeStation = PoliceStation::findOrFail($request->id);
 
-        $request->validate([
+        $rules = [
             'police_station_name' => 'required|string|max:255',
             'officer_in_charge' => 'nullable|string|max:255',
             'email' => 'required|email|unique:users,email,' . $policeStation->user_id,
             'contact_number' => 'required|numeric|digits:10|unique:users,phone,' . $policeStation->user_id,
             'address' => 'required|string',
-            'state_id' => 'required|exists:states,id',
-            'city_id' => 'required|exists:cities,id',
             'pincode' => 'required|numeric|digits:6',
-        ], [
-            'email.unique' => 'This email has already been taken.',
-            'contact_number.unique' => 'This contact number has already been taken.',
-            'city_id.exists' => 'The selected city is invalid.',
-            'state_id.exists' => 'The selected state is invalid.',
-        ]);
+        ];
 
-        // === Track changes ===
-        $excludedKeys = ['_token'];
-        $originalData = $policeStation->toArray();
-        $inputData = $request->except($excludedKeys);
-        $changes = array_diff_assoc($inputData, $originalData);
-
-        // Replace state and city IDs with names for better logging
-        if (isset($changes['state_id'])) {
-            $state = State::find($changes['state_id']);
-            if ($state) {
-                unset($changes['state_id']);
-                $changes['state_name'] = $state->name;
-            }
+        if (Auth::user()->user_type_id != 2) {
+            $rules['sp_office_id'] = 'required|exists:sp_offices,id';
         }
 
-        if (isset($changes['city_id'])) {
-            $city = City::find($changes['city_id']);
-            if ($city) {
-                unset($changes['city_id']);
-                $changes['city_name'] = $city->name;
+        $request->validate($rules, [
+            'email.unique' => 'This email has already been taken.',
+            'contact_number.unique' => 'This contact number has already been taken.',
+            'sp_office_id.exists' => 'The selected SP Office is invalid.',
+        ]);
+
+        $inputData = $request->only([
+            'police_station_name',
+            'officer_in_charge',
+            'email',
+            'contact_number',
+            'address',
+            'pincode'
+        ]);
+
+        $spOffice = Auth::user()->user_type_id == 2
+            ? SpOffice::where('user_id', Auth::id())->first()
+            : SpOffice::find($request->sp_office_id);
+
+        if ($spOffice) {
+            $inputData['sp_office_id'] = $spOffice->id;
+            $inputData['state_id'] = $spOffice->state_id;
+            $inputData['city_id'] = $spOffice->city_id;
+        }
+
+        $originalData = $policeStation->only(array_keys($inputData));
+        $changes = array_diff_assoc($inputData, $originalData);
+
+        if (isset($inputData['sp_office_id']) && $inputData['sp_office_id'] != $policeStation->sp_office_id) {
+            $spName = SpOffice::find($inputData['sp_office_id'])?->office_name;
+            if ($spName) {
+                $changes['sp_office_name'] = $spName;
             }
         }
 
         $policeStation->update($inputData);
 
-        // Update associated user
         $user = User::find($policeStation->user_id);
         if ($user) {
             $user->update([
-                'name' => $policeStation->police_station_name,
-                'email' => $policeStation->email,
-                'phone' => $policeStation->contact_number,
+                'name' => $inputData['police_station_name'],
+                'email' => $inputData['email'],
+                'phone' => $inputData['contact_number'],
             ]);
         }
 
-        // Format updated fields for logging
         $updatedChanges = implode(', ', array_map(function ($key) use ($changes) {
-            $readableKey = ucwords(str_replace('_', ' ', $key));
-            return $readableKey . ': ' . (isset($changes[$key]) ? $changes[$key] : 'NULL');
+            return ucwords(str_replace('_', ' ', $key)) . ': ' . $changes[$key];
         }, array_keys($changes)));
 
-        // Log the activity
         activiyLog('Police Station "' . $policeStation->police_station_name . '" updated by ' . ucfirst(Auth::user()->name) . '. Updated fields: ' . $updatedChanges);
 
         return response()->json([
@@ -174,6 +208,7 @@ class PoliceStationController extends Controller
             'redirect' => route('police-stations')
         ]);
     }
+
 
 
     public function deletePoliceStation(Request $request)

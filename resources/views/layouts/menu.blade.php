@@ -86,7 +86,7 @@
                  class="menu-item {{ Request::is('hotels') || Request::is('add-hotel') || Request::is('edit-hotel/*') || Request::is('view-hotel-details/*') || Request::is('hotel-employees/*') ? 'active' : '' }}">
                  <a href="{{ route('hotels') }}" class="text-white menu-link">
                      <i class="menu-icon tf-icons mdi mdi-bed-outline"></i>
-                     <div data-i18n="Hotels">Hotels</div>
+                     <div data-i18n="Hotel Master">Hotel Master</div>
                  </a>
              </li>
          @endif
@@ -109,7 +109,7 @@
              </li>
          @endif
 
-         <!-- Upload Entries -->
+         {{-- <!-- Upload Entries -->
          @if (hasPermission('uploaded-entries', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
              <li class="menu-item {{ Request::is('uploaded-entries') ? 'active' : '' }}">
                  <a href="{{ route('uploaded-entries') }}" class="text-white menu-link">
@@ -117,7 +117,7 @@
                      <div data-i18n="Upload Entries">Upload Entries</div>
                  </a>
              </li>
-         @endif
+         @endif --}}
 
          <!-- Transfer Entries -->
          @php
@@ -137,7 +137,7 @@
              <li class="menu-item {{ $isActive ? 'active' : '' }}">
                  <a href="{{ route('transfer-entries') }}" class="text-white menu-link">
                      <i class="menu-icon tf-icons mdi mdi-file-arrow-left-right-outline"></i>
-                     <div data-i18n="Transfer Entries">Transfer Entries</div>
+                     <div data-i18n="Transfer Bookings">Transfer Bookings</div>
                  </a>
              </li>
          @endif

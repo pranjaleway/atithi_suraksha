@@ -14,15 +14,35 @@
 
             <div class="card-body">
                 <form id="add-edit-form"
-                    action="{{ isset($policeStations) ? route('update-police-station') : route('store-police-station') }}" method="POST">
+                    action="{{ isset($policeStations) ? route('update-police-station') : route('store-police-station') }}"
+                    method="POST">
                     @csrf
                     <input type="hidden" name="id" value="{{ isset($policeStations) ? $policeStations->id : '' }}">
                     <div class="row">
+                        @if (Auth::user()->user_type_id == 1)
+                            <div class="col-md-6 mb-2">
+                                <div class="input-group input-group-merge">
+                                    <div class="form-floating form-floating-outline">
+                                        <select class="form-select" id="sp_office_id" name="sp_office_id">
+                                            <option selected value="" disabled>Select SP Office</option>
+                                            @foreach ($spOffices as $spOffice)
+                                                <option value="{{ $spOffice->id }}"
+                                                    @isset($policeStations)
+                                                   {{ $policeStations->sp_office_id == $spOffice->id ? 'selected' : '' }}
+                                               @endisset>
+                                                    {{ $spOffice->office_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <label for="sp_office_id">SP Office Name</label>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
-                                   <input class="form-control" type="text" name="police_station_name" id="police_station_name"
-                                        placeholder="Police Station Name"
+                                    <input class="form-control" type="text" name="police_station_name"
+                                        id="police_station_name" placeholder="Police Station Name"
                                         value="{{ isset($policeStations) ? $policeStations->police_station_name : '' }}" />
                                     <label for="police_station_name">Police Station Name</label>
                                 </div>
@@ -31,9 +51,9 @@
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
-                                    <input class="form-control" type="text" name="officer_in_charge" id="officer_in_charge"
-                                        placeholder="Office In Charge"
-                                       value="{{ isset($policeStations) ? $policeStations->officer_in_charge : '' }}" />
+                                    <input class="form-control" type="text" name="officer_in_charge"
+                                        id="officer_in_charge" placeholder="Office In Charge"
+                                        value="{{ isset($policeStations) ? $policeStations->officer_in_charge : '' }}" />
                                     <label for="officer_in_charge">Office In Charge</label>
                                 </div>
                             </div>
@@ -42,7 +62,8 @@
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
                                     <input class="form-control" type="email" name="email" id="email"
-                                        placeholder="Email" value="{{ isset($policeStations) ? $policeStations->email : '' }}" />
+                                        placeholder="Email"
+                                        value="{{ isset($policeStations) ? $policeStations->email : '' }}" />
                                     <label for="email">Email</label>
                                 </div>
                             </div>
@@ -94,6 +115,7 @@
                                 </div>
                             </div>
                         </div>
+                        {{-- @if (Auth::user()->user_type_id == 1)
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
@@ -130,6 +152,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif --}}
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">

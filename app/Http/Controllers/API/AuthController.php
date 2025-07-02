@@ -317,21 +317,32 @@ class AuthController extends Controller
 
 
 public function logout(Request $request)
-    {
-        try {
-            activiyLog(ucfirst($request->user()->name).' logged out');
-            $request->user()->currentAccessToken()->delete();
-            return response()->json([
-                'success' => true,
-                'message' => 'Logout successful',
-            ]);
-        } catch (\Exception $e) {
+{
+    try {
+        $user = $request->user();
+
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Something went wrong!',
-                'error' => $e->getMessage(),
-            ], 500);
+                'message' => 'User not authenticated',
+            ], 401);
         }
+
+        activiyLog(ucfirst($user->name) . ' logged out');
+        $user->currentAccessToken()->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Logout successful',
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Something went wrong!',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
+
 
 }

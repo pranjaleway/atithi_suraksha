@@ -227,7 +227,7 @@ class AuthController extends Controller
    /**
  * @OA\Post(
  *     path="/post-hotel-signup",
- *     tags={"Auth"},
+ *     tags={"Authentication"},
  *     summary="Register a new hotel",
  *     description="Handles hotel registration along with associated user and documents (in JSON).",
  *     @OA\RequestBody(

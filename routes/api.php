@@ -23,7 +23,7 @@ Route::get('/user', function (Request $request) {
   Route::controller(APIMasterController::class)->group(function () {
      Route::get('get-documents', 'getDocuments')->name('get-documents');
      Route::get('get-states', 'getStates')->name('get-states');
-     Route::get('get-cities', 'getCitiesByState')->name('get-cities');
+     Route::get('get-cities', 'getCities')->name('get-cities');
   });
 
   Route::middleware('auth:sanctum')->group(function () {

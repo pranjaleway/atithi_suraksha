@@ -224,6 +224,74 @@ class AuthController extends Controller
         return view('auth.hotel-signup', compact('states', 'documents'));
     }
 
+   /**
+ * @OA\Post(
+ *     path="/post-hotel-signup",
+ *     tags={"Auth"},
+ *     summary="Register a new hotel",
+ *     description="Handles hotel registration along with associated user and documents (in JSON).",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="application/json",
+ *             @OA\Schema(
+ *                 required={
+ *                     "hotel_name", "owner_name", "email", "contact_number", "owner_contact_number",
+ *                     "aadhar_number", "pan_number", "license_number", "address",
+ *                     "state_id", "city_id", "pincode", "password", "password_confirmation"
+ *                 },
+ *                 @OA\Property(property="hotel_name", type="string", example="Hotel Paradise"),
+ *                 @OA\Property(property="owner_name", type="string", example="John Smith"),
+ *                 @OA\Property(property="email", type="string", format="email", example="owner@example.com"),
+ *                 @OA\Property(property="contact_number", type="string", example="9876543210"),
+ *                 @OA\Property(property="owner_contact_number", type="string", example="9123456780"),
+ *                 @OA\Property(property="aadhar_number", type="string", example="123456789012"),
+ *                 @OA\Property(property="pan_number", type="string", example="ABCDE1234F"),
+ *                 @OA\Property(property="license_number", type="string", example="LIC123456"),
+ *                 @OA\Property(property="address", type="string", example="123 Street Name, City"),
+ *                 @OA\Property(property="state_id", type="integer", example=1),
+ *                 @OA\Property(property="city_id", type="integer", example=10),
+ *                 @OA\Property(property="pincode", type="string", example="400001"),
+ *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
+ *                 @OA\Property(property="password_confirmation", type="string", format="password", example="secret123"),
+ *                 @OA\Property(
+ *                     property="documents",
+ *                     type="array",
+ *                     description="Array of uploaded documents in base64 or metadata",
+ *                     @OA\Items(
+ *                         type="object",
+ *                         required={"document_id", "document_path"},
+ *                         @OA\Property(property="document_id", type="integer", example=1),
+ *                         @OA\Property(property="document_path", type="string", example="base64encodedstring==")
+ *                     )
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Hotel registration success",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="Please wait for admin approval")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+ *             @OA\Property(
+ *                 property="errors",
+ *                 type="object",
+ *                 @OA\Property(property="email", type="array", @OA\Items(type="string", example="This email has already been taken."))
+ *             )
+ *         )
+ *     )
+ * )
+ */
+
+
     public function postHotelSignup(Request $request)
     {
         $request->validate([

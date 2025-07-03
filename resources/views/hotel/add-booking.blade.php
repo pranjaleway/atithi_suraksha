@@ -38,22 +38,37 @@
                                         </div>
                                         <span class="text-danger contact_number-error"></span>
                                     </div>
-
+                                    <!-- Hide in repeat rows -->
                                     <!-- Email -->
-                                    <div class="mb-3 col-lg-6">
+                                    <div class="mb-3 col-lg-6 common-fields">
                                         <div class="form-floating form-floating-outline">
                                             <input type="email" name="email" class="form-control" placeholder="Email" />
                                             <label>Email</label>
                                         </div>
                                     </div>
+                                    <!-- End Hide in repeat rows -->
 
-                                    <!-- Date of Birth -->
+                                    <!-- Age -->
                                     <div class="mb-3 col-lg-6">
                                         <div class="form-floating form-floating-outline">
-                                            <input type="date" name="dob" class="form-control" />
-                                            <label>Date of Birth</label>
+                                            <input type="number" name="age" placeholder="Age" class="form-control" />
+                                            <label>Age</label>
                                         </div>
                                         <span class="text-danger dob-error"></span>
+                                    </div>
+
+                                    <!-- Gender -->
+                                    <div class="mb-3 col-lg-6">
+                                        <div class="form-floating form-floating-outline">
+                                            <select class="form-select" name="gender" id="gender">
+                                                <option selected value="" disabled>Select Gender</option>
+                                                <option value="male">Male</option>
+                                                <option value="female">Female</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                            <label>Gender</label>
+                                        </div>
+                                        <span class="text-danger gender-error"></span>
                                     </div>
 
                                     <!-- Aadhar Number -->
@@ -66,32 +81,47 @@
                                         <span class="text-danger aadhar_number-error"></span>
                                     </div>
 
-                                    <!-- Room Number -->
-                                    <div class="mb-3 col-lg-6">
-                                        <div class="form-floating form-floating-outline">
-                                            <input type="text" name="room_number" class="form-control"
-                                                placeholder="Room Number" />
-                                            <label>Room Number</label>
-                                        </div>
-                                        <span class="text-danger room_number-error"></span>
-                                    </div>
-
                                     <!-- Hide in repeat rows -->
+
                                     <!-- No of Guest -->
                                     <div class="mb-3 col-lg-6 common-fields">
                                         <div class="form-floating form-floating-outline">
-                                            <input type="number" name="no_of_guest" class="form-control"
-                                                placeholder="Number of Guest" />
+                                            <input type="number" min="1" name="no_of_guest" id="no_of_guest"
+                                                class="form-control" placeholder="Number of Guest" />
                                             <label>Number of Guest</label>
                                         </div>
                                         <span class="text-danger no_of_guest-error"></span>
+
+                                        <div class="row mt-3 count-fields d-none">
+                                            <div class="col-md-4">
+                                                <div class="form-floating form-floating-outline">
+                                                    <input type="text" name="no_of_male" class="form-control"
+                                                        placeholder="Number of Male" />
+                                                    <label for="no_of_male">Number of Male</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-floating form-floating-outline">
+                                                    <input type="text" name="no_of_female" class="form-control"
+                                                        placeholder="Number of Female" />
+                                                    <label for="no_of_female">Number of Female</label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-floating form-floating-outline">
+                                                    <input type="text" name="no_of_children" class="form-control"
+                                                        placeholder="Number of Children" />
+                                                    <label for="no_of_children">Number of Children</label>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <!-- Check-in -->
                                     <div class="mb-3 col-lg-6 common-fields">
                                         <div class="form-floating form-floating-outline">
-                                            <input type="date" name="check_in" class="form-control check_in"
-                                                min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" />
+                                            <input type="datetime-local" name="check_in" class="form-control check_in"
+                                                min="{{ \Carbon\Carbon::now()->format('Y-m-d\TH:i') }}" />
                                             <label>Check In</label>
                                         </div>
                                         <span class="text-danger check_in-error"></span>
@@ -100,12 +130,24 @@
                                     <!-- Check-out -->
                                     <div class="mb-3 col-lg-6 common-fields">
                                         <div class="form-floating form-floating-outline">
-                                            <input type="date" name="check_out" class="form-control"
-                                                min="{{ \Carbon\Carbon::now()->format('Y-m-d') }}" />
+                                            <input type="datetime-local" name="check_out" class="form-control"
+                                                min="{{ \Carbon\Carbon::now()->format('Y-m-d\TH:i') }}" />
                                             <label>Check Out</label>
                                         </div>
                                         <span class="text-danger check_out-error"></span>
                                     </div>
+
+                                     <!-- Room Number -->
+                                    <div class="mb-3 col-lg-6 common-fields">
+                                        <div class="form-floating form-floating-outline">
+                                            <select multiple class="form-select room_number_id" name="room_number_id" id="room_number_id">
+                                                
+                                            </select>
+                                            <label>Room Number</label>
+                                        </div>
+                                        <span class="text-danger room_number_id-error"></span>
+                                    </div>
+
 
 
                                     <!-- Same as above address checkbox (hidden initially) -->
@@ -205,11 +247,13 @@
 
 @section('scripts')
     <script>
-        cityUrl = "{{ route('get-cities') }}";
+        var cityUrl = "{{ route('get-cities') }}";
+        var getRoomUrl = "{{ route('get-room-number') }}";
     </script>
     {{-- <script src="{{ asset('assets/js/forms-extras.js') }}"></script> --}}
     <script src="{{ asset('assets/vendor/libs/jquery-repeater/jquery-repeater.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.js') }}"></script>
+    <script src="{{ asset('assets/vendor/libs/select2/select2.js')}}"></script>
     {{-- <script src="{{ asset('assets/js/forms-pickers.js') }}"></script> --}}
 
     {{-- <script src="{{ asset('assets/custom-js/common.js') }}"></script> --}}

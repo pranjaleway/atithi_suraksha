@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Document;
+use App\Models\Hotel;
 use App\Models\Menu;
+use App\Models\RoomNumber;
 use App\Models\State;
 use App\Models\User;
 use App\Models\UserAccess;
@@ -667,4 +669,84 @@ class MasterController extends Controller
         Document::where('id', $request->id)->delete();
         return response()->json(['status' => 'success', 'message' => 'Document deleted successfully']);
     }
+
+    public function roomMaster(Request $request)
+    {
+        if (!hasPermission('room-master', 'view')) {
+            abort(403, 'Unauthorized');
+        }
+        if ($request->ajax()) {
+            $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
+            $data = RoomNumber::where('hotel_id', $hotelId)->get();
+
+            $canAdd = hasPermission('room-master', 'add');
+            $canEdit = hasPermission('room-master', 'edit');
+            $canDelete = hasPermission('room-master', 'delete');
+            return response()->json(['data' => $data, 'canAdd' => $canAdd, 'canEdit' => $canEdit, 'canDelete' => $canDelete]);
+        }
+        return view('master.room-master');
+    }
+
+    public function storeRoomMaster(Request $request)
+    {
+        $existingRoom = RoomNumber::withTrashed()->where('room_number', $request['room_number'])->first();
+
+        if ($existingRoom) {
+            if ($existingRoom->trashed()) {
+                $existingRoom->restore();
+
+                return response()->json([
+                    'data' => $existingRoom,
+                    'status' => 'success',
+                    'message' => 'Room Number restored successfully'
+                ]);
+            }
+        }
+
+        $validatedData = $request->validate([
+            'room_number' => 'required|string|unique:room_numbers,room_number',
+            'room_type' => 'required|in:AC,NON-AC',
+        ]);
+        $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
+        $validatedData['hotel_id'] = $hotelId;
+        $data = RoomNumber::create($validatedData);
+        return response()->json(['data' => $data, 'status' => 'success', 'message' => 'Room Number created successfully']);
+    }
+
+    public function editRoomMaster(Request $request)
+    {
+        $data = RoomNumber::find($request->id);
+        return response()->json(['data' => $data]);
+    }
+
+    public function updateRoomMaster(Request $request)
+    {
+        $validatedData = $request->validate([
+            'room_number' => 'required|string|unique:room_numbers,room_number,' . $request->id,
+            'room_type' => 'required|in:AC,NON-AC',
+        ]);
+        $data = RoomNumber::find($request->id);
+        $data->update($validatedData);
+        return response()->json(['data' => $data, 'status' => 'success', 'message' => 'Room Number updated successfully']);
+    }
+
+    public function deleteRoomMaster(Request $request)
+    {
+        RoomNumber::where('id', $request->id)->delete();
+        return response()->json(['status' => 'success', 'message' => 'Room Number deleted successfully']);
+    }
+
+    public function changeRoomMasterStatus(Request $request){
+        $room = RoomNumber::find($request->id);
+
+        if ($room) {
+            // Toggle the status
+            $newStatus = $room->status == 1 ? 0 : 1;
+            $room->update(['status' => $newStatus]);
+
+            // Return the updated status
+            return response()->json(['status' => 'success', 'message' => 'Room status updated']);
+        }
+        return response()->json(['status' => 'error', 'message' => 'Room not found'], 404);
+    }   
 }

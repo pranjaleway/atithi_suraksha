@@ -25,6 +25,8 @@
                                         <th>Aadhar Number</th>
                                         <th>Contact Number</th>
                                         <th>Room number</th>
+                                        <th>Check In</th>
+                                        <th>Check Out</th>
                                         <th>Date and Time</th>
                                     </tr>
                                 </thead>
@@ -37,6 +39,8 @@
                                             <td>{{ $booking->aadhar_number }}</td>
                                             <td>{{ $booking->contact_number }}</td>
                                             <td>{{ $booking->room_number }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($booking->check_in)->format('d M Y, h:i A') }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($booking->check_out)->format('d M Y, h:i A') }}</td>
                                             <td>{{ $booking->created_at->format('d M Y, h:i A') }}</td>
                                         </tr>
                                     @endforeach

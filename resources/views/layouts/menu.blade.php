@@ -99,6 +99,9 @@
                  Request::is('add-booking') ||
                  Request::is('members/*') ||
                  Request::is(patterns: 'add-member/*') ||
+                 Request::is('visitors/*') ||
+                 Request::is(patterns: 'add-visitor/*') ||
+                 Request::is('view-visitor-details/*') ||
                  Request::is('view-booking-details/*')
                      ? 'active'
                      : '' }}">
@@ -108,6 +111,7 @@
                  </a>
              </li>
          @endif
+
 
          {{-- <!-- Upload Entries -->
          @if (hasPermission('uploaded-entries', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
@@ -130,7 +134,7 @@
                  Request::is('transfer-uploaded-entries') ||
                  ($userTypeId != 4 &&
                      $userTypeId != 5 &&
-                     (Request::is('view-booking-details/*') || Request::is('members/*')));
+                     (Request::is('view-booking-details/*')));
          @endphp
 
          @if (hasPermission('transfer-entries', 'view'))
@@ -151,6 +155,17 @@
                  <a href="{{ route('hotel-employees') }}" class="text-white menu-link">
                      <i class="menu-icon tf-icons mdi mdi-account-group-outline"></i>
                      <div data-i18n="Hotel Employees">Hotel Employees</div>
+                 </a>
+             </li>
+         @endif
+
+         <!-- Room Master -->
+         @if (hasPermission('room-master', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
+             <li
+                 class="menu-item {{ Request::is('room-master') ? 'active' : '' }}">
+                 <a href="{{ route('room-master') }}" class="text-white menu-link">
+                     <i class="menu-icon tf-icons mdi mdi-bed-outline"></i>
+                     <div data-i18n="Room Master">Room Master</div>
                  </a>
              </li>
          @endif

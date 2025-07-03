@@ -56,27 +56,38 @@
                                 <td>{{ $booking->email ?? 'N/A' }}</td>
                             </tr>
                             <tr>
-                                <th scope="row">DOB</th>
-                                <td>{{ $booking->dob ?? 'N/A' }}</td>
+                                <th scope="row">Age</th>
+                                <td>{{ $booking->age ?? 'N/A' }}</td>
+                                <th scope="row">Gender</th>
+                                <td>{{ ucfirst($booking->gender ?? 'N/A') }}</td>
+                            </tr>
+                            <tr>
                                 <th scope="row">Aadhar Number</th>
                                 <td>{{ $booking->aadhar_number }}</td>
+                                 <th scope="row">Number of Guest</th>
+                                <td>{{ $booking->no_of_guest ?? 'N/A' }}</td>
                             </tr>
                             <tr>
+                                 <th scope="row">Number of Male</th>
+                                <td>{{ $booking->no_of_male ?? 'N/A' }}</td>
+                                 <th scope="row">Number of Female</th>
+                                <td>{{ $booking->no_of_female ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Number of Children</th>
+                                <td>{{ $booking->hotel->no_of_children ?? 'N/A' }}</td>
                                 <th scope="row">Hotel Name</th>
                                 <td>{{ $booking->hotel->hotel_name }}</td>
+                            </tr>
+                            <tr>
                                 <th scope="row">Room Number</th>
                                 <td>{{ $booking->room_number }}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Number of Guest</th>
-                                <td>{{ $booking->hotel->no_of_guest ?? 'N/A' }}</td>
                                 <th scope="row">Check IN</th>
-                                <td>{{ \Carbon\Carbon::parse($booking->check_in)->format('Y-m-d') }}</td>
+                                <td>{{ \Carbon\Carbon::parse($booking->check_in)->format('d M Y, h:i A') }}</td>
                             </tr>
-
                             <tr>
                                 <th scope="row">Check OUT</th>
-                                <td>{{ \Carbon\Carbon::parse($booking->check_out)->format('Y-m-d') }}</td>
+                                <td>{{ \Carbon\Carbon::parse($booking->check_out)->format('d M Y, h:i A') }}</td>
                                 <th scope="row">Address</th>
                                 <td>{{ $booking->address }}</td>
                             </tr>
@@ -129,6 +140,42 @@
                                         <td>
                                             @if ($member->id_proof_path)
                                                 <a href="{{ asset('storage/' . $member->id_proof_path) }}"
+                                                    target="_blank">View</a>
+                                            @else
+                                                N/A
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+
+
+                @if ($visitors->count() > 0)
+                    <h5 class="mt-4">Visitors</h5>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th scope="col">S.No.</th>
+                                    <th scope="col">Visitor Name</th>
+                                    <th scope="col">Aadhar Number</th>
+                                    <th scope="col">Entry Time</th>
+                                    <th scope="col">ID Proof</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($visitors as $key => $visitor)
+                                    <tr>
+                                        <th scope="row">{{ $key + 1 }}</th>
+                                        <td>{{ $visitor->visitor_name }}</td>
+                                        <td>{{ $visitor->aadhar_number }}</td>
+                                        <td>{{ Carbon\Carbon::parse($visitor->entry_time)->format('d M Y, h:i A') }}</td>
+                                        <td>
+                                            @if ($member->id_proof_path)
+                                                <a href="{{ asset('storage/' . $visitor->id_proof_path) }}"
                                                     target="_blank">View</a>
                                             @else
                                                 N/A

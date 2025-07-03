@@ -18,6 +18,7 @@
                             <th>Date and Time</th>
                             @if (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5)
                                 <th>Members</th>
+                                <th>Visitors</th>
                             @endif
                             <th>Actions</th>
                         </tr>
@@ -36,6 +37,7 @@
         var deleteUrl = "{{ route('delete-booking') }}";
         var listUrl = "{{ route('bookings', [$hotel_id ?? '', $date ?? '']) }}";
         var membersUrl = "{{ route('members', ':id') }}";
+        var visitorsUrl = "{{ route('visitors', ':id') }}";
         var viewDetailsUrl = "{{ route('view-booking-details', ':id') }}";
         var addBookingUrl = "{{ route('add-booking') }}";
         var userRole = @json(Auth::user()->user_type_id);

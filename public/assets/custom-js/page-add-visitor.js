@@ -1,22 +1,22 @@
 "use strict";
 
 document.addEventListener("DOMContentLoaded", function () {
-    const formAuthentication = document.querySelector("#add-edit-form");
+    const formAuthentication = document.querySelector("#add-form");
 
     if (formAuthentication) {
         const fv = FormValidation.formValidation(formAuthentication, {
             fields: {
-                guest_name: {
+                visitor_name: {
                     validators: {
                         notEmpty: {
-                            message: "Please enter guest name",
+                            message: "Please enter visitor name",
                         },
                     },
                 },
-                check_in: {
+                entry_time: {
                     validators: {
                         notEmpty: {
-                            message: "Please enter check in date",
+                            message: "Please enter entry date and time",
                         },
                     },
                 },
@@ -24,20 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     validators: {
                         notEmpty: {
                             message: "Please select gender",
-                        },
-                    },
-                },
-                check_out: {
-                    validators: {
-                        notEmpty: {
-                            message: "Please enter check out date",
-                        },
-                    },
-                },
-                'room_number_id[]': {
-                    validators: {
-                        notEmpty: {
-                            message: "Please select room number",
                         },
                     },
                 },
@@ -152,13 +138,6 @@ document.addEventListener("DOMContentLoaded", function () {
         // Prevent normal form submission
         fv.on("core.form.valid", function () {
             var formdata = new FormData(formAuthentication);
-             var selectedRooms = $('#room_number_id').val(); // e.g., ["2", "3"]
-
-            // Remove room_number_id[] from FormData
-            formdata.delete('room_number_id[]');
-
-            // Append room_number_id as a single comma-separated string
-            formdata.append('room_number_id[]', selectedRooms ? selectedRooms.join(',') : '');
             var url = formAuthentication.getAttribute("action");
             var submitButton = $("button[type='submit']");
             $(".invalid-feedback").empty();
@@ -245,47 +224,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-$(document).on("change", ".check_in", function () {
-    const checkIn = $(this).val();
-    if (!checkIn) return;
 
-    $.ajax({
-        url: getRoomUrl,
-        type: "GET",
-        data: {
-            check_in: checkIn,
-        },
-        success: function (res) {
-            if (res.status && res.data) {
-                const $select = $("#room_number_id");
-                $select
-                    .empty()
-                    .append(
-                        '<option value="" disabled>Select Room Number</option>'
-                    );
 
-                res.data.forEach((room) => {
-                    $select.append(
-                        `<option value="${room.id}">${room.room_number}</option>`
-                    );
-                });
-            }
-        },
-        error: function () {
-            alert("Failed to load available rooms.");
-        },
-    });
-});
-
-const room_number_id = $(".room_number_id");
-if (room_number_id.length) {
-    room_number_id.each(function () {
-        var $this = $(this);
-        select2Focus($this);
-        $this.wrap('<div class="position-relative"></div>').select2({
-            placeholder: "Select Room Number",
-            dropdownCssClass: "select2-scrollable",
-        });
-    });
-}
 

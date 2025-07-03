@@ -1,28 +1,28 @@
 @extends('layouts.main')
-@section('title', 'Add Member')
+@section('title', 'Add Visitor')
 
 @section('content')
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="card">
             <h4 class="card-header d-flex justify-content-between align-items-center">
-                Add Member
-                <a href="{{ route('bookings') }}" class="d-none d-sm-inline-block"><button type="button"
-                        class="btn btn-primary waves-effect waves-light mx-2">Back</button></a>
+                Add Visitor
+                <a href="{{ route('visitors', base64_encode($booking->id)) }}" class="d-none d-sm-inline-block"><button
+                        type="button" class="btn btn-primary waves-effect waves-light mx-2">Back</button></a>
             </h4>
             <hr style="margin: 0.25rem">
 
 
             <div class="card-body">
-                <form id="add-edit-form" action="{{ route('store-member') }}" method="POST">
+                <form id="add-form" action="{{ route('store-visitor') }}" method="POST">
                     @csrf
-                    <input type="hidden" name="parent_id" value="{{ $booking->id }}">
+                    <input type="hidden" name="booking_id" value="{{ $booking->id }}">
                     <div class="row">
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
-                                    <input class="form-control" type="text" name="guest_name" id="guest_name"
-                                        placeholder="Guest Full Name" value="" />
-                                    <label for="guest_name">Guest Full Name</label>
+                                    <input class="form-control" type="text" name="visitor_name" id="visitor_name"
+                                        placeholder="Visitor Full Name" value="" />
+                                    <label for="visitor_name">Visitor Full Name</label>
                                 </div>
                             </div>
                         </div>
@@ -32,15 +32,6 @@
                                     <input class="form-control" type="number" id="contact_number" name="contact_number"
                                         placeholder="Contact Number" value="" />
                                     <label for="contact_number">Contact Number</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-2">
-                            <div class="input-group input-group-merge">
-                                <div class="form-floating form-floating-outline">
-                                    <input class="form-control" type="email" name="email" id="email"
-                                        placeholder="Email" value="" />
-                                    <label for="email">Email</label>
                                 </div>
                             </div>
                         </div>
@@ -80,36 +71,14 @@
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
-                                    <input class="form-control check_in" type="datetime-local" name="check_in" id="check_in"
-                                        placeholder="YYYY-MM-DD" value=""
+                                    <input class="form-control entry_time" type="datetime-local" name="entry_time"
+                                        id="entry_time" placeholder="YYYY-MM-DD" value=""
                                         min="{{ \Carbon\Carbon::now()->format('Y-m-d\TH:i') }}" />
-                                    <label for="check_in">Check In</label>
+
+                                    <label for="entry_time">Entry Time</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6 mb-2">
-                            <div class="input-group input-group-merge">
-                                <div class="form-floating form-floating-outline">
-                                    <input class="form-control" type="datetime-local" name="check_out" id="check_out"
-                                        placeholder="YYYY-MM-DD" value=""
-                                        min="{{ \Carbon\Carbon::now()->format('Y-m-d\TH:i') }}" />
-                                    <label for="check_out">Check Out</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 mb-2">
-                            <div class="input-group input-group-merge">
-                                <div class="form-floating form-floating-outline">
-                                   <select multiple class="form-select room_number_id" name="room_number_id[]" id="room_number_id">
-                                    
-                                    </select>
-                                    <label>Room Number</label>
-                                </div>
-                            </div>
-                        </div>
-
-
 
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
@@ -188,12 +157,10 @@
 
 @section('scripts')
     <script>
-       var cityUrl = "{{ route('get-cities') }}";
-        var getRoomUrl = "{{ route('get-room-number') }}";
+        var cityUrl = "{{ route('get-cities') }}";
     </script>
-    <script src="{{ asset('assets/vendor/libs/select2/select2.js')}}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>
-    <script src="{{ asset('assets/custom-js/page-add-member.js') }}"></script>
+    <script src="{{ asset('assets/custom-js/page-add-visitor.js') }}"></script>
 
 
 @endsection

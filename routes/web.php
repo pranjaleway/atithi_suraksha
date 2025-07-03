@@ -103,6 +103,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::put('update-document', 'updateDocument')->name('update-document')->middleware('checkPermission:document,edit');
         Route::post('change-document-status', 'changeDocumentStatus')->name('change-document-status')->middleware('checkPermission:document,edit');
         Route::delete('delete-document', 'deleteDocument')->name('delete-document')->middleware('checkPermission:document,delete');
+
+        //Room Master
+        Route::get('room-master', 'roomMaster')->name('room-master')->middleware('checkPermission:room-master,view');
+        Route::post('add-room-master', 'storeRoomMaster')->name('add-room-master')->middleware('checkPermission:room-master,add');
+        Route::get('edit-room-master', 'editRoomMaster')->name('edit-room-master')->middleware('checkPermission:room-master,edit');
+        Route::put('update-room-master', 'updateRoomMaster')->name('update-room-master')->middleware('checkPermission:room-master,edit');
+        Route::post('change-room-master-status', 'changeRoomMasterStatus')->name('change-room-master-status')->middleware('checkPermission:room-master,edit');
+        Route::delete('delete-room-master', 'deleteRoomMaster')->name('delete-room-master')->middleware('checkPermission:room-master,delete');
+        Route::post('change-room-master-status', 'changeRoomMasterStatus')->name('change-room-master-status')->middleware('checkPermission:room-master,edit');
     });
 
 
@@ -184,5 +193,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('transfer-uploaded-entries/', 'addTranserUploadedEntries')->name('transfer-uploaded-entries')->middleware('checkPermission:transfer-entries,add');
         Route::post('store-manual-transfer-entry', 'storeManualTransferEntries')->name('store-manual-transfer-entry')->middleware('checkPermission:transfer-entries,add');
         Route::post('store-uploaded-transfer-entry', 'storeUploadedTransferEntries')->name('store-uploaded-transfer-entry')->middleware('checkPermission:transfer-entries,add');
+
+        //Get room Number
+        Route::get('get-room-numbers', 'getRoomNumbers')->name('get-room-number')->middleware('checkPermission:bookings,view');
+
+        //Visitors
+        Route::get('visitors/{id}', 'getVisitors')->name('visitors')->middleware('checkPermission:bookings,view');
+        Route::get('add-visitor/{id}', 'addVisitor')->name('add-visitor')->middleware('checkPermission:bookings,add');
+        Route::post('store-visitor', 'storeVisitor')->name('store-visitor')->middleware('checkPermission:bookings,add');
+        Route::get('view-visitor-details/{id}', 'viewVisitorDetails')->name('view-visitor-details')->middleware('checkPermission:bookings,view');
+        Route::delete('delete-visitor', 'deleteVisitor')->name('delete-visitor')->middleware('checkPermission:bookings,delete');
     });
 });

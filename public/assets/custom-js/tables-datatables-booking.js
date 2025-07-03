@@ -58,7 +58,21 @@ $(function () {
                         '" class="btn btn-primary btn-sm rounded-pill">Members</a>'
                     );
                 },
-            });
+            },
+            {
+                data:null,
+                title: "Visitors",
+                render: function (data, type, row) {
+                    var encodedId = btoa(row.id);
+                    var url = visitorsUrl.replace(":id", encodedId);
+                    return (
+                        '<a href="' +
+                        url +
+                        '" class="btn btn-primary btn-sm rounded-pill">Visitors</a>'
+                    );
+                }
+            }
+        );
         }
 
         // Always add the actions column last

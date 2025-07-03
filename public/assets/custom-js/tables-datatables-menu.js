@@ -474,7 +474,7 @@ $(function () {
             dataType: "json",
             success: function (response) {
                 if (response.status === "success") {
-                    toastr.success("Bank updated successfully", "Success");
+                    toastr.success(response.message, "Success");
                     dt_basic.ajax.reload();
                     offCanvasElEdit.hide();
                 }

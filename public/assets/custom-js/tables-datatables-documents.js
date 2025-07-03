@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 name: {
                     validators: {
                         notEmpty: {
-                            message: "Please enter bank name",
+                            message: "Please enter document name",
                         },
                     },
                 },
@@ -282,7 +282,7 @@ $(function () {
             name: {
                 validators: {
                     notEmpty: {
-                        message: "Please enter bank name",
+                        message: "Please enter document name",
                     },
                 },
             },
@@ -318,7 +318,7 @@ $(function () {
             dataType: "json",
             success: function (response) {
                 if (response.status === "success") {
-                    toastr.success("Bank updated successfully", "Success");
+                    toastr.success(response.message, "Success");
                     dt_basic.ajax.reload();
                     offCanvasElEdit.hide();
                 }

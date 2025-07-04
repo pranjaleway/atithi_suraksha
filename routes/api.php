@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\APIMasterController;
+use App\Http\Controllers\API\APIProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\API\AuthController as APIAUthController;
 use Illuminate\Http\Request;
@@ -34,5 +35,9 @@ Route::get('/user', function (Request $request) {
 
     Route::controller(APIMasterController::class)->group(function () {
         Route::get('get-menus', 'getMenus')->name('get-menus');
+    });
+
+    Route::controller(APIProfileController::class)->group(function () {
+        Route::get('get-profile-details', 'getProfileDetails')->name('get-profile-details');
     });
   });

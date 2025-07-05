@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\APIHotelController;
 use App\Http\Controllers\API\APIMasterController;
 use App\Http\Controllers\API\APIProfileController;
 use App\Http\Controllers\AuthController;
@@ -39,5 +40,13 @@ Route::get('/user', function (Request $request) {
 
     Route::controller(APIProfileController::class)->group(function () {
         Route::get('get-profile-details', 'getProfileDetails')->name('get-profile-details');
+        Route::post('update-profile', 'updateProfile')->name('update-profile');
+    });
+    Route::controller(APIHotelController::class)->group(function () {
+        Route::get('get-rooms', 'getRooms')->name('get-rooms');
+        Route::post('add-room', 'addRoom')->name('add-room');
+        Route::get('get-employees', 'getEmployees')->name('get-employees');
+        Route::post('add-employee', 'addEmployee')->name('add-employee');
+        Route::get('get-bookings', 'getBookings')->name('get-bookings');
     });
   });

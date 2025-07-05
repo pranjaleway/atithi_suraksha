@@ -822,8 +822,7 @@ private function generateGraphData(array $hotelIds = [])
             if (in_array($userType, [4, 5])) {
                 // Hotel / Hotel Employee
                 $bookingQuery = HotelBooking::where('hotel_id', $hotelID)
-                    ->whereDate('created_at', $date)
-                    ->whereNull('parent_id');
+                    ->whereDate('created_at', $date);
 
                 $transferQuery = HotelBooking::where('hotel_id', $hotelID)
                     ->whereDate('transfer_date', $date)

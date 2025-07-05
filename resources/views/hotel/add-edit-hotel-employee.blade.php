@@ -103,15 +103,6 @@
                         <div class="col-md-6 mb-2">
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
-                                    <textarea class="form-control" id="address" name="address" placeholder="Address">{{ isset($employee) ? $employee->address : '' }}</textarea>
-                                    <label for="address">Address</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6 mb-2">
-                            <div class="input-group input-group-merge">
-                                <div class="form-floating form-floating-outline">
                                     <select class="form-select" id="state_id" name="state_id">
                                         <option selected value="" disabled>Select State</option>
                                         @foreach ($states as $state)
@@ -151,6 +142,14 @@
                                     <input class="form-control" type="number" id="pincode" name="pincode"
                                         placeholder="Pincode" value="{{ isset($employee) ? $employee->pincode : '' }}" />
                                     <label for="pincode">Pincode</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <textarea class="form-control" id="address" name="address" placeholder="Address">{{ isset($employee) ? $employee->address : '' }}</textarea>
+                                    <label for="address">Address</label>
                                 </div>
                             </div>
                         </div>

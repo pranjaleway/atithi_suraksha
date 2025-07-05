@@ -32,7 +32,7 @@
                                     <!-- Contact Number -->
                                     <div class="mb-3 col-lg-6">
                                         <div class="form-floating form-floating-outline">
-                                            <input type="text" name="contact_number" class="form-control"
+                                            <input type="number" name="contact_number" class="form-control"
                                                 placeholder="Contact Number" />
                                             <label>Contact Number</label>
                                         </div>
@@ -160,15 +160,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Address -->
-                                    <div class="mb-3 col-lg-6 address-fields">
-                                        <div class="form-floating form-floating-outline">
-                                            <textarea class="form-control" name="address" placeholder="Address"></textarea>
-                                            <label>Address</label>
-                                        </div>
-                                        <span class="text-danger address-error"></span>
-                                    </div>
-
                                     <!-- State -->
                                     <div class="mb-3 col-lg-6 address-fields">
                                         <div class="form-floating form-floating-outline">
@@ -202,6 +193,15 @@
                                             <label>Pincode</label>
                                         </div>
                                         <span class="text-danger pincode-error"></span>
+                                    </div>
+
+                                     <!-- Address -->
+                                    <div class="mb-3 col-lg-6 address-fields">
+                                        <div class="form-floating form-floating-outline">
+                                            <textarea class="form-control" name="address" placeholder="Address"></textarea>
+                                            <label>Address</label>
+                                        </div>
+                                        <span class="text-danger address-error"></span>
                                     </div>
 
                                     <!-- ID Proof -->

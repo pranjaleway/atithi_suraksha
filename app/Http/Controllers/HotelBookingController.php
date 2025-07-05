@@ -207,7 +207,7 @@ class HotelBookingController extends Controller
                 $prefix . 'email' => 'nullable|email|max:255',
                 $prefix . 'id_proof_path' => 'required|file|mimes:jpeg,jpg,png,pdf',
                 $prefix . 'same_address' => 'nullable|boolean',
-                $prefix . 'age' => 'nullable|integer|min:0',
+                $prefix . 'age' => 'required|integer|min:0',
                 $prefix . 'gender' => 'required|in:male,female,other',
             ];
 
@@ -485,7 +485,7 @@ class HotelBookingController extends Controller
             'guest_name' => 'required',
             'check_in' => 'required|date',
             'check_out' => 'nullable|date',
-            'age' => 'nullable|numeric',
+            'age' => 'required|numeric',
             'gender' => 'required|in:male,female,other',
             'room_number_id' => 'required',
             'contact_number' => 'required|numeric|digits:10',

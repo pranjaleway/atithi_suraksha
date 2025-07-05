@@ -49,32 +49,6 @@
 
 <!-- Main JS -->
 <script src="{{ asset('assets/js/main.js') }}"></script>
-<script> 
-$(document).on("click", ".mark-as-read", function () {
-    var notificationId = $(this).data("id");
-    var item = $(this);
-
-    $.ajax({
-        url: "/mark-as-read",
-        type: "POST",
-        data: {
-            _token: $('meta[name="csrf-token"]').attr("content"), 
-            id: notificationId
-        },
-        success: function (response) {
-            if (response.success) {
-                if(response.redirect){
-                    window.location.href = response.redirect;
-                }
-            }
-        },
-        error: function () {
-            alert("Failed to mark as read.");
-        }
-    });
-});
-
-</script>
 
 <!-- Page JS -->
 @yield('scripts')

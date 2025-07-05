@@ -137,11 +137,12 @@
                                         <span class="text-danger check_out-error"></span>
                                     </div>
 
-                                     <!-- Room Number -->
+                                    <!-- Room Number -->
                                     <div class="mb-3 col-lg-6 common-fields">
                                         <div class="form-floating form-floating-outline">
-                                            <select multiple class="form-select room_number_id" name="room_number_id" id="room_number_id">
-                                                
+                                            <select multiple class="form-select room_number_id" name="room_number_id"
+                                                id="room_number_id">
+
                                             </select>
                                             <label>Room Number</label>
                                         </div>
@@ -215,19 +216,33 @@
                                         <div class="preview mt-2"></div>
                                     </div>
 
+
+
+                                    <div class="mb-3 d-none showOtherGuestsDiv">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="showOtherGuests">
+                                            <label class="form-check-label" for="showOtherGuests">
+                                                Do you want to add other member details?
+                                            </label>
+                                        </div>
+                                    </div>
+
+
+
                                     <!-- Delete Button -->
                                     <div class="mb-3 deleteDiv d-none col-lg-12">
                                         <button class="btn btn-outline-danger" data-repeater-delete type="button">
                                             <i class="mdi mdi-close me-1"></i> Delete
                                         </button>
                                     </div>
+
                                 </div>
                                 <hr />
                             </div>
                         </div>
 
                         <div class="mb-0">
-                            <button class="btn btn-primary" data-repeater-create type="button">
+                            <button class="btn btn-primary d-none" data-repeater-create type="button">
                                 <i class="mdi mdi-plus me-1"></i> Add
                             </button>
                         </div>
@@ -253,7 +268,7 @@
     {{-- <script src="{{ asset('assets/js/forms-extras.js') }}"></script> --}}
     <script src="{{ asset('assets/vendor/libs/jquery-repeater/jquery-repeater.js') }}"></script>
     <script src="{{ asset('assets/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.js') }}"></script>
-    <script src="{{ asset('assets/vendor/libs/select2/select2.js')}}"></script>
+    <script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
     {{-- <script src="{{ asset('assets/js/forms-pickers.js') }}"></script> --}}
 
     {{-- <script src="{{ asset('assets/custom-js/common.js') }}"></script> --}}

@@ -201,7 +201,7 @@
                             </div>
                         </div>
 
-                        @foreach ($documents as $document)
+                        {{-- @foreach ($documents as $document)
                             <div class="col-md-6 mb-3">
                                 <div class="input-group input-group-merge">
                                     <div class="form-floating form-floating-outline">
@@ -212,7 +212,25 @@
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
+                        @endforeach --}}
+
+                        <div class="col-md-6 mb-3">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <select class="form-select" id="document_id" name="document_id">
+                                        <option selected value="" disabled>Select Document</option>
+                                        @foreach ($documents as $document)
+                                            <option value="{{ $document->id }}" data-name="{{ $document->name }}">{{ $document->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <label for="document_id">Select Document</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3" id="documentUploadContainer">
+                            <!-- File input will be dynamically added here -->
+                        </div>
 
                         <!-- Preview section for all selected documents -->
                         <div class="row mt-4" id="all-preview-row"></div>

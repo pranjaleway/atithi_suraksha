@@ -22,7 +22,6 @@ $(function () {
                 },
             },
             { data: "guest_name", name: "guest_name" },
-            { data: "aadhar_number", name: "aadhar_number" },
             { data: "contact_number", name: "contact_number" },
             { data: "room_number", name: "room_number" },
             {

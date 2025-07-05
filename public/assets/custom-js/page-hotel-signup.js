@@ -238,7 +238,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
                                     min: 10,
                                     max: 10,
                                     message: "Pan number must be 10 digits",
-                                }
+                                },
                             },
                         },
                     },
@@ -276,7 +276,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
                     success: function (response) {
                         if (response.status === "success") {
                             toastr.success(response.message, "Success");
-                           stepsValidationForm.reset();
+                            stepsValidationForm.reset();
                             validationStepper.to(0);
                         }
                     },
@@ -376,4 +376,29 @@ document.addEventListener("DOMContentLoaded", function (e) {
             });
         }
     })();
+});
+
+$("#document_id").on("change", function () {
+    $("#all-preview-row").empty();
+
+    var documentId = $(this).val();
+    var documentName = $(this).find(":selected").data("name");
+
+    if (!documentId) {
+        $("#documentUploadContainer").html("");
+        return;
+    }
+
+    // Create the file input dynamically
+    var fileInputHtml = `
+            <div class="input-group input-group-merge">
+                <div class="form-floating form-floating-outline">
+                    <input type="file" class="form-control document-input"
+                        id="document_${documentId}" data-label="${documentName}"
+                        name="document[${documentId}]" accept="image/*,application/pdf">
+                    <label for="document_${documentId}">${documentName}</label>
+                </div>
+            </div>`;
+
+    $("#documentUploadContainer").html(fileInputHtml);
 });

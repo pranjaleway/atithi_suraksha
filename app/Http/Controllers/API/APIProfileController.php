@@ -53,7 +53,7 @@ class APIProfileController extends Controller
 
                     $data = [
                         'user_id' => $data->user_id,
-                        'hotel_name' => $data->hotel_name,
+                        'name' => $data->hotel_name,
                         'owner_name' => $data->owner_name,
                         'email' => $data->email,
                         'contact_number' => $data->contact_number,
@@ -76,7 +76,7 @@ class APIProfileController extends Controller
                 $data = HotelEmployee::with( 'state', 'city', 'employeeDocuments')->where('user_id', $userId)->first();
                 $data = [
                     'user_id' => $data->user_id,
-                    'employee_name' => $data->employee_name,
+                    'name' => $data->employee_name,
                     'email' => $data->email,
                     'contact_number' => $data->contact_number,
                     'aadhar_number' => $data->aadhar_number,
@@ -93,6 +93,14 @@ class APIProfileController extends Controller
             } else {
                 return response()->json(['error' => 'Unauthorized', 'status' => 'error']);
             }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage(), 'status' => 'error']);
+        }
+    }
+
+    public function updateProfile(Request $request) {
+        try{
+           
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage(), 'status' => 'error']);
         }

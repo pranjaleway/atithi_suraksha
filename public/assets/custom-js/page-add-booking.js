@@ -321,37 +321,44 @@ $(document).on("input", "#no_of_guest", function () {
         $(".count-fields").addClass("d-none");
     }
 
-    // If input is empty or invalid, remove all repeater items except the first one
-    if (!rawValue || guestCountForVisibility <= 0) {
-        $repeaterItems.each(function (index) {
-            if (index > 0) {
-                $(this).slideUp(function () {
-                    $(this).remove();
-                });
-            }
-        });
-        return;
+    if (guestCountForVisibility > 1){
+        $('.showOtherGuestsDiv').removeClass('d-none');
+        $("#showOtherGuests").trigger("change"); 
+    } else {
+        $('.showOtherGuestsDiv').addClass('d-none');
     }
 
-    // Add/remove logic
-    const currentCount = $repeaterList.find("[data-repeater-item]").length;
+    // // If input is empty or invalid, remove all repeater items except the first one
+    // if (!rawValue || guestCountForVisibility <= 0) {
+    //     $repeaterItems.each(function (index) {
+    //         if (index > 0) {
+    //             $(this).slideUp(function () {
+    //                 $(this).remove();
+    //             });
+    //         }
+    //     });
+    //     return;
+    // }
 
-    if (guestCountForRepeater > currentCount) {
-        const timesToAdd = guestCountForRepeater - currentCount;
-        for (let i = 0; i < timesToAdd; i++) {
-            $addButton.trigger("click");
-        }
-    } else if (guestCountForRepeater < currentCount) {
-        const timesToRemove = currentCount - guestCountForRepeater;
-        for (let i = 0; i < timesToRemove; i++) {
-            $repeaterList
-                .find("[data-repeater-item]")
-                .last()
-                .slideUp(function () {
-                    $(this).remove();
-                });
-        }
-    }
+    // // Add/remove logic
+    // const currentCount = $repeaterList.find("[data-repeater-item]").length;
+
+    // if (guestCountForRepeater > currentCount) {
+    //     const timesToAdd = guestCountForRepeater - currentCount;
+    //     for (let i = 0; i < timesToAdd; i++) {
+    //         $addButton.trigger("click");
+    //     }
+    // } else if (guestCountForRepeater < currentCount) {
+    //     const timesToRemove = currentCount - guestCountForRepeater;
+    //     for (let i = 0; i < timesToRemove; i++) {
+    //         $repeaterList
+    //             .find("[data-repeater-item]")
+    //             .last()
+    //             .slideUp(function () {
+    //                 $(this).remove();
+    //             });
+    //     }
+    // }
 });
 
 $(document).on("change", ".check_in", function () {
@@ -397,3 +404,34 @@ if (room_number_id.length) {
         });
     });
 }
+
+$(document).on("change", "#showOtherGuests", function () {
+    const guestCount = parseInt($("#no_of_guest").val()) || 1;
+    const $form = $(this).closest("form");
+    const $addButton = $form.find("[data-repeater-create]");
+    const $repeaterList = $form.find("[data-repeater-list]");
+    const $repeaterItems = $repeaterList.find("[data-repeater-item]");
+
+    if ($(this).is(":checked") && guestCount > 1) {
+        const currentCount = $repeaterItems.length;
+        const toAdd = guestCount - currentCount;
+
+        for (let i = 0; i < toAdd; i++) {
+            $addButton.trigger("click");
+        }
+    } else {
+        $repeaterItems.each(function (index) {
+            if (index > 0) {
+                $(this).remove();
+            }
+        });
+    }
+});
+
+// Re-trigger checkbox logic when no_of_guest changes
+$(document).on("input", "#no_of_guest", function () {
+    $("#showOtherGuests").trigger("change");
+});
+
+
+

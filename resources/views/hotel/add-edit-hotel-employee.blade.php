@@ -13,7 +13,8 @@
 
 
             <div class="card-body">
-                <form id="add-edit-form" action="{{ isset($employee) ? route('update-hotel-employee') : route('store-hotel-employee') }}"
+                <form id="add-edit-form"
+                    action="{{ isset($employee) ? route('update-hotel-employee') : route('store-hotel-employee') }}"
                     method="POST">
                     @csrf
                     <input type="hidden" name="id" value="{{ isset($employee) ? $employee->id : '' }}">
@@ -22,7 +23,8 @@
                             <div class="input-group input-group-merge">
                                 <div class="form-floating form-floating-outline">
                                     <input class="form-control" type="text" name="employee_name" id="employee_name"
-                                        placeholder="Employee Name" value="{{ isset($employee) ? $employee->employee_name : '' }}" />
+                                        placeholder="Employee Name"
+                                        value="{{ isset($employee) ? $employee->employee_name : '' }}" />
                                     <label for="employee_name">Employee Name</label>
                                 </div>
                             </div>
@@ -153,7 +155,7 @@
                             </div>
                         </div>
 
-                        @foreach ($documents as $document)
+                        {{-- @foreach ($documents as $document)
                             <div class="col-md-6 mb-3">
                                 <div class="input-group input-group-merge">
                                     <div class="form-floating form-floating-outline">
@@ -164,7 +166,27 @@
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
+                        @endforeach --}}
+
+                        <div class="col-md-6 mb-3">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <select class="form-select" id="document_id" name="document_id">
+                                        <option selected value="" disabled>Select Document</option>
+                                        @foreach ($documents as $document)
+                                            <option value="{{ $document->id }}" data-name="{{ $document->name }}">
+                                                {{ $document->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <label for="document_id">Select Document</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3" id="documentUploadContainer">
+                            <!-- File input will be dynamically added here -->
+                        </div>
+
 
                         <!-- Preview section for all selected documents -->
                         <div class="row mt-4" id="all-preview-row"></div>

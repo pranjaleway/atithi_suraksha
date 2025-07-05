@@ -269,6 +269,16 @@
              </li>
          @endif
 
+         <!-- Notification -->
+         @if (hasPermission('notifications', 'view'))
+             <li class="menu-item {{ Request::is('notifications') ? 'active' : '' }}">
+                 <a href="{{ route('notifications') }}" class="menu-link text-white">
+                     <i class="menu-icon tf-icons mdi mdi-bell-outline"></i>
+                     <div data-i18n="Notifications">Notifications</div>
+                 </a>
+             </li>
+         @endif
+
      </ul>
  </aside>
  <!-- / Menu -->

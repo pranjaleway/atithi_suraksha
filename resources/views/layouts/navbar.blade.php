@@ -16,39 +16,42 @@
             <!-- Notification -->
 
 
-            <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-2 me-xl-1">
+             <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-2 me-xl-1">
                 <a class="nav-link btn btn-text-secondary rounded-pill btn-icon dropdown-toggle hide-arrow"
                     href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside"
                     aria-expanded="false">
                     <i class="mdi mdi-bell-outline mdi-24px"></i>
-                    
+                    @if ($count > 0)
                         <span
                             class="position-absolute top-0 start-50 translate-middle-y badge badge-dot bg-danger mt-2 border">
                         </span>
+                    @endif
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end py-0">
                     <li class="dropdown-menu-header border-bottom">
                         <div class="dropdown-header d-flex align-items-center py-3">
-                            {{-- @if ($totalNotifications > 0)
+                            @if ($count > 0)
                             <h6 class="mb-0 me-auto">Notification</h6>
-                            <span class="badge rounded-pill bg-label-primary">{{ $totalNotifications }} New</span>
+                            <span class="badge rounded-pill bg-label-primary">{{ $count }} New</span>
                             @else
                             <h6 class="mb-0 m-auto">No Notification</h6>
-                            @endif --}}
+                            @endif
                         </div>
                     </li>
                     <li class="dropdown-notifications-list scrollable-container">
                         <ul class="list-group list-group-flush">
-                            {{-- @foreach ($notifications as $notification)
+                            @foreach ($notifications as $notification)
                                 <li class="list-group-item list-group-item-action dropdown-notifications-item notification-item mark-as-read"
                                     data-id="{{ $notification->id }}">
                                     <div class="d-flex gap-2">
                                         <div class="flex-shrink-0"></div>
                                         <div class="d-flex flex-column flex-grow-1 overflow-hidden w-px-200">
-                                            <h6 class="mb-1 text-truncate">@isset($notification->data['title']){{ 
-                                                $notification->data['title'] }} @endisset</h6>
+                                            <h6 class="mb-1 text-truncate">@isset($notification->user->name){{ 
+                                                $notification->user->name }} @endisset</h6>
+                                            <h6 class="mb-1 text-truncate">@isset($notification->title){{ 
+                                                $notification->title }} @endisset</h6>
                                             <small class="text-truncate text-body">
-                                               {{ $notification->data['message'] }}
+                                               {{ $notification->message }}
                                             </small>
                                         </div>
                                         <div class="flex-shrink-0 dropdown-notifications-actions">
@@ -57,18 +60,18 @@
                                         </div>
                                     </div>
                                 </li>
-                            @endforeach --}}
+                            @endforeach
                         </ul>
                     </li>
 
-                    {{-- @if ($totalNotifications > 5)
+                    @if ($count > 5)
                         <li class="dropdown-menu-footer border-top p-2">
                             <a href="{{ route('notifications') }}"
                                 class="btn btn-primary d-flex justify-content-center">
                                 View all notifications
                             </a>
                         </li>
-                    @endif --}}
+                    @endif
                 </ul>
             </li>
             <!--/ Notification -->

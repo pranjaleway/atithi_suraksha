@@ -4,7 +4,7 @@
 
 <div class="authentication-wrapper authentication-cover">
     <!-- Logo -->
-    <a href="{{ route('login')}}" class="auth-cover-brand d-flex align-items-center gap-2">
+    <a href="{{ route('login') }}" class="auth-cover-brand d-flex align-items-center gap-2">
         <span class="app-brand-logo demo">
             <span style="color: var(--bs-primary)">
                 <svg width="268" height="150" viewBox="0 0 38 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -48,7 +48,7 @@
         <!-- Left Text -->
         <div class="d-none d-lg-flex col-lg-4 align-items-center justify-content-center p-5 mt-5 mt-xxl-0">
             <img alt="register-multi-steps-illustration"
-                src="{{ asset('assets/img/illustrations/auth-register-multi-steps-illustration.png')}}"
+                src="{{ asset('assets/img/illustrations/auth-register-multi-steps-illustration.png') }}"
                 class="h-auto mh-100 w-px-200" />
         </div>
         <!-- /Left Text -->
@@ -234,21 +234,25 @@
                                             <label for="pan_number">Pan Number</label>
                                         </div>
                                     </div>
-                                    @foreach ($documents as $document)
-                                        <div class="col-sm-6">
-                                            <div class="input-group input-group-merge">
-                                                <div class="form-floating form-floating-outline">
-                                                    <input type="file" class="form-control document-input"
-                                                        id="document_{{ $document->id }}"
-                                                        data-label="{{ $document->name }}"
-                                                        name="document[{{ $document->id }}]"
-                                                        accept="image/*,application/pdf">
-                                                    <label
-                                                        for="document_{{ $document->id }}">{{ $document->name }}</label>
-                                                </div>
+                                    <div class="col-sm-6">
+                                        <div class="input-group input-group-merge">
+                                            <div class="form-floating form-floating-outline">
+                                                <select class="form-select" id="document_id" name="document_id">
+                                                    <option selected value="" disabled>Select Document</option>
+                                                    @foreach ($documents as $document)
+                                                        <option value="{{ $document->id }}"
+                                                            data-name="{{ $document->name }}">{{ $document->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <label for="document_id">Select Document</label>
                                             </div>
                                         </div>
-                                    @endforeach
+                                    </div>
+
+                                    <div class="col-md-6 mb-3" id="documentUploadContainer">
+                                        <!-- File input will be dynamically added here -->
+                                    </div>
 
                                     <!-- Preview section for all selected documents -->
                                     <div class="row mt-4" id="all-preview-row"></div>

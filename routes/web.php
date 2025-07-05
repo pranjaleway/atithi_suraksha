@@ -6,6 +6,7 @@ use App\Http\Controllers\HotelBookingController;
 use App\Http\Controllers\HotelController;
 use App\Http\Controllers\HotelEmployeeController;
 use App\Http\Controllers\MasterController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PoliceStationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SPOfficeController;
@@ -40,6 +41,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::controller(AuthController::class)->group(function () {
         Route::get('dashboard', 'dashboard')->name('dashboard');
+        Route::get('get-filtered-data', 'getFilterGraphData')->name('get-filtered-data');
         Route::get('logout', 'logout')->name('logout');
 
     });
@@ -203,5 +205,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('store-visitor', 'storeVisitor')->name('store-visitor')->middleware('checkPermission:bookings,add');
         Route::get('view-visitor-details/{id}', 'viewVisitorDetails')->name('view-visitor-details')->middleware('checkPermission:bookings,view');
         Route::delete('delete-visitor', 'deleteVisitor')->name('delete-visitor')->middleware('checkPermission:bookings,delete');
+    });
+
+    Route::controller(NotificationController::class)->group(function () {
+        Route::get('notifications', 'notifications')->name('notifications');
+        Route::post('store-notification', 'storeNotification')->name('store-notification');
+        Route::delete('delete-notification', 'deleteNotification')->name('delete-notification');
     });
 });

@@ -104,7 +104,9 @@ $(document).ready(function () {
     const $inputs = $(".document-input");
     const $previewContainer = $("#all-preview-row");
 
-    $inputs.on("change", function () {
+    $(document).on("change", ".document-input", function () {
+        
+  
         const files = this.files;
         const label = $(this).data("label");
         const id = this.id;

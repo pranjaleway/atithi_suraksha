@@ -46,7 +46,7 @@
                             <tr>
                                 <th scope="row">Booking ID</th>
                                 <td>{{ $booking->booking_id ?? 'N/A' }}</td>
-                                <th scope="row">Full Name</th>
+                                <th scope="row">Guest Name</th>
                                 <td>{{ $booking->guest_name }}</td>
                             </tr>
                             <tr>
@@ -126,6 +126,7 @@
                                     <th scope="col">S.No.</th>
                                     <th scope="col">Guest Name</th>
                                     <th scope="col">Aadhar Number</th>
+                                    <th scope="col">Contact Number</th>
                                     <th scope="col">Room Number</th>
                                     <th scope="col">ID Proof</th>
                                 </tr>
@@ -136,6 +137,7 @@
                                         <th scope="row">{{ $key + 1 }}</th>
                                         <td>{{ $member->guest_name }}</td>
                                         <td>{{ $member->aadhar_number }}</td>
+                                        <td>{{ $member->contact_number ?? 'N/A' }}</td>
                                         <td>{{ $member->room_number }}</td>
                                         <td>
                                             @if ($member->id_proof_path)
@@ -162,6 +164,7 @@
                                     <th scope="col">S.No.</th>
                                     <th scope="col">Visitor Name</th>
                                     <th scope="col">Aadhar Number</th>
+                                    <th scope="col">Contact Number</th>
                                     <th scope="col">Entry Time</th>
                                     <th scope="col">ID Proof</th>
                                 </tr>
@@ -172,6 +175,7 @@
                                         <th scope="row">{{ $key + 1 }}</th>
                                         <td>{{ $visitor->visitor_name }}</td>
                                         <td>{{ $visitor->aadhar_number }}</td>
+                                        <td>{{ $visitor->contact_number ?? 'N/A' }}</td>
                                         <td>{{ Carbon\Carbon::parse($visitor->entry_time)->format('d M Y, h:i A') }}</td>
                                         <td>
                                             @if ($member->id_proof_path)

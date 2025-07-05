@@ -32,17 +32,17 @@ document.addEventListener("DOMContentLoaded", function () {
     if (formAddNewRecord) {
         fv = FormValidation.formValidation(formAddNewRecord, {
             fields: {
-                room_number: {
+                title: {
                     validators: {
                         notEmpty: {
-                            message: "Please enter room number",
+                            message: "Please enter title",
                         },
                     },
                 },
-                room_type: {
+                message: {
                     validators: {
                         notEmpty: {
-                            message: "Please select room type",
+                            message: "Please enter message",
                         },
                     },
                 },
@@ -96,30 +96,12 @@ $(function () {
                         return meta.row + 1; // sequence number
                     },
                 },
-                { data: "room_number", name: "room_number" },
-                { data: "room_type", name: "room_type" },
                 {
-                    data: "status",
-                    render: function (data, type, row) {
-                        return data == 0
-                            ? `
-                            <label class="switch switch-primary">
-                            <input type="checkbox" class="switch-input status_${row.id}" onclick="changeStatus(${row.id})" data-id="${row.id}" data-url="${changeStatusURl}" name="status">
-                            <span class="switch-toggle-slider">
-                            <span class="switch-on"></span>
-                            <span class="switch-off"></span>
-                            </span>
-                            </label>`
-                            : `
-                            <label class="switch switch-primary">
-                            <input type="checkbox" class="switch-input status_${row.id}" onclick="changeStatus(${row.id})" data-id="${row.id}" data-url="${changeStatusURl}" checked name="status">
-                            <span class="switch-toggle-slider">
-                            <span class="switch-on"></span>
-                            <span class="switch-off"></span>
-                            </span>
-                            </label>`;
-                    },
+                    data: "user.name",
+                    name: "user.name"
                 },
+                { data: "title", name: "title" },
+                { data: "message", name: "message" },
             ],
             columnDefs: [
                 {
@@ -138,16 +120,11 @@ $(function () {
                               '" ><i class="mdi mdi-delete"></i></a>' +
                               "</div>"
                             : "";
-                        var editBtn = full.canEdit
-                            ? '<a href="javascript:;" data-id="' +
-                              full.id +
-                              '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record"><i class="mdi mdi-pencil-outline"></i></a>'
-                            : "";
 
-                        if (deleteBtn == "" && editBtn == "") {
+                        if (deleteBtn == "") {
                             return "Permission Denied";
                         } else {
-                            return editBtn + deleteBtn;
+                            return deleteBtn;
                         }
                     },
                 },
@@ -190,7 +167,7 @@ $(function () {
         });
 
         $("div.head-label").html(
-            '<h5 class="card-title mb-0">Room Master</h5>'
+            '<h5 class="card-title mb-0">Notifications</h5>'
         );
     }
 
@@ -255,122 +232,8 @@ $(function () {
         });
     });
 
-    //Edit record
 
-    const offCanvasElementEdit = document.querySelector("#editModal");
-    const offCanvasElEdit = new bootstrap.Offcanvas(offCanvasElementEdit);
-
-    $(".datatables-basic tbody").on("click", ".edit-record", function () {
-        const id = $(this).data("id");
-        if (id) {
-            offCanvasElEdit.show();
-            $(".form-control").removeClass("is-invalid");
-            $(".invalid-feedback").empty();
-
-            $.ajax({
-                url: editUrl,
-                type: "GET",
-                dataType: "json",
-                data: {
-                    id: id,
-                },
-                success: function (response) {
-                    $("#edit_room_number").val(response.data.room_number);
-                    $("#edit_room_type").val(response.data.room_type);
-                    $("#edit_id").val(response.data.id);
-                },
-                error: function (xhr) {
-                    toastr.error("Something went wrong", "Error");
-                },
-            });
-        }
-    });
-
-    //Submit edit form
-
-    const formEditRecord = document.getElementById("editForm");
-    let fve;
-
-    // Initialize form validation only once
-
-    fve = FormValidation.formValidation(formEditRecord, {
-        fields: {
-            room_number: {
-                validators: {
-                    notEmpty: {
-                        message: "Please enter room number",
-                    },
-                },
-            },
-            room_type: {
-                validators: {
-                    notEmpty: {
-                        message: "Please select room type",
-                    },
-                },
-            },
-        },
-        plugins: {
-            trigger: new FormValidation.plugins.Trigger(),
-            bootstrap5: new FormValidation.plugins.Bootstrap5({
-                eleValidClass: "",
-                rowSelector: ".form-floating, .form-check",
-            }),
-            submitButton: new FormValidation.plugins.SubmitButton(),
-            autoFocus: new FormValidation.plugins.AutoFocus(),
-        },
-    });
-
-    fve.on("core.form.valid", function () {
-        var id = $("#edit_id").val();
-        var room_number = $("#edit_room_number").val();
-        var room_type = $("#edit_room_type").val();
-        var url = $("#editForm").attr("action");
-        var submitButton = $("button[type='submit']");
-        toggleButtonLoadingState(submitButton, true);
-
-        $.ajax({
-            url: url,
-            type: "PUT",
-            data: {
-                id: id,
-                room_number: room_number,
-                room_type: room_type,
-            },
-            headers: {
-                "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
-            },
-            dataType: "json",
-            success: function (response) {
-                if (response.status === "success") {
-                    toastr.success(response.message, "Success");
-                    dt_basic.ajax.reload();
-                    offCanvasElEdit.hide();
-                }
-            },
-            error: function (xhr) {
-                if (xhr.status === 422) {
-                    let errors = xhr.responseJSON.errors;
-                    $(".invalid-feedback").remove(); // Remove previous errors
-                    $(".is-invalid").removeClass("is-invalid"); // Reset validation classes
-
-                    $.each(errors, function (key, value) {
-                        let inputField = $("#edit_" + key);
-                        inputField.addClass("is-invalid");
-                        inputField.after(
-                            `<div class="invalid-feedback">${value}</div>`
-                        );
-                    });
-                } else {
-                    toastr.error("Something went wrong", "Error");
-                }
-            },
-            complete: function () {
-                toggleButtonLoadingState(submitButton, false);
-            },
-        });
-    });
-
+  
     // Filter form control to default size
     // ? setTimeout used for multilingual table initialization
     setTimeout(() => {

@@ -20,9 +20,13 @@ class PoliceStationController extends Controller
         if (!hasPermission('police-stations', 'view')) {
             abort(403, 'Unauthorized');
         }
-
         if ($request->ajax()) {
-            $data = PoliceStation::orderBy('id', 'desc')->get();
+            if(Auth::user()->user_type_id == 2) {
+                $spOfficeID = SpOffice::where('user_id', Auth::user()->id)->first()->id;
+                $data = PoliceStation::where('sp_office_id', $spOfficeID)->orderBy('id', 'desc')->get();
+            } else {
+                $data = PoliceStation::orderBy('id', 'desc')->get();
+            }
             $canAdd = hasPermission('police-stations', 'add');
             $canEdit = hasPermission('police-stations', 'edit');
             $canDelete = hasPermission('police-stations', 'delete');

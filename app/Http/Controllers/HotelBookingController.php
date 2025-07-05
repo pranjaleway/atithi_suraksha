@@ -304,6 +304,20 @@ class HotelBookingController extends Controller
         }
 
         $validated = $request->validate($rules, $messages);
+        $firstGuest = $guests[0];
+
+        $totalGuests = (int) ($firstGuest['no_of_male'] ?? 0)
+            + (int) ($firstGuest['no_of_female'] ?? 0)
+            + (int) ($firstGuest['no_of_children'] ?? 0);
+
+        if ((int) $firstGuest['no_of_guest'] !== $totalGuests) {
+            return response()->json([
+                'status' => 'error',
+                'errors' => [
+                    "guests.0.no_of_guest" => ["Total guests must match the sum of male, female, and children."]
+                ]
+            ], 422);
+        }
 
         // Auth & hotel lookup
         $user = Auth::user();
@@ -316,9 +330,10 @@ class HotelBookingController extends Controller
             $hotelId = $employee->hotel_id ?? null;
             $hotelEmployeeId = $employee->id ?? null;
         }
-
+        $cityId = $guests[0]['city_id'];
+        $policeStationId = Hotel::where('id', $hotelId)->value('police_station_id');
+        $bookingId = $this->generateBookingId($cityId, $policeStationId, $hotelId);
         $savedIds = [];
-        $bookingId = uniqid();
 
         foreach ($guests as $index => $guestData) {
             $filePath = null;
@@ -386,7 +401,29 @@ class HotelBookingController extends Controller
     }
 
 
+    private function generateBookingId($cityId, $policeStationId, $hotelId)
+    {
+        $datePart = now()->format('Ymd'); // Example: 20250703
 
+        // Match all booking IDs ending with today's date + sequence
+        $todayBookings = HotelBooking::where('booking_id', 'like', "%{$datePart}%")
+            ->pluck('booking_id');
+
+        $maxSequence = 0;
+
+        foreach ($todayBookings as $bookingId) {
+            // Get the last 3 characters as sequence
+            $sequence = (int) substr($bookingId, -3);
+            if ($sequence > $maxSequence) {
+                $maxSequence = $sequence;
+            }
+        }
+
+        $nextSequence = str_pad($maxSequence + 1, 3, '0', STR_PAD_LEFT);
+
+        // Build final booking ID
+        return "{$cityId}{$policeStationId}{$hotelId}{$datePart}{$nextSequence}";
+    }
 
 
     public function getMembers(Request $request, $id)
@@ -842,7 +879,7 @@ class HotelBookingController extends Controller
         $bookings = HotelBooking::where('status', 0)
             ->whereDate('check_in', '<=', $dayAfterTomorrow) // Includes all previous days and up to day after tomorrow
             ->get();
-            return view('hotel.add-manual-transfer-entries', compact('bookings'));
+        return view('hotel.add-manual-transfer-entries', compact('bookings'));
     }
     public function storeManualTransferEntries(Request $request)
     {

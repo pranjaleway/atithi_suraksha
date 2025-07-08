@@ -8,10 +8,10 @@ use App\Models\Hotel;
 use App\Models\HotelEmployee;
 use App\Models\HotelEmployeeDoc;
 use App\Models\HotelOwnerDoc;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use User;
 
 class APIProfileController extends Controller
 {

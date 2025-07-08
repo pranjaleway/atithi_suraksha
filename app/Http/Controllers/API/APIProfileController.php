@@ -316,9 +316,21 @@ private function detectChanges(array $original, array $updated, array $exclude =
 private function handleDocuments($request, $ownerId, $folder, $model, $ownerKey): array
 {
     $updatedDocumentIds = [];
-    if ($request->hasFile('document')) {
-        foreach ($request->file('document') as $documentId => $file) {
-            $existingDocument = $model::where($ownerKey, $ownerId)->where('document_id', $documentId)->first();
+
+    if ($request->has('documents') && is_array($request->documents)) {
+        $documents = $request->documents;
+
+        foreach ($documents as $document) {
+            $documentId = $document['document_id'] ?? null;
+            $file = $document['document_path'] ?? null;
+
+            if (!$documentId || !$file) {
+                continue; // Skip invalid entries
+            }
+
+            $existingDocument = $model::where($ownerKey, $ownerId)
+                ->where('document_id', $documentId)
+                ->first();
 
             if ($existingDocument) {
                 Storage::disk('public')->delete($existingDocument->document_path);
@@ -336,6 +348,7 @@ private function handleDocuments($request, $ownerId, $folder, $model, $ownerKey)
             $updatedDocumentIds[] = $documentId;
         }
     }
+
     return $updatedDocumentIds;
 }
 

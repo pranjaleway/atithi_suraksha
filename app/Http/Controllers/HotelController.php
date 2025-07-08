@@ -278,19 +278,46 @@ class HotelController extends Controller
 
 
     public function deleteHotel(Request $request)
-    {
+{
+    try {
         $hotel = Hotel::find($request->id);
-        if ($hotel->user_id) {
-            User::find($hotel->user_id)->delete();
-            $hotel->ownerDocuments()->delete();
-            $hotel->delete();
-            activiyLog('Hotel ' . $hotel->hotel_name . ' deleted by ' . ucfirst(Auth::user()->name));
+
+        if (!$hotel) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Hotel not found',
+            ], 404);
         }
+
+        // Log activity before deletion
+        activiyLog('Hotel ' . $hotel->hotel_name . ' deleted by ' . ucfirst(Auth::user()->name));
+
+        // Delete associated user if exists
+        if ($hotel->user_id) {
+            $user = User::find($hotel->user_id);
+            if ($user) {
+                $user->delete();
+            }
+        }
+
+        // Delete associated documents and hotel
+        $hotel->ownerDocuments()->delete();
+        $hotel->delete();
+
         return response()->json([
             'status' => 'success',
             'message' => 'Hotel deleted successfully',
         ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Something went wrong while deleting the hotel.',
+            'error' => $e->getMessage(), // Remove this in production if needed
+        ], 500);
     }
+}
+
 
     public function changehotelStatus(Request $request)
     {

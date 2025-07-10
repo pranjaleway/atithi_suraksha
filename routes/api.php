@@ -43,10 +43,17 @@ Route::get('/user', function (Request $request) {
         Route::post('update-profile', 'updateProfile')->name('update-profile');
     });
     Route::controller(APIHotelController::class)->group(function () {
-        Route::get('get-rooms', 'getRooms')->name('get-rooms');
+        Route::post('get-rooms', 'getRooms')->name('get-rooms');
         Route::post('add-room', 'addRoom')->name('add-room');
-        Route::get('get-employees', 'getEmployees')->name('get-employees');
+        Route::post('update-room', 'updateRoom')->name('update-room');
+        Route::post('delete-room', 'deleteRoom')->name('delete-room');
+        Route::post('change-room-status', 'changeRoomStatus')->name('change-room-status');
+        Route::post('get-employees', 'getEmployees')->name('get-employees');
         Route::post('add-employee', 'addEmployee')->name('add-employee');
-        Route::get('get-bookings', 'getBookings')->name('get-bookings');
+        Route::post('get-bookings', 'getBookings')->name('get-bookings');
+        Route::post('get-members', 'getMembers')->name('get-members');
+
+        //Transfer Entries
+        Route::post('get-transfer-entries', 'getTransferEntries')->name('get-transfer-entries');
     });
   });

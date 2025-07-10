@@ -945,6 +945,13 @@ class APIHotelController extends Controller
      *     security={{"bearerAuth":{}}},
      *
      *     @OA\Parameter(
+     *         name="id",
+     *         in="query",
+     *         required=false,
+     *         description="ID of the booking to retrieve",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
      *         name="search",
      *         in="query",
      *         required=false,
@@ -1039,6 +1046,10 @@ class APIHotelController extends Controller
                 $from = Carbon::parse($request->from_date)->startOfDay();
                 $to = Carbon::parse($request->to_date)->endOfDay();
                 $query->whereBetween('created_at', [$from, $to]);
+            }
+
+            if($request->filled('id')) {
+                $query->where('id', $request->id);
             }
 
             if (Auth::user()->user_type_id == 4) {
@@ -1166,6 +1177,205 @@ class APIHotelController extends Controller
     }
 
     /**
+ * @OA\Post(
+ *     path="/add-member",
+ *     tags={"Hotels"},
+ *     summary="Add a new member to a booking",
+ *     description="Creates a new hotel booking member under an existing booking. Requires authentication.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"parent_id", "guest_name", "check_in", "age", "gender", "room_number_id", "contact_number", "aadhar_number", "address", "state_id", "city_id", "pincode", "id_proof_path"},
+ *             @OA\Property(property="parent_id", type="integer", example=1, description="Parent booking ID"),
+ *             @OA\Property(property="guest_name", type="string", example="John Doe"),
+ *             @OA\Property(property="check_in", type="string", format="date", example="2025-06-01"),
+ *             @OA\Property(property="check_out", type="string", format="date", nullable=true, example="2025-06-05"),
+ *             @OA\Property(property="age", type="integer", example=30),
+ *             @OA\Property(property="gender", type="string", enum={"male", "female", "other"}, example="male"),
+ *             @OA\Property(property="room_number_id", type="string", example="1,2", description="Comma-separated room number IDs"),
+ *             @OA\Property(property="contact_number", type="string", example="9876543210"),
+ *             @OA\Property(property="aadhar_number", type="string", example="123456789012"),
+ *             @OA\Property(property="email", type="string", format="email", example="john@example.com", nullable=true),
+ *             @OA\Property(property="address", type="string", example="123 Main Street"),
+ *             @OA\Property(property="state_id", type="integer", example=1),
+ *             @OA\Property(property="city_id", type="integer", example=10),
+ *             @OA\Property(property="pincode", type="string", example="400001"),
+ *             @OA\Property(property="id_proof_path", type="string", example="data:application/pdf;base64,JVBERi0xLjQKJ...")  
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Member added successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="Member added successfully")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
+
+     public function addMember(Request $request)
+    {
+        try{
+            $request->validate([
+            'parent_id' => 'required',
+            'guest_name' => 'required',
+            'check_in' => 'required|date',
+            'check_out' => 'nullable|date',
+            'age' => 'required|numeric',
+            'gender' => 'required|in:male,female,other',
+            'room_number_id' => 'required',
+            'contact_number' => 'required|numeric|digits:10',
+            'aadhar_number' => 'required|numeric|digits:12',
+            'email' => 'nullable|email',
+            'address' => 'required',
+            'state_id' => 'required',
+            'city_id' => 'required',
+            'pincode' => 'required|numeric|digits:6',
+            'id_proof_path' => 'required|file|mimes:jpeg,png,jpg,pdf',
+        ]);
+
+        $guestData = $request->all();
+
+        $roomNumberIds = is_array($guestData['room_number_id'])
+            ? explode(',', $guestData['room_number_id'][0])
+            : explode(',', $guestData['room_number_id']);
+        $roomNumberStr = implode(',', $roomNumberIds);
+
+        $roomNumbers = RoomNumber::whereIn('id', $roomNumberIds)->pluck('room_number')->toArray();
+
+        $guestData['room_number'] = implode(',', $roomNumbers);
+
+        // Handle file if uploaded
+        $file = $request->file('id_proof_path');
+        $filePath = $file->store('booking/id_proofs', 'public');
+
+        $user = Auth::user();
+        $hotelId = null;
+        $hotel_employee_id = null;
+
+        if ($user->user_type_id == 4) {
+            $hotelId = Hotel::where('user_id', $user->id)->value('id');
+        } elseif ($user->user_type_id == 5) {
+            $employee = HotelEmployee::where('user_id', $user->id)->first();
+            if ($employee) {
+                $hotelId = $employee->hotel_id;
+                $hotel_employee_id = $employee->id;
+            }
+        }
+
+        $parentId = $guestData['parent_id'];
+        $booking = HotelBooking::find($parentId);
+        $bookingId = $booking->booking_id;
+
+        $booking = HotelBooking::create([
+            'hotel_id' => $hotelId,
+            'booking_id' => $bookingId,
+            'hotel_employee_id' => $hotel_employee_id,
+            'guest_name' => $guestData['guest_name'],
+            'check_in' => $guestData['check_in'],
+            'check_out' => $guestData['check_out'],
+            'room_number' => $guestData['room_number'],
+            'room_number_id' => $roomNumberStr,
+            'contact_number' => $guestData['contact_number'],
+            'aadhar_number' => $guestData['aadhar_number'],
+            'email' => $guestData['email'],
+            'address' => $guestData['address'],
+            'state_id' => $guestData['state_id'],
+            'city_id' => $guestData['city_id'],
+            'pincode' => $guestData['pincode'],
+            'id_proof_path' => $filePath,
+            'parent_id' => $guestData['parent_id'],
+            'age' => $guestData['age'],
+            'gender' => $guestData['gender'],
+        ]);
+
+        if ($booking) {
+            activiyLog('Member added by ' . ucfirst(Auth::user()->name));
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Member added successfully',
+        ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+ * @OA\Post(
+ *     path="/delete-member",
+ *     tags={"Hotels"},
+ *     summary="Delete a hotel booking member",
+ *     description="Deletes a member from a hotel booking by their booking ID. Requires authentication.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"id"},
+ *             @OA\Property(property="id", type="integer", example=5, description="The ID of the member booking record to delete")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Member deleted successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="Member deleted successfully")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
+
+
+    public function deleteMember(Request $request)
+    {
+        try{
+        $member = HotelBooking::find($request->id);
+        if ($member) {
+            $member->delete();
+            activiyLog('Member deleted by ' . ucfirst(Auth::user()->name));
+        }
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Member deleted successfully',
+        ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * @OA\Post(
      *     path="/get-visitors",
      *     tags={"Hotels"},
@@ -1175,6 +1385,13 @@ class APIHotelController extends Controller
      *
      *     @OA\Parameter(
      *         name="id",
+     *         in="query",
+     *         required=true,
+     *         description="The booking ID to retrieve visitors for",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="booking_id",
      *         in="query",
      *         required=true,
      *         description="The booking ID to retrieve visitors for",
@@ -1238,9 +1455,9 @@ class APIHotelController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        $id = $request->id;
+        $bookingId = $request->booking_id;
 
-        $query = Visitor::where('booking_id', $id);
+        $query = Visitor::where('booking_id', $bookingId);
 
         // Search filter
         if ($request->filled('search')) {
@@ -1249,6 +1466,10 @@ class APIHotelController extends Controller
                 $q->where('visitor_name', 'LIKE', "%{$searchTerm}%")
                     ->orWhere('contact_number', 'LIKE', "%{$searchTerm}%");
             });
+        }
+
+        if($request->filled('id')) {
+            $query->where('id', $request->id);
         }
 
         $data = $query->orderBy('id', 'desc')->paginate(10);
@@ -1265,9 +1486,140 @@ class APIHotelController extends Controller
         ]);
     }
 
+  /**
+ * @OA\Post(
+ *     path="/add-visitor",
+ *     tags={"Hotels"},
+ *     summary="Add a new visitor",
+ *     description="Adds a new visitor associated with a booking. Supports providing visitor details and an optional ID proof path as a string (e.g., file path).",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"booking_id", "visitor_name", "aadhar_number", "contact_number", "age", "gender", "address", "state_id", "city_id", "pincode", "entry_time"},
+ *             @OA\Property(property="booking_id", type="integer", example=1, description="Booking ID to associate the visitor with"),
+ *             @OA\Property(property="visitor_name", type="string", example="Jane Doe"),
+ *             @OA\Property(property="aadhar_number", type="string", example="123456789012"),
+ *             @OA\Property(property="contact_number", type="string", example="9876543210"),
+ *             @OA\Property(property="age", type="integer", example=30),
+ *             @OA\Property(property="gender", type="string", enum={"male", "female", "other"}, example="female"),
+ *             @OA\Property(property="id_proof_path", type="string", example="booking/visitors_id_proofs/abc123.pdf", description="Optional path of the ID proof document"),
+ *             @OA\Property(property="address", type="string", example="123 Main Street"),
+ *             @OA\Property(property="state_id", type="integer", example=1),
+ *             @OA\Property(property="city_id", type="integer", example=10),
+ *             @OA\Property(property="pincode", type="string", example="400001"),
+ *             @OA\Property(property="entry_time", type="string", format="date-time", example="2025-07-10T12:00:00", description="Entry time in Y-m-d\\TH:i:s format")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Visitor added successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="Visitor added successfully.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
+
+    public function addVisitor(Request $request)
+    {
+       try{
+         $validated = $request->validate([
+            'booking_id' => 'required|exists:hotel_bookings,id',
+            'visitor_name' => 'required|string|max:255',
+            'aadhar_number' => 'required|string|max:255',
+            'contact_number' => 'required|string|max:255',
+            'age' => 'required|integer|min:0',
+            'gender' => 'required|in:male,female,other',
+            'id_proof_path' => 'nullable|file|mimes:jpeg,jpg,png,pdf',
+            'address' => 'required|string|max:255',
+            'state_id' => 'required|exists:states,id',
+            'city_id' => 'required|exists:cities,id',
+            'pincode' => 'required|string|max:255',
+            'entry_time' => 'required|date_format:Y-m-d\TH:i',
+        ]);
+
+        $visitor = Visitor::create($validated);
+
+        if ($request->hasFile('id_proof_path')) {
+            $visitor->id_proof_path = $request->file('id_proof_path')->store('booking/visitors_id_proofs', 'public');
+            $visitor->save();
+        }
+        activiyLog('Visitor ' . $visitor->visitor_name . ' added by ' . ucfirst(Auth::user()->name));
+        return response()->json(['status' => 'success', 'message' => 'Visitor added successfully.']);
+
+       } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+ * @OA\Post(
+ *     path="/delete-visitor",
+ *     tags={"Hotels"},
+ *     summary="Delete a visitor",
+ *     description="Deletes a visitor by its ID. Logs the action performed by the authenticated user.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"id"},
+ *             @OA\Property(property="id", type="integer", example=1, description="ID of the visitor to be deleted")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Visitor deleted successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="Visitor deleted successfully.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
 
 
 
+    public function deleteVisitor(Request $request)
+    {
+        try{
+            $visitor = Visitor::find($request->id);
+        $visitor->delete();
+        activiyLog('Visitor ' . $visitor->visitor_name . ' deleted by ' . ucfirst(Auth::user()->name));
+        return response()->json(['status' => 'success', 'message' => 'Visitor deleted successfully.']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     /**
      * @OA\Post(
@@ -1396,5 +1748,109 @@ class APIHotelController extends Controller
         }
     }
 
+    /**
+ * @OA\Post(
+ *     path="/get-available-room-numbers",
+ *     tags={"Hotels"},
+ *     summary="Get available room numbers",
+ *     description="Retrieves a list of available room numbers for the authenticated hotel or hotel employee based on the given check-in date. Excludes rooms already booked for the given date.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"check_in"},
+ *             @OA\Property(property="check_in", type="string", format="date-time", example="2025-07-15T14:00:00", description="Check-in date and time in Y-m-d\\TH:i:s format")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response with a list of available rooms",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=true),
+ *             @OA\Property(property="data", type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="room_number", type="string", example="101"),
+ *                     @OA\Property(property="room_type", type="string", example="Deluxe"),
+ *                     @OA\Property(property="status", type="integer", example=1)
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error when check-in date is missing or invalid",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Check-in date is required")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=403,
+ *         description="Unauthorized access if user is not a hotel or hotel employee",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Unauthorized")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
 
+
+
+    public function getAvailableRoomNumbers(Request $request)
+    {
+       try{
+         $checkInDateTime = Carbon::parse($request->check_in);
+
+        if (!$checkInDateTime) {
+            return response()->json(['status' => false, 'message' => 'Check-in date is required'], 422);
+        }
+
+        if (Auth::user()->user_type_id == 4) {
+            $hotel_id = Hotel::where('user_id', Auth::id())->value('id');
+        } elseif (Auth::user()->user_type_id == 5) {
+            $hotel_id = HotelEmployee::where('user_id', Auth::id())->value('hotel_id');
+        } else {
+            return response()->json(['status' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        $allRooms = RoomNumber::where('hotel_id', $hotel_id)->where('status', 1)->get();
+
+        $bookings = HotelBooking::where('hotel_id', $hotel_id)
+            ->where('check_in', '<=', $checkInDateTime)
+            ->where('check_out', '>=', $checkInDateTime)
+            ->pluck('room_number_id') // this gives comma-separated room ids
+            ->toArray();
+
+        $bookedRoomIds = collect($bookings)
+            ->flatMap(function ($item) {
+                return array_map('intval', explode(',', $item));
+            })
+            ->unique()
+            ->toArray();
+
+        $availableRooms = $allRooms->filter(function ($room) use ($bookedRoomIds) {
+            return !in_array($room->id, $bookedRoomIds);
+        })->values();
+
+        return response()->json(['status' => true, 'data' => $availableRooms]);
+
+       } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+       } 
+    }
 }

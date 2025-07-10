@@ -57,8 +57,15 @@ Route::get('/user', function (Request $request) {
         Route::post('change-employee-status', 'changeEmployeeStatus')->name('change-employee-status');
 
         Route::post('get-bookings', 'getBookings')->name('get-bookings');
+        Route::post('get-available-room-numbers', 'getAvailableRoomNumbers')->name('get-available-room-numbers');
+
         Route::post('get-members', 'getMembers')->name('get-members');
+        Route::post('add-member', 'addMember')->name('add-member');
+        Route::post('delete-member', 'deleteMember')->name('delete-member');
+
         Route::post('get-visitors', 'getVisitors')->name('get-visitors');
+        Route::post('add-visitor', 'addVisitor')->name('add-visitor');
+        Route::post('delete-visitor', 'deleteVisitor')->name('delete-visitor');
 
         //Transfer Entries
         Route::post('get-transfer-entries', 'getTransferEntries')->name('get-transfer-entries');

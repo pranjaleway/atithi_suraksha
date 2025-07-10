@@ -876,7 +876,9 @@ class HotelBookingController extends Controller
     {
         $dayAfterTomorrow = Carbon::tomorrow()->addDay(); // Day after tomorrow's date
 
-        $bookings = HotelBooking::where('status', 0)
+        $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
+
+        $bookings = HotelBooking::where('hotel_id', $hotelId)->where('status', 0)
             ->whereDate('check_in', '<=', $dayAfterTomorrow) // Includes all previous days and up to day after tomorrow
             ->get();
         return view('hotel.add-manual-transfer-entries', compact('bookings'));

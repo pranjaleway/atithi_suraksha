@@ -3,9 +3,15 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Hotel;
+use App\Models\HotelBooking;
+use App\Models\HotelEmployee;
+use App\Models\TransferEntry;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -27,117 +33,117 @@ class AuthController extends Controller
 {
 
     /**
- * @OA\Post(
- *     path="/login",
- *     tags={"Authentication"},
- *     summary="User login",
- *     description="Logs in a user (only for user types 4 and 5).",
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\MediaType(
- *             mediaType="application/json",
- *             @OA\Schema(
- *                 required={"email", "password"},
- *                 @OA\Property(property="email", type="string", format="email", example="user@example.com"),
- *                 @OA\Property(property="password", type="string", format="password", example="secret123")
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Login successful",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Login successful"),
- *             @OA\Property(property="redirect", type="string", example="/dashboard")
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Invalid credentials",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(property="message", type="string", example="Invalid credentials")
- *         )
- *     ),
- *     @OA\Response(
- *         response=403,
- *         description="Forbidden - Unauthorized user type or deactivated account",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(property="message", type="string", example="You do not have permission to login via the app.")
- *         )
- *     ),
- *     @OA\Response(
- *         response=422,
- *         description="Validation error",
- *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="The given data was invalid."),
- *             @OA\Property(
- *                 property="errors",
- *                 type="object",
- *                 @OA\Property(property="email", type="array", @OA\Items(type="string", example="The email field is required.")),
- *                 @OA\Property(property="password", type="array", @OA\Items(type="string", example="The password field is required."))
- *             )
- *         )
- *     )
- * )
- */
+     * @OA\Post(
+     *     path="/login",
+     *     tags={"Authentication"},
+     *     summary="User login",
+     *     description="Logs in a user (only for user types 4 and 5).",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 required={"email", "password"},
+     *                 @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+     *                 @OA\Property(property="password", type="string", format="password", example="secret123")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Login successful"),
+     *             @OA\Property(property="redirect", type="string", example="/dashboard")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid credentials",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Invalid credentials")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden - Unauthorized user type or deactivated account",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="You do not have permission to login via the app.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="email", type="array", @OA\Items(type="string", example="The email field is required.")),
+     *                 @OA\Property(property="password", type="array", @OA\Items(type="string", example="The password field is required."))
+     *             )
+     *         )
+     *     )
+     * )
+     */
 
     public function login(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required|min:6',
-    ]);
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|min:6',
+        ]);
 
-    $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
-    if ($user) {
-        // Check if password is correct
-        if (Hash::check($request->password, $user->password)) {
-            // Allow login only for user_type_id 4 or 5
-            if (!in_array($user->user_type_id, [4, 5])) {
+        if ($user) {
+            // Check if password is correct
+            if (Hash::check($request->password, $user->password)) {
+                // Allow login only for user_type_id 4 or 5
+                if (!in_array($user->user_type_id, [4, 5])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You do not have permission to login via the app.'
+                    ], 403);
+                }
+
+                // Check if account is deactivated
+                if ($user->status == 0) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Your account is deactivated, please contact the administrator.'
+                    ], 403);
+                }
+
+                // Allow login
+                Auth::login($user);
+                $token = $user->createToken('auth_token')->plainTextToken;
+                activiyLog(ucfirst($user->name) . ' logged in');
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'You do not have permission to login via the app.'
-                ], 403);
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'token' => $token,
+                    'data' => $user
+                ]);
             }
 
-            // Check if account is deactivated
-            if ($user->status == 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Your account is deactivated, please contact the administrator.'
-                ], 403);
-            }
-
-            // Allow login
-            Auth::login($user);
-            $token = $user->createToken('auth_token')->plainTextToken;
-            activiyLog(ucfirst($user->name) . ' logged in');
-
+            // If password is incorrect
             return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'token' => $token,
-                'data' => $user
-            ]);
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
         }
 
-        // If password is incorrect
+        // If user not found
         return response()->json([
             'success' => false,
             'message' => 'Invalid credentials'
         ], 401);
     }
-
-    // If user not found
-    return response()->json([
-        'success' => false,
-        'message' => 'Invalid credentials'
-    ], 401);
-}
 
     /**
      * @OA\Post(
@@ -171,47 +177,47 @@ class AuthController extends Controller
      */
 
     public function forgotPassword(Request $request)
-{
-    try {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
-        // Check if the user exists
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user) {
-            return response()->json([
-                'message' => 'Email address not found.',
-                'status' => 'error',
-            ], 404);
-        }
-
-        // Send reset link
-        $status = Password::sendResetLink($request->only('email'));
-
-        if ($status === Password::RESET_LINK_SENT) {
-            return response()->json([
-                'message' => 'Reset password link sent successfully',
-                'status' => 'success',
+    {
+        try {
+            $request->validate([
+                'email' => 'required|email',
             ]);
-        } else {
+
+            // Check if the user exists
+            $user = User::where('email', $request->email)->first();
+
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Email address not found.',
+                    'status' => 'error',
+                ], 404);
+            }
+
+            // Send reset link
+            $status = Password::sendResetLink($request->only('email'));
+
+            if ($status === Password::RESET_LINK_SENT) {
+                return response()->json([
+                    'message' => 'Reset password link sent successfully',
+                    'status' => 'success',
+                ]);
+            } else {
+                return response()->json([
+                    'message' => 'Reset link could not be sent',
+                    'status' => 'error',
+                ], 500);
+            }
+        } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Reset link could not be sent',
+                'success' => false,
+                'message' => 'Something went wrong!',
+                'error' => $e->getMessage(),
                 'status' => 'error',
             ], 500);
         }
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Something went wrong!',
-            'error' => $e->getMessage(),
-            'status' => 'error',
-        ], 500);
     }
-}
 
- /**
+    /**
      * @OA\Post(
      *     path="/reset-password",
      *     summary="Reset Password",
@@ -275,7 +281,152 @@ class AuthController extends Controller
         }
     }
 
- /**
+    /**
+ * @OA\Get(
+ *     path="/dashboard",
+ *     tags={"Authentication"},
+ *     summary="Get dashboard statistics",
+ *     description="Retrieves dashboard statistics based on the authenticated user's role. Hotel owners see their hotel's statistics, while hotel employees see statistics for their assigned hotel.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response with dashboard statistics",
+ *         @OA\JsonContent(
+ *             oneOf={
+ *                 @OA\Schema( 
+ *                     @OA\Property(property="totalEmployees", type="integer", example=15),
+ *                     @OA\Property(property="totalBooking", type="integer", example=100),
+ *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=5),
+ *                     @OA\Property(property="todayTransferredBookings", type="integer", example=10)
+ *                 ),
+ *                 @OA\Schema( 
+ *                     @OA\Property(property="totalBooking", type="integer", example=20),
+ *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=2),
+ *                     @OA\Property(property="totalTransferredBookings", type="integer", example=15),
+ *                     @OA\Property(property="todayTransferredBookings", type="integer", example=4)
+ *                 )
+ *             }
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=403,
+ *         description="Unauthorized",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="error", type="string", example="Unauthorized")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
+
+
+    public function dashboard(Request $request)
+    {
+        try{
+            $user = Auth::user();
+            $userType = $user->user_type_id;
+
+        switch ($userType) {
+            case 4: // Hotel
+                $hotelID = Hotel::where('user_id', $user->id)->value('id');
+
+                $totalEmployees = HotelEmployee::where('hotel_id', $hotelID)->count();
+                $totalBooking = $this->countBookings($hotelID);
+                $totalTransferPendingBookings = $this->countPendingTransfers($hotelID);
+                $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID]);
+
+                return response()->json([
+                    'totalEmployees' => $totalEmployees,
+                    'totalBooking' => $totalBooking,
+                    'totalTransferPendingBookings' => $totalTransferPendingBookings,
+                    'todayTransferredBookings' => $todayTransferredBookings
+                ]);
+
+            case 5: // Hotel Employee
+                $hotelEmployeeID = HotelEmployee::where('user_id', $user->id)->value('id');
+                $hotelID = HotelEmployee::where('id', $hotelEmployeeID)->value('hotel_id');
+
+                $totalBooking = $this->countBookings($hotelID, $hotelEmployeeID);
+                $totalTransferPendingBookings = $this->countPendingTransfers($hotelID, $hotelEmployeeID);
+                $totalTransferredBookings = $this->countDistinctTransfers([$hotelID], $hotelEmployeeID);
+                $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID], $hotelEmployeeID);
+
+                return response()->json([
+                    'totalBooking' => $totalBooking,
+                    'totalTransferPendingBookings' => $totalTransferPendingBookings,
+                    'totalTransferredBookings' => $totalTransferredBookings,
+                    'todayTransferredBookings' => $todayTransferredBookings
+                ]);
+
+            default:
+                return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    private function getTodayTransferredBookings(array $hotelIDs = [], $hotelEmployeeID = null)
+    {
+        $query = TransferEntry::whereDate('transfer_date', Carbon::today());
+
+        if (!empty($hotelIDs)) {
+            $query->whereIn('hotel_id', $hotelIDs);
+        }
+
+        if ($hotelEmployeeID) {
+            $query->where('hotel_employee_id', $hotelEmployeeID);
+        }
+
+        return $query->count();
+    }
+
+    private function countDistinctTransfers(array $hotelIDs = [], $hotelEmployeeID = null)
+    {
+        $query = TransferEntry::whereIn('hotel_id', $hotelIDs);
+
+        if ($hotelEmployeeID) {
+            $query->where('hotel_employee_id', $hotelEmployeeID);
+        }
+
+        return $query->count(DB::raw('DISTINCT hotel_id, transfer_date'));
+    }
+
+    private function countBookings($hotelID, $hotelEmployeeID = null)
+    {
+        $query = HotelBooking::where('hotel_id', $hotelID)->whereNull('parent_id');
+
+        if ($hotelEmployeeID) {
+            $query->where('hotel_employee_id', $hotelEmployeeID);
+        }
+
+        return $query->count();
+    }
+
+    private function countPendingTransfers($hotelID, $hotelEmployeeID = null)
+    {
+        $query = HotelBooking::where('hotel_id', $hotelID)
+            ->whereNull('transfer_date')
+            ->where('status', 0);
+
+        if ($hotelEmployeeID) {
+            $query->where('hotel_employee_id', $hotelEmployeeID);
+        }
+
+        return $query->count();
+    }
+
+    /**
      * @OA\Post(
      *     path="/logout",
      *     summary="User Logout",
@@ -316,33 +467,33 @@ class AuthController extends Controller
 
 
 
-public function logout(Request $request)
-{
-    try {
-        $user = $request->user();
+    public function logout(Request $request)
+    {
+        try {
+            $user = $request->user();
 
-        if (!$user) {
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User not authenticated',
+                ], 401);
+            }
+
+            activiyLog(ucfirst($user->name) . ' logged out');
+            $user->currentAccessToken()->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Logout successful',
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'User not authenticated',
-            ], 401);
+                'message' => 'Something went wrong!',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        activiyLog(ucfirst($user->name) . ' logged out');
-        $user->currentAccessToken()->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Logout successful',
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Something went wrong!',
-            'error' => $e->getMessage(),
-        ], 500);
     }
-}
 
 
 }

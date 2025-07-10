@@ -31,6 +31,7 @@ Route::get('/user', function (Request $request) {
   Route::middleware('auth:sanctum')->group(function () {
     
     Route::controller(APIAUthController::class)->group(function () {
+      Route::get('dashboard', 'dashboard')->name('dashboard');
       Route::post('logout', 'logout')->name('logout');
     });
 
@@ -48,10 +49,16 @@ Route::get('/user', function (Request $request) {
         Route::post('update-room', 'updateRoom')->name('update-room');
         Route::post('delete-room', 'deleteRoom')->name('delete-room');
         Route::post('change-room-status', 'changeRoomStatus')->name('change-room-status');
+
         Route::post('get-employees', 'getEmployees')->name('get-employees');
         Route::post('add-employee', 'addEmployee')->name('add-employee');
+        Route::post('update-employee', 'updateEmployee')->name('update-employee');
+        Route::post('delete-employee', 'deleteEmployee')->name('delete-employee');
+        Route::post('change-employee-status', 'changeEmployeeStatus')->name('change-employee-status');
+
         Route::post('get-bookings', 'getBookings')->name('get-bookings');
         Route::post('get-members', 'getMembers')->name('get-members');
+        Route::post('get-visitors', 'getVisitors')->name('get-visitors');
 
         //Transfer Entries
         Route::post('get-transfer-entries', 'getTransferEntries')->name('get-transfer-entries');

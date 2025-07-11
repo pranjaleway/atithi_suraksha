@@ -37,6 +37,7 @@ Route::get('/user', function (Request $request) {
 
     Route::controller(APIMasterController::class)->group(function () {
         Route::get('get-menus', 'getMenus')->name('get-menus');
+        Route::get('get-notifications', 'getNotifications')->name('get-notifications');
     });
 
     Route::controller(APIProfileController::class)->group(function () {
@@ -69,5 +70,8 @@ Route::get('/user', function (Request $request) {
 
         //Transfer Entries
         Route::post('get-transfer-entries', 'getTransferEntries')->name('get-transfer-entries');
+        Route::post('get-remaining-transfer-bookings', 'getRemainingTransferBookings')->name('get-remaining-transfer-bookings');
+        Route::post('add-transfer-bookings', 'addTransferBookings')->name('add-transfer-bookings');
+        Route::post('upload-register', 'uploadRegister')->name('upload-register');
     });
   });

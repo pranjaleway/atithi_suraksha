@@ -5,7 +5,7 @@
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="card">
             <h4 class="card-header d-flex justify-content-between align-items-center">
-                Add Manual Transfer Entries
+                Add Transfer Booking
                 <a href="{{ route('transfer-entries') }}" class="d-none d-sm-inline-block"><button type="button"
                         class="btn btn-primary waves-effect waves-light mx-2">Back</button></a>
             </h4>

@@ -5,7 +5,11 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\City;
 use App\Models\Document;
+use App\Models\Hotel;
 use App\Models\Menu;
+use App\Models\Notification;
+use App\Models\PoliceStation;
+use App\Models\SpOffice;
 use App\Models\State;
 use App\Models\UserAccess;
 use Illuminate\Http\Request;
@@ -264,6 +268,113 @@ private function buildMenuTree($menus, $parentId = null, $level = 0)
 
     return $result;
 }
+
+/**
+ * @OA\Get(
+ *     path="/get-notifications",
+ *     tags={"Common"},
+ *     summary="Get notifications for the authenticated user",
+ *     description="Retrieves a paginated list of notifications. For hotels and hotel employees, notifications from their associated Police Station or SP Office are fetched. Super Admin gets all notifications.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="page",
+ *         in="query",
+ *         required=false,
+ *         description="Page number for pagination",
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Notifications retrieved successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="data", type="object",
+ *                 @OA\Property(property="current_page", type="integer", example=1),
+ *                 @OA\Property(property="data", type="array",
+ *                     @OA\Items(
+ *                         @OA\Property(property="id", type="integer", example=1),
+ *                         @OA\Property(property="user_id", type="integer", example=2),
+ *                         @OA\Property(property="message", type="string", example="New notification received."),
+ *                         @OA\Property(property="created_at", type="string", example="2025-07-10T12:00:00Z"),
+ *                         @OA\Property(property="updated_at", type="string", example="2025-07-10T12:00:00Z"),
+ *                         @OA\Property(property="user", type="object",
+ *                             @OA\Property(property="id", type="integer", example=2),
+ *                             @OA\Property(property="name", type="string", example="John Doe")
+ *                         )
+ *                     )
+ *                 ),
+ *                 @OA\Property(property="last_page", type="integer", example=5),
+ *                 @OA\Property(property="total", type="integer", example=50)
+ *             ),
+ *             @OA\Property(property="canAdd", type="boolean", example=true),
+ *             @OA\Property(property="canEdit", type="boolean", example=true),
+ *             @OA\Property(property="canDelete", type="boolean", example=false)
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=403,
+ *         description="Unauthorized access",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Unauthorized")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal server error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Internal Server Error")
+ *         )
+ *     )
+ * )
+ */
+
+
+public function getNotifications(Request $request)
+{
+    try {
+        if (!hasPermission('notifications', 'view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        $user = Auth::user();
+
+        $query = Notification::with('user:id,name')->orderByDesc('id');
+
+        if (in_array($user->user_type_id, [4, 5])) {
+            $hotel = Hotel::where('user_id', $user->id)->first();
+            $policeStationId = $hotel?->police_station_id;
+
+            $spUserId = optional(PoliceStation::find($policeStationId)?->spOffice)->user_id;
+            $policeUserIds = PoliceStation::where('id', $policeStationId)->pluck('user_id');
+
+            $query->where(function ($q) use ($spUserId, $policeUserIds) {
+                if ($spUserId) {
+                    $q->orWhere('user_id', $spUserId);
+                }
+                if ($policeUserIds->isNotEmpty()) {
+                    $q->orWhereIn('user_id', $policeUserIds);
+                }
+            });
+        }
+
+        $notifications = $query->paginate(10);
+
+        return response()->json([
+            'data' => $notifications,
+            'canAdd' => hasPermission('notifications', 'add'),
+            'canEdit' => hasPermission('notifications', 'edit'),
+            'canDelete' => hasPermission('notifications', 'delete'),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+
 
 
 }

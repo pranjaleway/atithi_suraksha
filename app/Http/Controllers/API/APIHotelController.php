@@ -12,6 +12,7 @@ use App\Models\HotelEmployeeDoc;
 use App\Models\RoomNumber;
 use App\Models\State;
 use App\Models\TransferEntry;
+use App\Models\UploadedEntry;
 use App\Models\User;
 use App\Models\UserType;
 use App\Models\Visitor;
@@ -1743,6 +1744,276 @@ class APIHotelController extends Controller
                 'canEdit' => hasPermission('transfer-entries', 'edit'),
                 'canDelete' => hasPermission('transfer-entries', 'delete'),
             ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+ * @OA\Post(
+ *     path="/get-remaining-transfer-bookings",
+ *     tags={"Transfer Entries"},
+ *     summary="Get remaining transfer entries",
+ *     description="Retrieves all hotel bookings for the authenticated hotel that have a status of 0 and a check-in date up to and including the day after tomorrow.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response with a list of pending transfer bookings",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=true),
+ *             @OA\Property(property="data", type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="guest_name", type="string", example="John Doe"),
+ *                     @OA\Property(property="check_in", type="string", format="date-time", example="2025-07-12T14:00:00"),
+ *                     @OA\Property(property="check_out", type="string", format="date-time", example="2025-07-14T11:00:00"),
+ *                     @OA\Property(property="status", type="integer", example=0),
+ *                     @OA\Property(property="room_number", type="string", example="101,102")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
+
+
+    public function getRemainingTransferBookings(Request $request){
+        try{
+        $dayAfterTomorrow = Carbon::tomorrow()->addDay(); // Day after tomorrow's date
+
+        $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
+
+        $bookings = HotelBooking::where('hotel_id', $hotelId)->where('status', 0)
+            ->whereDate('check_in', '<=', $dayAfterTomorrow) // Includes all previous days and up to day after tomorrow
+            ->get();
+
+        return response()->json(['status' => true, 'data' => $bookings]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+ * @OA\Post(
+ *     path="/add-transfer-bookings",
+ *     tags={"Transfer Entries"},
+ *     summary="Transfer hotel bookings",
+ *     description="Marks the selected hotel bookings as transferred and creates a transfer entry for the authenticated hotel or employee.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"booking_ids"},
+ *             @OA\Property(
+ *                 property="booking_ids",
+ *                 type="array",
+ *                 @OA\Items(type="integer", example=1),
+ *                 description="Array of booking IDs to transfer"
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Transfer entries saved successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="Transfer entries saved successfully.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="The booking_ids field is required.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
+
+
+    public function addTransferBookings(Request $request){
+        try{
+            
+            $validated = $request->validate([
+            'booking_ids' => 'required|array',
+            'booking_ids.*' => 'integer|exists:hotel_bookings,id',
+        ]);
+
+        $user = Auth::user();
+        $hotelId = null;
+        $hotel_employee_id = null;
+
+        if ($user->user_type_id == 4) {
+            $hotelId = Hotel::where('user_id', $user->id)->value('id');
+        } elseif ($user->user_type_id == 5) {
+            $employee = HotelEmployee::where('user_id', $user->id)->first();
+            if ($employee) {
+                $hotelId = $employee->hotel_id;
+                $hotel_employee_id = $employee->id;
+            }
+        }
+        foreach ($validated['booking_ids'] as $id) {
+            $booking = HotelBooking::find($id);
+            if ($booking) {
+                $booking->status = 1;
+                $booking->transfer_date = now();
+                $booking->save();
+            }
+        }
+        $transferEntries = TransferEntry::create([
+            'hotel_id' => $hotelId,
+            'hotel_employee_id' => $hotel_employee_id,
+            'transfer_date' => now(),
+            'transfer_type' => 'manual',
+        ]);
+
+        // Log the action
+        activiyLog('Manual Entries Transferred by ' . ucfirst(Auth::user()->name));
+
+        // Return JSON response
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Transfer entries saved successfully.',
+        ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+    
+  /**
+ * @OA\Post(
+ *     path="/upload-register",
+ *     tags={"Transfer Entries"},
+ *     summary="Upload register file paths",
+ *     description="Saves the file paths of uploaded register entries and marks them as transferred. This expects file paths (strings), not binary uploads.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"file_path"},
+ *             @OA\Property(
+ *                 property="file_path",
+ *                 type="array",
+ *                 description="Array of file paths (as strings) for the uploaded files",
+ *                 @OA\Items(
+ *                     type="string",
+ *                     example="uploaded_entries/abc123.pdf"
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="File paths saved and marked as transferred successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="File uploaded and marked as transferred successfully.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Please provide at least one file path.")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
+    public function uploadRegister(Request $request){
+        try{
+             $validated = $request->validate([
+            'file_path' => 'required|array',
+            'file_path.*' => 'file|mimes:jpeg,png,jpg,pdf',
+        ], [
+            'file_path.required' => 'Please select at least one file.',
+            'file_path.*.file' => 'Please select a valid file.',
+            'file_path.*.mimes' => 'Please select a file with one of the following extensions: jpeg, png, jpg, pdf.',
+        ]);
+
+        $user = Auth::user();
+        $hotelId = null;
+        $hotel_employee_id = null;
+
+        if ($user->user_type_id == 4) {
+            $hotelId = Hotel::where('user_id', $user->id)->value('id');
+        } elseif ($user->user_type_id == 5) {
+            $employee = HotelEmployee::where('user_id', $user->id)->first();
+            if ($employee) {
+                $hotelId = $employee->hotel_id;
+                $hotel_employee_id = $employee->id;
+            }
+        }
+
+        $createdUploadIds = [];
+
+        // Upload and save each file
+        foreach ($request->file('file_path') as $file) {
+            $filePath = $file->store('uploaded_entries', 'public');
+            $uploaded = UploadedEntry::create([
+                'hotel_id' => $hotelId,
+                'hotel_employee_id' => $hotel_employee_id,
+                'file_path' => $filePath,
+                'status' => 1,
+                'transfer_date' => now(),
+            ]);
+
+            // Collect the uploaded entry ID
+            $createdUploadIds[] = $uploaded->id;
+        }
+
+        // Update those entries and create transfer entry
+        if (!empty($createdUploadIds)) {
+
+            TransferEntry::create([
+                'hotel_id' => $hotelId,
+                'hotel_employee_id' => $hotel_employee_id,
+                'transfer_date' => now(),
+                'transfer_type' => 'uploaded',
+            ]);
+        }
+
+        activiyLog('Entries uploaded by ' . ucfirst($user->name));
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'File uploaded and marked as transferred successfully.',
+        ]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }

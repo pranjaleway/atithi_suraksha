@@ -510,7 +510,7 @@ class APIHotelController extends Controller
         try {
             $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
 
-            $query = HotelEmployee::where('hotel_id', $hotelId);
+            $query = HotelEmployee::with('state:id,name', 'city:id,name', 'employeeDocuments')->where('hotel_id', $hotelId);
 
             if ($request->filled('search')) {
                 $searchTerm = $request->search;

@@ -282,54 +282,69 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/dashboard",
-     *     tags={"Authentication"},
-     *     summary="Get dashboard statistics",
-     *     description="Retrieves dashboard statistics based on the authenticated user's role. Hotel owners see their hotel's statistics, while hotel employees see statistics for their assigned hotel.",
-     *     security={{"bearerAuth":{}}},
-     *
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful response with dashboard statistics",
-     *         @OA\JsonContent(
-     *             oneOf={
-     *                 @OA\Schema( 
-     *                     @OA\Property(property="totalEmployees", type="integer", example=15),
-     *                     @OA\Property(property="totalBooking", type="integer", example=100),
-     *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=5),
-     *                     @OA\Property(property="todayTransferredBookings", type="integer", example=10)
-     *                 ),
-     *                 @OA\Schema( 
-     *                     @OA\Property(property="totalBooking", type="integer", example=20),
-     *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=2),
-     *                     @OA\Property(property="totalTransferredBookings", type="integer", example=15),
-     *                     @OA\Property(property="todayTransferredBookings", type="integer", example=4)
-     *                 )
-     *             }
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=403,
-     *         description="Unauthorized",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="error", type="string", example="Unauthorized")
-     *         )
-     *     ),
-     *
-     *     @OA\Response(
-     *         response=500,
-     *         description="Internal Server Error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="error"),
-     *             @OA\Property(property="message", type="string", example="Error message")
-     *         )
-     *     )
-     * )
-     */
-
+   /**
+ * @OA\Get(
+ *     path="/dashboard",
+ *     tags={"Authentication"},
+ *     summary="Get dashboard statistics",
+ *     description="Returns dashboard statistics based on the authenticated user's role (Hotel Owner or Hotel Employee).",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response with dashboard data",
+ *         @OA\JsonContent(
+ *             oneOf={
+ *                 @OA\Schema(
+ *                     type="object",
+ *                     @OA\Property(property="totalEmployees", type="integer", example=12),
+ *                     @OA\Property(property="totalBooking", type="integer", example=200),
+ *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=5),
+ *                     @OA\Property(property="todayTransferredBookings", type="integer", example=3),
+ *                     @OA\Property(
+ *                         property="graphData",
+ *                         type="object",
+ *                         @OA\Property(property="labels", type="array", @OA\Items(type="string", example="01 Jul")),
+ *                         @OA\Property(property="dailyBookings", type="array", @OA\Items(type="integer", example=5)),
+ *                         @OA\Property(property="dailyTransfers", type="array", @OA\Items(type="integer", example=2))
+ *                     )
+ *                 ),
+ *                 @OA\Schema(
+ *                     type="object",
+ *                     @OA\Property(property="totalBooking", type="integer", example=50),
+ *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=2),
+ *                     @OA\Property(property="totalTransferredBookings", type="integer", example=20),
+ *                     @OA\Property(property="todayTransferredBookings", type="integer", example=1),
+ *                     @OA\Property(
+ *                         property="graphData",
+ *                         type="object",
+ *                         @OA\Property(property="labels", type="array", @OA\Items(type="string", example="01 Jul")),
+ *                         @OA\Property(property="dailyBookings", type="array", @OA\Items(type="integer", example=3)),
+ *                         @OA\Property(property="dailyTransfers", type="array", @OA\Items(type="integer", example=1))
+ *                     )
+ *                 )
+ *             }
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=403,
+ *         description="Unauthorized access",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="error", type="string", example="Unauthorized")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
 
     public function dashboard(Request $request)
     {

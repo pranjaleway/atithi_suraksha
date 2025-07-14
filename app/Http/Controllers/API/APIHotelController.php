@@ -1111,8 +1111,8 @@ class APIHotelController extends Controller
  *             @OA\Property(property="checkOut", type="string", format="date-time", example="2025-07-16T11:43:00.000Z"),
  *             @OA\Property(
  *                 property="room",
- *                 type="array",
- *                 @OA\Items(type="integer", example=1)
+ *                 type="string",
+ *                 example="1,2,3",
  *             ),
  *             @OA\Property(property="state_id", type="integer", example=1),
  *             @OA\Property(property="city_id", type="integer", example=2),
@@ -1202,7 +1202,7 @@ class APIHotelController extends Controller
         'aadhar_number' => $request->aadharNumber,
         'check_in' => Carbon::parse($request->checkIn)->format('Y-m-d\TH:i'),
         'check_out' => Carbon::parse($request->checkOut)->format('Y-m-d\TH:i'),
-        'room_number_id' => implode(',', $request->room ?? []),
+        'room_number_id' => $request->room,
         'state_id' => $request->state_id,
         'city_id' => $request->city_id,
         'pincode' => $request->pincode,
@@ -1298,6 +1298,7 @@ class APIHotelController extends Controller
             $roomIds = explode(',', $guestData['room_number_id']);
             $roomNumbers = RoomNumber::whereIn('id', $roomIds)->pluck('room_number')->toArray();
         }
+
 
         // Store the file
         $filePath = null;
@@ -2099,8 +2100,9 @@ private function validateBookingData(Request $request)
                 $query->whereBetween('transfer_date', [$from, $to]);
             }
 
+
             // Paginate before grouping
-            $entries = $query->paginate(10);
+            $entries = $query->orderBy('id', 'desc')->paginate(10);
 
             // Group the paginated results
             $grouped = collect($entries->items())->groupBy(function ($item) {
@@ -2182,7 +2184,8 @@ private function validateBookingData(Request $request)
 
             $bookings = HotelBooking::where('hotel_id', $hotelId)->where('status', 0)
                 ->whereNull('parent_id')
-                ->whereDate('check_in', '<=', $dayAfterTomorrow) // Includes all previous days and up to day after tomorrow
+                ->whereDate('check_in', '<=', $dayAfterTomorrow)
+                ->orderBy('id', 'desc') 
                 ->get();
 
             return response()->json(['status' => true, 'data' => $bookings]);
@@ -2508,10 +2511,14 @@ private function validateBookingData(Request $request)
 
         if (Auth::user()->user_type_id == 4) {
             $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
-            $data = $query->where('hotel_id', $hotelId)->get();
+            $data = $query->where('hotel_id', $hotelId)
+            ->orderBy('id', 'desc')
+            ->get();
         } else if (Auth::user()->user_type_id == 5) {
             $employeeID = HotelEmployee::where('user_id', Auth::user()->id)->value('id');
-            $data = $query->where('hotel_employee_id', $employeeID)->get();
+            $data = $query->where('hotel_employee_id', $employeeID)
+            ->orderBy('id', 'desc')
+            ->get();
         } else {
             $data = [];
         }

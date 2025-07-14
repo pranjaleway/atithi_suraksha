@@ -56,7 +56,7 @@ class APIMasterController extends Controller
     public function getDocuments(Request $request)
     {
         try {
-            $data = Document::where('status', 1)->get();
+            $data = Document::where('status', 1)->orderBy('id', 'desc')->get();
             return response()->json(['status' => true, 'data' => $data]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
@@ -103,7 +103,7 @@ class APIMasterController extends Controller
     public function getStates(Request $request)
     {
         try {
-            $data = State::where('country_id', 1)->where('status', 1)->get();
+            $data = State::where('country_id', 1)->where('status', 1)->orderBy('id', 'desc')->get();
             return response()->json(['status' => true, 'data' => $data]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
@@ -426,7 +426,7 @@ class APIMasterController extends Controller
     public function getPolicStationByCity(Request $request)
     {
         try {
-            $policeStations = PoliceStation::where('city_id', $request->id)->get();
+            $policeStations = PoliceStation::where('city_id', $request->id)->orderBy('id', 'desc')->get();
             return response()->json(['data' => $policeStations]);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);

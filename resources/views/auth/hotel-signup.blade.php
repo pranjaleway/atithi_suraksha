@@ -185,6 +185,15 @@
                                         </div>
                                     </div>
 
+                                    <div class="col-sm-6">
+                                        <div class="form-floating form-floating-outline">
+                                            <select class="form-select" id="police_station_id" name="police_station_id">
+                                                <option selected value="" disabled>Select Police Station</option>
+                                            </select>
+                                            <label for="police_station_id">Police Station Name</label>
+                                        </div>
+                                    </div>
+
                                     <div class="col-12 d-flex justify-content-between">
                                         <button class="btn btn-secondary btn-prev" disabled>
                                             <i class="mdi mdi-arrow-left me-sm-1 me-0"></i>
@@ -229,7 +238,7 @@
                                     </div>
                                     <div class="col-sm-6">
                                         <div class="form-floating form-floating-outline">
-                                            <input class="form-control" type="number" id="pan_number"
+                                            <input class="form-control" type="text" id="pan_number"
                                                 name="pan_number" placeholder="Pan Number" value="" />
                                             <label for="pan_number">Pan Number</label>
                                         </div>
@@ -282,8 +291,9 @@
 @extends('layouts.scriptLinks')
 @section('scripts')
     <script>
-        cityUrl = "{{ route('get-cities') }}";
-        signupUrl = "{{ route('post-hotel-signup') }}";
+        var cityUrl = "{{ route('get-cities') }}";
+        var signupUrl = "{{ route('post-hotel-signup') }}";
+        var policeStationByCityUrl = "{{ route('get-police-station-by-city') }}";
     </script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>
     <script src="{{ asset('assets/custom-js/page-hotel-signup.js') }}"></script>

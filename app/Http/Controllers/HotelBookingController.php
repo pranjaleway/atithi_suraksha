@@ -878,7 +878,7 @@ class HotelBookingController extends Controller
 
         $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
 
-        $bookings = HotelBooking::where('hotel_id', $hotelId)->where('status', 0)
+        $bookings = HotelBooking::where('hotel_id', $hotelId)->whereNull('parent_id')->where('status', 0)
             ->whereDate('check_in', '<=', $dayAfterTomorrow) // Includes all previous days and up to day after tomorrow
             ->get();
         return view('hotel.add-manual-transfer-entries', compact('bookings'));

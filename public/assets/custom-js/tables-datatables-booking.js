@@ -45,33 +45,34 @@ $(function () {
 
         // Conditionally add parent_id column for user roles 4 and 5
         if (userRole === 4 || userRole === 5) {
-            baseColumns.push({
-                data: "parent_id",
-                title: "Members",
-                render: function (data, type, row) {
-                    var encodedId = btoa(row.id);
-                    var url = membersUrl.replace(":id", encodedId);
-                    return (
-                        '<a href="' +
-                        url +
-                        '" class="btn btn-primary btn-sm rounded-pill">Members</a>'
-                    );
+            baseColumns.push(
+                {
+                    data: "parent_id",
+                    title: "Members",
+                    render: function (data, type, row) {
+                        var encodedId = btoa(row.id);
+                        var url = membersUrl.replace(":id", encodedId);
+                        return (
+                            '<a href="' +
+                            url +
+                            '" class="btn btn-primary btn-sm rounded-pill">Members</a>'
+                        );
+                    },
                 },
-            },
-            {
-                data:null,
-                title: "Visitors",
-                render: function (data, type, row) {
-                    var encodedId = btoa(row.id);
-                    var url = visitorsUrl.replace(":id", encodedId);
-                    return (
-                        '<a href="' +
-                        url +
-                        '" class="btn btn-primary btn-sm rounded-pill">Visitors</a>'
-                    );
+                {
+                    data: null,
+                    title: "Visitors",
+                    render: function (data, type, row) {
+                        var encodedId = btoa(row.id);
+                        var url = visitorsUrl.replace(":id", encodedId);
+                        return (
+                            '<a href="' +
+                            url +
+                            '" class="btn btn-primary btn-sm rounded-pill">Visitors</a>'
+                        );
+                    },
                 }
-            }
-        );
+            );
         }
 
         // Always add the actions column last
@@ -82,15 +83,21 @@ $(function () {
             render: function (data, type, full, meta) {
                 var id = btoa(full.id);
                 var viewRoute = viewDetailsUrl.replace(":id", id);
-                var deleteBtn = full.canDelete
-                    ? '<div class="d-inline-block">' +
-                      '<a href="javascript:;" class="dropdown-item text-danger delete-record" data-url="' +
-                      deleteUrl +
-                      '"  data-id="' +
-                      full.id +
-                      '" ><i class="mdi mdi-delete"></i></a>' +
-                      "</div>"
-                    : "";
+
+                // Check if transfer_date is null and status == 0
+                var showDelete =
+                    full.transfer_date === null && full.status === 0;
+
+                var deleteBtn =
+                    showDelete && full.canDelete
+                        ? '<div class="d-inline-block">' +
+                          '<a href="javascript:;" class="dropdown-item text-danger delete-record" data-url="' +
+                          deleteUrl +
+                          '"  data-id="' +
+                          full.id +
+                          '" ><i class="mdi mdi-delete"></i></a>' +
+                          "</div>"
+                        : "";
 
                 var viewBtn =
                     '<a href="' +

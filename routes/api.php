@@ -26,6 +26,7 @@ Route::get('/user', function (Request $request) {
      Route::get('get-documents', 'getDocuments')->name('get-documents');
      Route::get('get-states', 'getStates')->name('get-states');
      Route::get('get-cities', 'getCities')->name('get-cities');
+     Route::get('get-polic-station-by-city', 'getPolicStationByCity')->name('get-polic-station-by-city');
   });
 
   Route::middleware('auth:sanctum')->group(function () {
@@ -73,5 +74,6 @@ Route::get('/user', function (Request $request) {
         Route::post('get-remaining-transfer-bookings', 'getRemainingTransferBookings')->name('get-remaining-transfer-bookings');
         Route::post('add-transfer-bookings', 'addTransferBookings')->name('add-transfer-bookings');
         Route::post('upload-register', 'uploadRegister')->name('upload-register');
+        Route::post('get-uploaded-registers', 'getUploadedRegisters')->name('get-uploaded-registers');
     });
   });

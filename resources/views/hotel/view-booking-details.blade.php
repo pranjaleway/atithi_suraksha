@@ -64,41 +64,18 @@
                             <tr>
                                 <th scope="row">Aadhar Number</th>
                                 <td>{{ $booking->aadhar_number }}</td>
-                                 <th scope="row">Number of Guest</th>
-                                <td>{{ $booking->no_of_guest ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                 <th scope="row">Number of Male</th>
-                                <td>{{ $booking->no_of_male ?? 'N/A' }}</td>
-                                 <th scope="row">Number of Female</th>
-                                <td>{{ $booking->no_of_female ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Number of Children</th>
-                                <td>{{ $booking->hotel->no_of_children ?? 'N/A' }}</td>
-                                <th scope="row">Hotel Name</th>
-                                <td>{{ $booking->hotel->hotel_name }}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Room Number</th>
-                                <td>{{ $booking->room_number }}</td>
-                                <th scope="row">Check IN</th>
-                                <td>{{ \Carbon\Carbon::parse($booking->check_in)->format('d M Y, h:i A') }}</td>
-                            </tr>
-                            <tr>
-                                <th scope="row">Check OUT</th>
-                                <td>{{ \Carbon\Carbon::parse($booking->check_out)->format('d M Y, h:i A') }}</td>
                                 <th scope="row">Address</th>
                                 <td>{{ $booking->address }}</td>
                             </tr>
-
+                            
                             <tr>
                                 <th scope="row">City</th>
                                 <td>{{ $booking->city->name }}</td>
                                 <th>State</th>
                                 <td>{{ $booking->state->name }}</td>
                             </tr>
-                            <tr>
+
+                             <tr>
                                 <th scope="row">Pincode</th>
                                 <td>{{ $booking->pincode }}</td>
                                 <th>ID Proof</th>
@@ -112,7 +89,33 @@
                                 </td>
                             </tr>
 
-
+                            @if($booking->parent_id == null)
+                            <tr>
+                                <th scope="row">Number of Guest</th>
+                                <td>{{ $booking->no_of_guest ?? 'N/A' }}</td>
+                                 <th scope="row">Number of Male</th>
+                                <td>{{ $booking->no_of_male ?? 'N/A' }}</td>
+                                 
+                            </tr>
+                            <tr>
+                                <th scope="row">Number of Female</th>
+                                <td>{{ $booking->no_of_female ?? 'N/A' }}</td>
+                                <th scope="row">Number of Children</th>
+                                <td>{{ $booking->hotel->no_of_children ?? 'N/A' }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Hotel Name</th>
+                                <td>{{ $booking->hotel->hotel_name }}</td>
+                                <th scope="row">Room Number</th>
+                                <td>{{ $booking->room_number }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Check IN</th>
+                                <td>{{ \Carbon\Carbon::parse($booking->check_in)->format('d M Y, h:i A') }}</td>
+                                <th scope="row">Check OUT</th>
+                                <td>{{ \Carbon\Carbon::parse($booking->check_out)->format('d M Y, h:i A') }}</td>
+                            </tr>
+                            @endif
                         </tbody>
 
                     </table>

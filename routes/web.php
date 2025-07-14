@@ -34,6 +34,7 @@ Route::group(['middleware' => ['web']], function () {
     });
      Route::controller(MasterController::class)->group(function () {
         Route::get('get-cities', 'getCitiesByState')->name('get-cities');
+        Route::get('get-police-station-by-city', 'getPolicStationByCity')->name('get-police-station-by-city');
     });
 
 });

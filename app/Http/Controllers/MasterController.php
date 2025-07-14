@@ -7,6 +7,7 @@ use App\Models\City;
 use App\Models\Document;
 use App\Models\Hotel;
 use App\Models\Menu;
+use App\Models\PoliceStation;
 use App\Models\RoomNumber;
 use App\Models\State;
 use App\Models\User;
@@ -736,6 +737,8 @@ class MasterController extends Controller
 
         $data = RoomNumber::create($validatedData);
 
+        activiyLog(ucfirst(Auth::user()->name) . ' added room number ' . $data->room_number);
+
         return response()->json([
             'data' => $data,
             'status' => 'success',
@@ -750,37 +753,46 @@ class MasterController extends Controller
     }
 
     public function updateRoomMaster(Request $request)
-{
-    $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
+    {
+        $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
 
-    $validatedData = $request->validate([
-        'room_number' => [
-            'required',
-            'string',
-            Rule::unique('room_numbers', 'room_number')
-                ->where(fn($query) => $query->where('hotel_id', $hotelId))
-                ->ignore($request->id),
-        ],
-        'room_type' => 'required|in:AC,NON-AC',
-    ]);
+        $validatedData = $request->validate([
+            'room_number' => [
+                'required',
+                'string',
+                Rule::unique('room_numbers', 'room_number')
+                    ->where(fn($query) => $query->where('hotel_id', $hotelId))
+                    ->ignore($request->id),
+            ],
+            'room_type' => 'required|in:AC,NON-AC',
+        ]);
 
-    $data = RoomNumber::find($request->id);
-    if (!$data) {
-        return response()->json(['status' => 'error', 'message' => 'Room not found.'], 404);
+        $data = RoomNumber::find($request->id);
+        if (!$data) {
+            return response()->json(['status' => 'error', 'message' => 'Room not found.'], 404);
+        }
+        $changes = array_diff_assoc($validatedData, $data->toArray());
+        $data->update($validatedData);
+
+        $updatedChanges = implode(', ', array_map(function ($key) use ($changes) {
+            $readableKey = ucwords(str_replace('_', ' ', $key));
+            return $readableKey . ': ' . (isset($changes[$key]) ? $changes[$key] : 'NULL');
+        }, array_keys($changes)));
+
+        activiyLog(ucfirst(Auth::user()->name) . ' updated room changes: ' . $updatedChanges);
+
+        return response()->json([
+            'data' => $data,
+            'status' => 'success',
+            'message' => 'Room Number updated successfully'
+        ]);
     }
-
-    $data->update($validatedData);
-
-    return response()->json([
-        'data' => $data,
-        'status' => 'success',
-        'message' => 'Room Number updated successfully'
-    ]);
-}
 
     public function deleteRoomMaster(Request $request)
     {
-        RoomNumber::where('id', $request->id)->delete();
+        $room = RoomNumber::where('id', $request->id);
+        activiyLog(ucfirst(Auth::user()->name) . ' deleted room number');
+        $room->delete();
         return response()->json(['status' => 'success', 'message' => 'Room Number deleted successfully']);
     }
 
@@ -793,9 +805,21 @@ class MasterController extends Controller
             $newStatus = $room->status == 1 ? 0 : 1;
             $room->update(['status' => $newStatus]);
 
+            activiyLog('Room ' . $room->room_number . ' status changed to ' . ($newStatus == 1 ? 'Active' : 'Inactive') . ' by ' . ucfirst(Auth::user()->name));
+
             // Return the updated status
             return response()->json(['status' => 'success', 'message' => 'Room status updated']);
         }
         return response()->json(['status' => 'error', 'message' => 'Room not found'], 404);
+    }
+
+    public function getPolicStationByCity(Request $request)
+    {
+        try {
+            $policeStations = PoliceStation::where('city_id', $request->id)->get();
+            return response()->json(['data' => $policeStations]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+        }
     }
 }

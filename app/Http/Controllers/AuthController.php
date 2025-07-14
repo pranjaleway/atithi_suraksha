@@ -449,6 +449,7 @@ class AuthController extends Controller
      *                 @OA\Property(property="state_id", type="integer", example=1),
      *                 @OA\Property(property="city_id", type="integer", example=10),
      *                 @OA\Property(property="pincode", type="string", example="400001"),
+     *                 @OA\Property(property="police_station_id", type="integer", example=1),
      *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
      *                 @OA\Property(property="password_confirmation", type="string", format="password", example="secret123"),
      *                 @OA\Property(
@@ -503,6 +504,7 @@ class AuthController extends Controller
             'address' => 'required|string',
             'state_id' => 'required|exists:states,id',
             'city_id' => 'required|exists:cities,id',
+            'police_station_id' => 'required|exists:police_stations,id',
             'pincode' => 'required|numeric|digits:6',
             'password' => 'required|string|min:6|confirmed',
         ], [
@@ -525,7 +527,8 @@ class AuthController extends Controller
             'address',
             'state_id',
             'city_id',
-            'pincode'
+            'pincode',
+            'police_station_id'
         ]));
 
         if ($request->hasFile('document')) {
@@ -866,8 +869,5 @@ private function generateGraphData(array $hotelIds = [])
             ]);
         }
     }
-
-
-
 
 }

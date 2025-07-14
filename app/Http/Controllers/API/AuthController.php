@@ -9,6 +9,7 @@ use App\Models\HotelEmployee;
 use App\Models\TransferEntry;
 use App\Models\User;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -282,95 +283,98 @@ class AuthController extends Controller
     }
 
     /**
- * @OA\Get(
- *     path="/dashboard",
- *     tags={"Authentication"},
- *     summary="Get dashboard statistics",
- *     description="Retrieves dashboard statistics based on the authenticated user's role. Hotel owners see their hotel's statistics, while hotel employees see statistics for their assigned hotel.",
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Response(
- *         response=200,
- *         description="Successful response with dashboard statistics",
- *         @OA\JsonContent(
- *             oneOf={
- *                 @OA\Schema( 
- *                     @OA\Property(property="totalEmployees", type="integer", example=15),
- *                     @OA\Property(property="totalBooking", type="integer", example=100),
- *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=5),
- *                     @OA\Property(property="todayTransferredBookings", type="integer", example=10)
- *                 ),
- *                 @OA\Schema( 
- *                     @OA\Property(property="totalBooking", type="integer", example=20),
- *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=2),
- *                     @OA\Property(property="totalTransferredBookings", type="integer", example=15),
- *                     @OA\Property(property="todayTransferredBookings", type="integer", example=4)
- *                 )
- *             }
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=403,
- *         description="Unauthorized",
- *         @OA\JsonContent(
- *             @OA\Property(property="error", type="string", example="Unauthorized")
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=500,
- *         description="Internal Server Error",
- *         @OA\JsonContent(
- *             @OA\Property(property="status", type="string", example="error"),
- *             @OA\Property(property="message", type="string", example="Error message")
- *         )
- *     )
- * )
- */
+     * @OA\Get(
+     *     path="/dashboard",
+     *     tags={"Authentication"},
+     *     summary="Get dashboard statistics",
+     *     description="Retrieves dashboard statistics based on the authenticated user's role. Hotel owners see their hotel's statistics, while hotel employees see statistics for their assigned hotel.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response with dashboard statistics",
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Schema( 
+     *                     @OA\Property(property="totalEmployees", type="integer", example=15),
+     *                     @OA\Property(property="totalBooking", type="integer", example=100),
+     *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=5),
+     *                     @OA\Property(property="todayTransferredBookings", type="integer", example=10)
+     *                 ),
+     *                 @OA\Schema( 
+     *                     @OA\Property(property="totalBooking", type="integer", example=20),
+     *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=2),
+     *                     @OA\Property(property="totalTransferredBookings", type="integer", example=15),
+     *                     @OA\Property(property="todayTransferredBookings", type="integer", example=4)
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Unauthorized")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal Server Error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Error message")
+     *         )
+     *     )
+     * )
+     */
 
 
     public function dashboard(Request $request)
     {
-        try{
+        try {
             $user = Auth::user();
             $userType = $user->user_type_id;
 
-        switch ($userType) {
-            case 4: // Hotel
-                $hotelID = Hotel::where('user_id', $user->id)->value('id');
+            switch ($userType) {
+                case 4: // Hotel
+                    $hotelID = Hotel::where('user_id', $user->id)->value('id');
 
-                $totalEmployees = HotelEmployee::where('hotel_id', $hotelID)->count();
-                $totalBooking = $this->countBookings($hotelID);
-                $totalTransferPendingBookings = $this->countPendingTransfers($hotelID);
-                $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID]);
+                    $totalEmployees = HotelEmployee::where('hotel_id', $hotelID)->count();
+                    $totalBooking = $this->countBookings($hotelID);
+                    $totalTransferPendingBookings = $this->countPendingTransfers($hotelID);
+                    $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID]);
+                    $graphData = $this->generateHotelGraphData($hotelID);
 
-                return response()->json([
-                    'totalEmployees' => $totalEmployees,
-                    'totalBooking' => $totalBooking,
-                    'totalTransferPendingBookings' => $totalTransferPendingBookings,
-                    'todayTransferredBookings' => $todayTransferredBookings
-                ]);
+                    return response()->json([
+                        'totalEmployees' => $totalEmployees,
+                        'totalBooking' => $totalBooking,
+                        'totalTransferPendingBookings' => $totalTransferPendingBookings,
+                        'todayTransferredBookings' => $todayTransferredBookings,
+                        'graphData' => $graphData
+                    ]);
 
-            case 5: // Hotel Employee
-                $hotelEmployeeID = HotelEmployee::where('user_id', $user->id)->value('id');
-                $hotelID = HotelEmployee::where('id', $hotelEmployeeID)->value('hotel_id');
+                case 5: // Hotel Employee
+                    $hotelEmployeeID = HotelEmployee::where('user_id', $user->id)->value('id');
+                    $hotelID = HotelEmployee::where('id', $hotelEmployeeID)->value('hotel_id');
 
-                $totalBooking = $this->countBookings($hotelID, $hotelEmployeeID);
-                $totalTransferPendingBookings = $this->countPendingTransfers($hotelID, $hotelEmployeeID);
-                $totalTransferredBookings = $this->countDistinctTransfers([$hotelID], $hotelEmployeeID);
-                $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID], $hotelEmployeeID);
+                    $totalBooking = $this->countBookings($hotelID, $hotelEmployeeID);
+                    $totalTransferPendingBookings = $this->countPendingTransfers($hotelID, $hotelEmployeeID);
+                    $totalTransferredBookings = $this->countDistinctTransfers([$hotelID], $hotelEmployeeID);
+                    $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID], $hotelEmployeeID);
+                    $graphData = $this->generateHotelGraphData($hotelID, $hotelEmployeeID);
+                    return response()->json([
+                        'totalBooking' => $totalBooking,
+                        'totalTransferPendingBookings' => $totalTransferPendingBookings,
+                        'totalTransferredBookings' => $totalTransferredBookings,
+                        'todayTransferredBookings' => $todayTransferredBookings,
+                        'graphData' => $graphData
+                    ]);
 
-                return response()->json([
-                    'totalBooking' => $totalBooking,
-                    'totalTransferPendingBookings' => $totalTransferPendingBookings,
-                    'totalTransferredBookings' => $totalTransferredBookings,
-                    'todayTransferredBookings' => $todayTransferredBookings
-                ]);
-
-            default:
-                return response()->json(['error' => 'Unauthorized'], 403);
-        }
+                default:
+                    return response()->json(['error' => 'Unauthorized'], 403);
+            }
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
@@ -424,6 +428,35 @@ class AuthController extends Controller
         }
 
         return $query->count();
+    }
+
+    private function generateHotelGraphData($hotelID, $hotelEmployeeID = null)
+    {
+        $dates = CarbonPeriod::create(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth());
+        $labels = [];
+        $dailyBookings = [];
+        $dailyTransfers = [];
+
+        foreach ($dates as $date) {
+            $labels[] = $date->format('d M');
+
+            $bookingQuery = HotelBooking::where('hotel_id', $hotelID)->whereDate('created_at', $date);
+            $transferQuery = HotelBooking::where('hotel_id', $hotelID)->whereDate('transfer_date', $date);
+
+            if ($hotelEmployeeID) {
+                $bookingQuery->where('hotel_employee_id', $hotelEmployeeID);
+                $transferQuery->where('hotel_employee_id', $hotelEmployeeID);
+            }
+
+            $dailyBookings[] = $bookingQuery->count();
+            $dailyTransfers[] = $transferQuery->count();
+        }
+
+        return [
+            'labels' => $labels,
+            'dailyBookings' => $dailyBookings,
+            'dailyTransfers' => $dailyTransfers
+        ];
     }
 
     /**

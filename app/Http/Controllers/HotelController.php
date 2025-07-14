@@ -10,6 +10,7 @@ use App\Models\HotelBooking;
 use App\Models\HotelEmployee;
 use App\Models\HotelOwnerDoc;
 use App\Models\PoliceStation;
+use App\Models\SpOffice;
 use App\Models\State;
 use App\Models\TransferEntry;
 use App\Models\UploadedEntry;
@@ -29,7 +30,12 @@ class HotelController extends Controller
         }
 
         if ($request->ajax()) {
-            if (Auth::user()->user_type_id == 3) {
+            if(Auth::user()->user_type_id == 2){
+                $spOffice = SpOffice::where('user_id', Auth::id())->first();
+                $policeStation = PoliceStation::where('sp_office_id', $spOffice->id)->pluck('id');
+                $data = Hotel::whereIn('police_station_id', $policeStation)->orderBy('id', 'desc')->get();
+            }
+            else if (Auth::user()->user_type_id == 3) {
                 $policeStation = PoliceStation::where('user_id', Auth::id())->first();
 
                 if ($policeStation) {

@@ -120,6 +120,13 @@ document.addEventListener("DOMContentLoaded", function (e) {
                                 },
                             },
                         },
+                        police_station_id: {
+                            validators: {
+                                notEmpty: {
+                                    message: "Please select police station",
+                                },
+                            },
+                        },
                         password: {
                             validators: {
                                 notEmpty: {
@@ -402,3 +409,38 @@ $("#document_id").on("change", function () {
 
     $("#documentUploadContainer").html(fileInputHtml);
 });
+
+$(document).on("change", "#city_id", function () {
+    var id = $(this).val();
+    if (id) {
+        $.ajax({
+            url: policeStationByCityUrl,
+            type: "GET",
+            data: { id: id },
+            dataType: "json",
+            success: function (response) {
+                $("#police_station_id")
+                    .empty()
+                    .append('<option value="">Select Police Station</option>');
+
+                if (response.data && response.data.length > 0) {
+                    $.each(response.data, function (index, city) {
+                        $("#police_station_id").append(
+                            '<option value="' + city.id + '">' + city.police_station_name + "</option>"
+                        );
+                    });
+                } else {
+                    $("#police_station_id").append('<option value="">No Police Station Available</option>');
+                }
+            },
+            error: function () {
+                $("#police_station_id")
+                    .empty()
+                    .append("<option>Error loading Police Stations</option>");
+            },
+        });
+    } else {
+        $("#police_station_id").empty().append('<option value="">Select Police Station</option>');
+    }
+});
+

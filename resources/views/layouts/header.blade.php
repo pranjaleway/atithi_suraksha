@@ -13,7 +13,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-    <title>@if(Request::is('/'))Login @elseif (Request::is('forgot-password')) Forgot Password @elseif (Request::is('reset-password')) Reset Password @else @yield('title') @endif</title>
+    <title>@if(Request::is('/'))Login @elseif (Request::is('forgot-password')) Forgot Password @elseif (Request::is('reset-password')) Reset Password @elseif(Request::is('hotel-signup')) Hotel Signup @else @yield('title') @endif</title>
 
     <meta name="description" content="" />
     <meta name="csrf-token" content="{{ csrf_token() }}">

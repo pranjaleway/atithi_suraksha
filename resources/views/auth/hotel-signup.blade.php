@@ -259,7 +259,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-md-6 mb-3" id="documentUploadContainer">
+                                    <div class="col-sm-6 mb-3" id="documentUploadContainer">
                                         <!-- File input will be dynamically added here -->
                                     </div>
 

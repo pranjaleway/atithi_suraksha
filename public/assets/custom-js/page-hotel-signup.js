@@ -77,13 +77,13 @@ document.addEventListener("DOMContentLoaded", function (e) {
                                 },
                             },
                         },
-                        license_number: {
-                            validators: {
-                                notEmpty: {
-                                    message: "Please enter license  number",
-                                },
-                            },
-                        },
+                        // license_number: {
+                        //     validators: {
+                        //         notEmpty: {
+                        //             message: "Please enter license  number",
+                        //         },
+                        //     },
+                        // },
                         pincode: {
                             validators: {
                                 notEmpty: {
@@ -179,6 +179,61 @@ document.addEventListener("DOMContentLoaded", function (e) {
                                 );
                             }
                         });
+
+                       let lastDocumentField = null;
+
+$("#document_id").on("change", function () {
+    $("#all-preview-row").empty();
+
+    const documentId = $(this).val();
+    const documentName = $(this).find(":selected").data("name");
+
+    const fieldName = `document[${documentId}]`;
+
+    // Safely remove previous field from FormValidation BEFORE changing DOM
+    if (lastDocumentField && multiSteps2.getFields().hasOwnProperty(lastDocumentField)) {
+        multiSteps2.removeField(lastDocumentField);
+    }
+
+    if (!documentId) {
+        $("#documentUploadContainer").html("");
+        lastDocumentField = null;
+        return;
+    }
+
+    // HTML should be wrapped in .col-md-6 to support Bootstrap5 plugin layout
+    const fileInputHtml = `
+            <div class="input-group input-group-merge">
+                <div class="form-floating form-floating-outline">
+                    <input type="file" class="form-control document-input"
+                        id="document_${documentId}" data-label="${documentName}"
+                        name="${fieldName}" accept="image/*,application/pdf">
+                    <label for="document_${documentId}">${documentName}</label>
+                </div>
+            </div>`;
+
+    $("#documentUploadContainer").html(fileInputHtml);
+
+    // Delay required to ensure new DOM element is ready before adding to validator
+    setTimeout(() => {
+        multiSteps2.addField(fieldName, {
+            validators: {
+                notEmpty: {
+                    message: "Please upload document",
+                },
+                file: {
+                    extension: "jpg,jpeg,png,pdf",
+                    type: "image/jpeg,image/png,image/jpg,application/pdf",
+                    message: "Only JPG, PNG, or PDF files are allowed",
+                },
+            },
+        });
+
+        lastDocumentField = fieldName;
+    }, 50);
+});
+
+
                     },
                 }
             ).on("core.form.valid", function () {
@@ -248,6 +303,20 @@ document.addEventListener("DOMContentLoaded", function (e) {
                                 },
                             },
                         },
+                        document_id: {
+                            validators: {
+                                notEmpty: {
+                                    message: "Please select document",
+                                },
+                            },
+                        },
+                        "document[]": {
+                            validators: {
+                                notEmpty: {
+                                    message: "Please upload document",
+                                },
+                            },
+                        },
                     },
                     plugins: {
                         trigger: new FormValidation.plugins.Trigger(),
@@ -285,6 +354,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
                             toastr.success(response.message, "Success");
                             stepsValidationForm.reset();
                             validationStepper.to(0);
+                            $('#all-preview-row').empty();
                         }
                     },
                     error: function (xhr) {
@@ -385,30 +455,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     })();
 });
 
-$("#document_id").on("change", function () {
-    $("#all-preview-row").empty();
-
-    var documentId = $(this).val();
-    var documentName = $(this).find(":selected").data("name");
-
-    if (!documentId) {
-        $("#documentUploadContainer").html("");
-        return;
-    }
-
-    // Create the file input dynamically
-    var fileInputHtml = `
-            <div class="input-group input-group-merge">
-                <div class="form-floating form-floating-outline">
-                    <input type="file" class="form-control document-input"
-                        id="document_${documentId}" data-label="${documentName}"
-                        name="document[${documentId}]" accept="image/*,application/pdf">
-                    <label for="document_${documentId}">${documentName}</label>
-                </div>
-            </div>`;
-
-    $("#documentUploadContainer").html(fileInputHtml);
-});
+let lastDocumentField;
 
 $(document).on("change", "#city_id", function () {
     var id = $(this).val();
@@ -426,11 +473,17 @@ $(document).on("change", "#city_id", function () {
                 if (response.data && response.data.length > 0) {
                     $.each(response.data, function (index, city) {
                         $("#police_station_id").append(
-                            '<option value="' + city.id + '">' + city.police_station_name + "</option>"
+                            '<option value="' +
+                                city.id +
+                                '">' +
+                                city.police_station_name +
+                                "</option>"
                         );
                     });
                 } else {
-                    $("#police_station_id").append('<option value="">No Police Station Available</option>');
+                    $("#police_station_id").append(
+                        '<option value="">No Police Station Available</option>'
+                    );
                 }
             },
             error: function () {
@@ -440,7 +493,8 @@ $(document).on("change", "#city_id", function () {
             },
         });
     } else {
-        $("#police_station_id").empty().append('<option value="">Select Police Station</option>');
+        $("#police_station_id")
+            .empty()
+            .append('<option value="">Select Police Station</option>');
     }
 });
-

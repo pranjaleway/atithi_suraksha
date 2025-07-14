@@ -114,6 +114,8 @@ class APIHotelController extends Controller
                 $query->where('id', $request->id);
             }
 
+             $query->orderBy('id', 'desc');
+
             $data = $query->paginate(10);
 
             $canAdd = hasPermission('room-master', 'add');
@@ -537,6 +539,8 @@ class APIHotelController extends Controller
             if ($request->filled('id')) {
                 $query->where('id', $request->id);
             }
+
+             $query->orderBy('id', 'desc');
 
             $data = $query->paginate(10);
 
@@ -1025,6 +1029,8 @@ class APIHotelController extends Controller
      *     )
      * )
      */
+
+
     public function getBookings(Request $request)
     {
         try {
@@ -1076,6 +1082,380 @@ class APIHotelController extends Controller
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }
+/**
+ * @OA\Post(
+ *     path="/add-booking",
+ *     tags={"Hotels"},
+ *     summary="Create a hotel booking with guest and member information",
+ *     operationId="storeHotelBooking",
+ *     security={{"bearerAuth":{}}},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={
+ *                 "guestFullName", "contactNumber", "gender", "age",
+ *                 "aadharNumber", "checkIn", "checkOut", "room", "state_id", "city_id",
+ *                 "pincode", "address", "idProof"
+ *             },
+ *             @OA\Property(property="guestFullName", type="string", example="Ankit"),
+ *             @OA\Property(property="contactNumber", type="string", example="9988654433"),
+ *             @OA\Property(property="email", type="string", format="email", example="ankit@example.com"),
+ *             @OA\Property(property="gender", type="string", enum={"male", "female", "other"}, example="male"),
+ *             @OA\Property(property="age", type="integer", example=23),
+ *             @OA\Property(property="guestNo", type="integer", example=3),
+ *             @OA\Property(property="maleCount", type="integer", example=1),
+ *             @OA\Property(property="femaleCount", type="integer", example=1),
+ *             @OA\Property(property="childCount", type="integer", example=1),
+ *             @OA\Property(property="aadharNumber", type="string", example="983475934593"),
+ *             @OA\Property(property="checkIn", type="string", format="date-time", example="2025-07-14T11:43:00.000Z"),
+ *             @OA\Property(property="checkOut", type="string", format="date-time", example="2025-07-16T11:43:00.000Z"),
+ *             @OA\Property(
+ *                 property="room",
+ *                 type="array",
+ *                 @OA\Items(type="integer", example=1)
+ *             ),
+ *             @OA\Property(property="state_id", type="integer", example=1),
+ *             @OA\Property(property="city_id", type="integer", example=2),
+ *             @OA\Property(property="pincode", type="integer", example=456010),
+ *             @OA\Property(property="address", type="string", example="test"),
+ *             @OA\Property(property="addMembers", type="boolean", example=true),
+ *             @OA\Property(property="idProof", type="string", format="binary", description="ID proof file (base64 or file URL)"),
+ *             @OA\Property(
+ *                 property="members",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     required={"guestFullName", "contactNumber", "gender", "age", "aadharNumber", "idProof"},
+ *                     @OA\Property(property="guestFullName", type="string", example="guest 2"),
+ *                     @OA\Property(property="contactNumber", type="string", example="93845793475"),
+ *                     @OA\Property(property="gender", type="string", enum={"male", "female", "other"}, example="female"),
+ *                     @OA\Property(property="age", type="integer", example=22),
+ *                     @OA\Property(property="aadharNumber", type="string", example="234234234234"),
+ *                     @OA\Property(property="sameAsAboveAddress", type="boolean", example=true),
+ *                     @OA\Property(property="state_id", type="integer", example=2),
+ *                     @OA\Property(property="city_id", type="integer", example=126),
+ *                     @OA\Property(property="pincode", type="integer", example=456050),
+ *                     @OA\Property(property="address", type="string", example="test 2"),
+ *                     @OA\Property(property="idProof", type="string", format="binary", description="Member ID proof (base64 or file reference)")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Booking created successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="message", type="string", example="Hotel booking added successfully"),
+ *             @OA\Property(property="redirect", type="string", example="/bookings")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="errors", type="object")
+ *         )
+ *     )
+ * )
+ */
+
+    private function generateBookingId($cityId, $policeStationId, $hotelId)
+    {
+        $datePart = now()->format('Ymd'); // Example: 20250703
+
+        // Match all booking IDs ending with today's date + sequence
+        $todayBookings = HotelBooking::where('booking_id', 'like', "%{$datePart}%")
+            ->pluck('booking_id');
+
+        $maxSequence = 0;
+
+        foreach ($todayBookings as $bookingId) {
+            // Get the last 3 characters as sequence
+            $sequence = (int) substr($bookingId, -3);
+            if ($sequence > $maxSequence) {
+                $maxSequence = $sequence;
+            }
+        }
+
+        $nextSequence = str_pad($maxSequence + 1, 3, '0', STR_PAD_LEFT);
+
+        // Build final booking ID
+        return "{$cityId}{$policeStationId}{$hotelId}{$datePart}{$nextSequence}";
+    }
+
+
+    public function addBooking(Request $request)
+{
+    // 1. Transform the given payload into a 'guests' array
+    $mainGuest = [
+        'guest_name' => $request->guestFullName,
+        'contact_number' => $request->contactNumber,
+        'email' => $request->email,
+        'gender' => $request->gender,
+        'age' => $request->age,
+        'no_of_guest' => $request->guestNo,
+        'no_of_male' => $request->maleCount,
+        'no_of_female' => $request->femaleCount,
+        'no_of_children' => $request->childCount,
+        'aadhar_number' => $request->aadharNumber,
+        'check_in' => Carbon::parse($request->checkIn)->format('Y-m-d\TH:i'),
+        'check_out' => Carbon::parse($request->checkOut)->format('Y-m-d\TH:i'),
+        'room_number_id' => implode(',', $request->room ?? []),
+        'state_id' => $request->state_id,
+        'city_id' => $request->city_id,
+        'pincode' => $request->pincode,
+        'address' => $request->address,
+        'id_proof_path' => $request->file('idProof'),
+        'same_address' => null,
+    ];
+
+    $members = $request->input('members', []);
+    $guestList = [$mainGuest];
+
+    foreach ($members as $index => $member) {
+        $guestList[] = [
+            'guest_name' => $member['guestFullName'],
+            'contact_number' => $member['contactNumber'] ?? null,
+            'gender' => $member['gender'],
+            'age' => $member['age'],
+            'aadhar_number' => $member['aadharNumber'],
+            'email' => null,
+            'check_in' => null,
+            'check_out' => null,
+            'room_number_id' => null,
+            'no_of_guest' => null,
+            'no_of_male' => null,
+            'no_of_female' => null,
+            'no_of_children' => null,
+            'same_address' => $member['sameAsAboveAddress'] ?? false,
+            'address' => $member['address'] ?? null,
+            'state_id' => $member['state_id'] ?? null,
+            'city_id' => $member['city_id'] ?? null,
+            'pincode' => $member['pincode'] ?? null,
+            'id_proof_path' => $request->file("members.$index.idProof"),
+        ];
+    }
+
+    // 2. Attach to request manually for validation
+    $request->merge(['guests' => $guestList]);
+
+    // 3. Validate the request using existing rules
+    $this->validateBookingData($request); // Make sure you extract your validation into this helper method
+
+    $guests = $request->guests;
+    $firstGuest = $guests[0];
+
+    // 4. Guest count consistency check
+    $totalGuests = (int) ($firstGuest['no_of_male'] ?? 0)
+        + (int) ($firstGuest['no_of_female'] ?? 0)
+        + (int) ($firstGuest['no_of_children'] ?? 0);
+
+    if ((int) $firstGuest['no_of_guest'] !== $totalGuests) {
+        return response()->json([
+            'status' => 'error',
+            'errors' => [
+                "guests.0.no_of_guest" => ["Total guests must match the sum of male, female, and children."]
+            ]
+        ], 422);
+    }
+
+    // 5. Get hotel or employee info
+    $user = Auth::user();
+    $hotelId = $hotelEmployeeId = null;
+
+    if ($user->user_type_id == 4) {
+        $hotelId = Hotel::where('user_id', $user->id)->value('id');
+    } elseif ($user->user_type_id == 5) {
+        $employee = HotelEmployee::where('user_id', $user->id)->first();
+        $hotelId = $employee->hotel_id ?? null;
+        $hotelEmployeeId = $employee->id ?? null;
+    }
+
+    $cityId = $firstGuest['city_id'];
+    $policeStationId = Hotel::where('id', $hotelId)->value('police_station_id');
+    $bookingId = $this->generateBookingId($cityId, $policeStationId, $hotelId);
+    $savedIds = [];
+
+    // 6. Loop and store each guest
+    foreach ($guests as $index => $guestData) {
+        if ($index > 0 && filter_var($guestData['same_address'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $guestData['address'] = $firstGuest['address'];
+            $guestData['state_id'] = $firstGuest['state_id'];
+            $guestData['city_id'] = $firstGuest['city_id'];
+            $guestData['pincode'] = $firstGuest['pincode'];
+        }
+
+        if ($index > 0) {
+            $guestData['check_in'] = $firstGuest['check_in'];
+            $guestData['check_out'] = $firstGuest['check_out'];
+            $guestData['room_number_id'] = $firstGuest['room_number_id'];
+        }
+
+        $roomNumbers = [];
+        if (!empty($guestData['room_number_id'])) {
+            $roomIds = explode(',', $guestData['room_number_id']);
+            $roomNumbers = RoomNumber::whereIn('id', $roomIds)->pluck('room_number')->toArray();
+        }
+
+        // Store the file
+        $filePath = null;
+        if ($guestData['id_proof_path']) {
+            $filePath = $guestData['id_proof_path']->store('booking/id_proofs', 'public');
+        }
+
+        $booking = HotelBooking::create([
+            'hotel_id' => $hotelId,
+            'hotel_employee_id' => $hotelEmployeeId,
+            'booking_id' => $bookingId,
+            'guest_name' => $guestData['guest_name'],
+            'contact_number' => $guestData['contact_number'] ?? $firstGuest['contact_number'],
+            'email' => $guestData['email'] ?? null,
+            'aadhar_number' => $guestData['aadhar_number'],
+            'age' => $guestData['age'],
+            'gender' => $guestData['gender'],
+            'no_of_guest' => $guestData['no_of_guest'] ?? null,
+            'no_of_male' => $guestData['no_of_male'] ?? null,
+            'no_of_female' => $guestData['no_of_female'] ?? null,
+            'no_of_children' => $guestData['no_of_children'] ?? null,
+            'check_in' => $guestData['check_in'],
+            'check_out' => $guestData['check_out'],
+            'room_number_id' => $guestData['room_number_id'],
+            'room_number' => implode(',', $roomNumbers),
+            'address' => $guestData['address'],
+            'state_id' => $guestData['state_id'],
+            'city_id' => $guestData['city_id'],
+            'pincode' => $guestData['pincode'],
+            'id_proof_path' => $filePath,
+            'parent_id' => $index === 0 ? null : ($savedIds[0] ?? null),
+        ]);
+
+        $savedIds[] = $booking->id;
+    }
+
+    activiyLog('New booking added by ' . ucfirst($user->name));
+
+    return response()->json([
+        'status' => 'success',
+        'message' => 'Hotel booking added successfully',
+        'redirect' => route('bookings'),
+    ]);
+}
+
+private function validateBookingData(Request $request)
+{
+    $guests = $request->input('guests');
+
+    $rules = ['guests' => 'required|array|min:1'];
+    $messages = ['guests.required' => 'At least one guest is required.'];
+
+    foreach ($guests as $index => $guest) {
+        $prefix = "guests.$index.";
+
+        $rules += [
+            $prefix . 'guest_name' => 'required|string|max:255',
+            $prefix . 'aadhar_number' => 'required|numeric|digits:12',
+            $prefix . 'email' => 'nullable|email|max:255',
+            $prefix . 'id_proof_path' => 'required|file|mimes:jpeg,jpg,png,pdf',
+            $prefix . 'same_address' => 'nullable|boolean',
+            $prefix . 'age' => 'required|integer|min:0',
+            $prefix . 'gender' => 'required|in:male,female,other',
+        ];
+
+        if ($index === 0) {
+            $rules += [
+                $prefix . 'check_in' => 'required|date_format:Y-m-d\TH:i',
+                $prefix . 'check_out' => 'required|date_format:Y-m-d\TH:i|after_or_equal:' . $prefix . 'check_in',
+                $prefix . 'contact_number' => 'required|numeric|digits:10',
+                $prefix . 'no_of_guest' => 'required|integer|min:1',
+                $prefix . 'no_of_male' => 'nullable|integer|min:1',
+                $prefix . 'no_of_female' => 'nullable|integer|min:1',
+                $prefix . 'no_of_children' => 'nullable|integer|min:0',
+                $prefix . 'address' => 'required|string|max:500',
+                $prefix . 'state_id' => 'required|integer|exists:states,id',
+                $prefix . 'city_id' => 'required|integer|exists:cities,id',
+                $prefix . 'pincode' => 'required|numeric|digits:6',
+                $prefix . 'room_number_id' => 'required',
+            ];
+        } else {
+            $rules += [
+                $prefix . 'check_in' => 'nullable|date_format:Y-m-d\TH:i',
+                $prefix . 'check_out' => 'nullable|date_format:Y-m-d\TH:i|after_or_equal:' . $prefix . 'check_in',
+                $prefix . 'contact_number' => 'nullable',
+                $prefix . 'no_of_guest' => 'nullable',
+                $prefix . 'no_of_male' => 'nullable',
+                $prefix . 'no_of_female' => 'nullable',
+                $prefix . 'no_of_children' => 'nullable',
+                $prefix . 'room_number_id' => 'nullable',
+            ];
+
+            if (!filter_var($guest['same_address'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                $rules += [
+                    $prefix . 'address' => 'required|string|max:500',
+                    $prefix . 'state_id' => 'required|integer|exists:states,id',
+                    $prefix . 'city_id' => 'required|integer|exists:cities,id',
+                    $prefix . 'pincode' => 'required|numeric|digits:6',
+                ];
+                $messages += [
+                    $prefix . 'address.required' => 'Please enter the address.',
+                    $prefix . 'state_id.required' => 'Please select a state.',
+                    $prefix . 'city_id.required' => 'Please select a city.',
+                    $prefix . 'pincode.required' => 'Please enter the pincode.',
+                ];
+            }
+        }
+
+        // Custom messages (shared)
+        $messages += [
+            $prefix . 'guest_name.required' => 'Please enter the guest name.',
+            $prefix . 'guest_name.max' => 'Guest name may not exceed 255 characters.',
+            $prefix . 'aadhar_number.required' => 'Please enter the Aadhar number.',
+            $prefix . 'aadhar_number.numeric' => 'Aadhar number must be numeric.',
+            $prefix . 'aadhar_number.digits' => 'Aadhar number must be exactly 12 digits.',
+            $prefix . 'email.email' => 'Please enter a valid email address.',
+            $prefix . 'id_proof_path.required' => 'Please upload the ID proof.',
+            $prefix . 'id_proof_path.mimes' => 'ID proof must be a jpeg, jpg, png, or pdf file.',
+            $prefix . 'age.required' => 'Please enter the age.',
+            $prefix . 'age.integer' => 'Age must be a valid number.',
+            $prefix . 'age.min' => 'Age must be a positive number.',
+            $prefix . 'gender.required' => 'Please select the gender.',
+            $prefix . 'gender.in' => 'Please select a valid gender.',
+        ];
+
+        if ($index === 0) {
+            $messages += [
+                $prefix . 'check_in.required' => 'Please enter the check-in date.',
+                $prefix . 'check_in.date_format' => 'Check-in date must be in Y-m-d\TH:i format.',
+                $prefix . 'check_out.required' => 'Please enter the check-out date.',
+                $prefix . 'check_out.date_format' => 'Check-out date must be in Y-m-d\TH:i format.',
+                $prefix . 'check_out.after_or_equal' => 'Check-out must be same or after check-in.',
+                $prefix . 'contact_number.required' => 'Please enter contact number.',
+                $prefix . 'contact_number.numeric' => 'Contact number must be numeric.',
+                $prefix . 'contact_number.digits' => 'Contact number must be 10 digits.',
+                $prefix . 'no_of_guest.required' => 'Please enter number of guests.',
+                $prefix . 'no_of_guest.integer' => 'Number of guests must be a valid number.',
+                $prefix . 'no_of_guest.min' => 'At least one guest is required.',
+                $prefix . 'address.required' => 'Please enter the address.',
+                $prefix . 'state_id.required' => 'Please select the state.',
+                $prefix . 'city_id.required' => 'Please select the city.',
+                $prefix . 'pincode.required' => 'Please enter the pincode.',
+                $prefix . 'pincode.numeric' => 'Pincode must be numeric.',
+                $prefix . 'pincode.digits' => 'Pincode must be 6 digits.',
+                $prefix . 'no_of_male.integer' => 'Number of males must be a valid number.',
+                $prefix . 'no_of_male.min' => 'At least one male is required.',
+                $prefix . 'no_of_female.integer' => 'Number of females must be a valid number.',
+                $prefix . 'no_of_female.min' => 'At least one female is required.',
+                $prefix . 'no_of_children.integer' => 'Number of children must be a valid number.',
+                $prefix . 'same_address.boolean' => 'Please select a valid option.',
+                $prefix . 'room_number_id.required' => 'Please enter the room number.',
+            ];
+        }
+    }
+
+    $request->validate($rules, $messages);
+}
+
 
 
     /**
@@ -1169,7 +1549,7 @@ class APIHotelController extends Controller
             });
         }
 
-        $data = $query->paginate(10);
+        $data = $query->orderBy('id', 'desc')->paginate(10);
 
         $canAdd = hasPermission('bookings', 'add');
         $canEdit = hasPermission('bookings', 'edit');

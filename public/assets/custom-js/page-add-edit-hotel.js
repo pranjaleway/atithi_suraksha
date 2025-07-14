@@ -87,13 +87,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                     },
                 },
-                license_number: {
-                    validators: {
-                        notEmpty: {
-                            message: "Please enter license  number",
-                        },
-                    },
-                },
+                // license_number: {
+                //     validators: {
+                //         notEmpty: {
+                //             message: "Please enter license  number",
+                //         },
+                //     },
+                // },
                 police_station_id: {
                     validators: {
                         notEmpty: {
@@ -163,6 +163,13 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                     },
                 },
+                document_id: {
+                    validators: {
+                        notEmpty: {
+                            message: "Please select document",
+                        },
+                    },
+                }
             },
             plugins: {
                 trigger: new FormValidation.plugins.Trigger(),
@@ -276,30 +283,62 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
             });
         });
-    }
-});
+       let lastDocumentFieldName = null;
 
 $("#document_id").on("change", function () {
     $("#all-preview-row").empty();
 
-    var documentId = $(this).val();
-    var documentName = $(this).find(":selected").data("name");
+    const documentId = $(this).val();
+    const documentName = $(this).find(":selected").data("name");
+
+    const fieldName = `document[${documentId}]`;
+
+    // Remove the previous validation field BEFORE overwriting DOM
+    if (lastDocumentFieldName) {
+        fv.removeField(lastDocumentFieldName);
+        lastDocumentFieldName = null;
+    }
 
     if (!documentId) {
         $("#documentUploadContainer").html("");
         return;
     }
 
-    // Create the file input dynamically
-    var fileInputHtml = `
+    const fileInputHtml = `
+
             <div class="input-group input-group-merge">
                 <div class="form-floating form-floating-outline">
                     <input type="file" class="form-control document-input"
                         id="document_${documentId}" data-label="${documentName}"
-                        name="document[${documentId}]" accept="image/*,application/pdf">
+                        name="${fieldName}" accept="image/*,application/pdf">
                     <label for="document_${documentId}">${documentName}</label>
                 </div>
             </div>`;
 
     $("#documentUploadContainer").html(fileInputHtml);
+
+    // Wait for DOM update, then add field to FormValidation
+    setTimeout(() => {
+        fv.addField(fieldName, {
+            validators: {
+                notEmpty: {
+                    message: "Please upload document",
+                },
+                file: {
+                    extension: "jpg,jpeg,png,pdf",
+                    type: "image/jpeg,image/png,image/jpg,application/pdf",
+                    message: "Only JPG, PNG, or PDF files are allowed",
+                },
+            },
+        });
+
+        lastDocumentFieldName = fieldName;
+    }, 50);
 });
+
+
+
+    }
+});
+
+

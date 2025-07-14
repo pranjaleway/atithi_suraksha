@@ -75,20 +75,26 @@ class HotelController extends Controller
             'owner_contact_number' => 'required|numeric|digits:10|unique:users,phone',
             'aadhar_number' => 'required|numeric|digits:12|unique:hotels,aadhar_number',
             'pan_number' => 'required|string|max:10|unique:hotels,pan_number',
-            'license_number' => 'required|string|max:255|unique:hotels,license_number',
+            'license_number' => 'nullable|string|max:255|unique:hotels,license_number',
             'police_station_id' => 'required|exists:police_stations,id',
             'address' => 'required|string',
             'state_id' => 'required|exists:states,id',
             'city_id' => 'required|exists:cities,id',
             'pincode' => 'required|numeric|digits:6',
             'password' => 'required|string|min:6|confirmed',
+            'document_id' => 'required',
+            'document' => 'required|array',
+            'document.*' => 'required|file|mimes:jpg,jpeg,png,pdf',
         ], [
             'email.unique' => 'This email has already been taken.',
             'contact_number.unique' => 'This contact number has already been taken.',
             'city_id.exists' => 'The selected city is invalid.',
             'state_id.exists' => 'The selected state is invalid.',
             'password.confirmed' => 'The confirmed password does not match.',
-            'police_station_id.exists' => 'The selected police station is invalid.'
+            'police_station_id.exists' => 'The selected police station is invalid.',
+            'document.*.required' => 'Please upload at least one document.',
+            'document.*.file' => 'Each document must be a valid file.',
+            'document.*.mimes' => 'Only JPG, JPEG, PNG, or PDF files are allowed.',
         ]);
 
         $hotels = Hotel::create($request->only([

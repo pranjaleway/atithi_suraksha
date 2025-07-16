@@ -56,4 +56,9 @@ class HotelBooking extends Model
     {
         return $this->belongsTo(City::class);
     }
+
+    public function visitors()
+{
+    return $this->hasMany(Visitor::class, 'booking_id');
+}
 }

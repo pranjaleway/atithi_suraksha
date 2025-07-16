@@ -1034,7 +1034,13 @@ class APIHotelController extends Controller
     public function getBookings(Request $request)
     {
         try {
-            $query = HotelBooking::with(['hotel:id,hotel_name,user_id', 'hotelEmployee:id,employee_name,user_id', 'state:id,name', 'city:id,name'])
+            $query = HotelBooking::with([
+                'hotel:id,hotel_name,user_id',
+                'hotelEmployee:id,employee_name,user_id',
+                'state:id,name',
+                'city:id,name'
+            ])
+                ->withCount('visitors') // ✅ Adds visitors_count field
                 ->whereNull('parent_id');
 
             if ($request->filled('search')) {
@@ -1061,14 +1067,19 @@ class APIHotelController extends Controller
                     ->where('transfer_date', $request->date)
                     ->where('transfer_type', 'manual')
                     ->first();
-                $query = HotelBooking::with(['hotel', 'hotelEmployee', 'state', 'city'])->where('parent_id', null)
-                    ->whereDate('transfer_date', $entry->transfer_date);
+
+                if ($entry) {
+                    $query = HotelBooking::with(['hotel', 'hotelEmployee', 'state', 'city'])
+                        ->withCount('visitors')
+                        ->whereNull('parent_id')
+                        ->whereDate('transfer_date', $entry->transfer_date);
+                }
             }
 
             if (Auth::user()->user_type_id == 4) {
                 $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
                 $query->where('hotel_id', $hotelId);
-            } else if (Auth::user()->user_type_id == 5) {
+            } elseif (Auth::user()->user_type_id == 5) {
                 $employeeID = HotelEmployee::where('user_id', Auth::user()->id)->value('id');
                 $query->where('hotel_employee_id', $employeeID);
             } else {
@@ -1076,13 +1087,16 @@ class APIHotelController extends Controller
             }
 
             $data = $query->orderBy('id', 'desc')->paginate(10);
-            $VisitorCount = Visitor::where('booking_id', $request->id)->count();
 
-            return response()->json(['status' => 'success', 'data' => $data, 'VisitorCount' => $VisitorCount]);
+            return response()->json([
+                'status' => 'success',
+                'data' => $data
+            ]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
     /**
      * @OA\Post(
      *     path="/add-booking",

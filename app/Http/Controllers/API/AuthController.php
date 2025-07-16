@@ -282,69 +282,69 @@ class AuthController extends Controller
         }
     }
 
-   /**
- * @OA\Get(
- *     path="/dashboard",
- *     tags={"Authentication"},
- *     summary="Get dashboard statistics",
- *     description="Returns dashboard statistics based on the authenticated user's role (Hotel Owner or Hotel Employee).",
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Response(
- *         response=200,
- *         description="Successful response with dashboard data",
- *         @OA\JsonContent(
- *             oneOf={
- *                 @OA\Schema(
- *                     type="object",
- *                     @OA\Property(property="totalEmployees", type="integer", example=12),
- *                     @OA\Property(property="totalBooking", type="integer", example=200),
- *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=5),
- *                     @OA\Property(property="todayTransferredBookings", type="integer", example=3),
- *                     @OA\Property(
- *                         property="graphData",
- *                         type="object",
- *                         @OA\Property(property="labels", type="array", @OA\Items(type="string", example="01 Jul")),
- *                         @OA\Property(property="dailyBookings", type="array", @OA\Items(type="integer", example=5)),
- *                         @OA\Property(property="dailyTransfers", type="array", @OA\Items(type="integer", example=2))
- *                     )
- *                 ),
- *                 @OA\Schema(
- *                     type="object",
- *                     @OA\Property(property="totalBooking", type="integer", example=50),
- *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=2),
- *                     @OA\Property(property="totalTransferredBookings", type="integer", example=20),
- *                     @OA\Property(property="todayTransferredBookings", type="integer", example=1),
- *                     @OA\Property(
- *                         property="graphData",
- *                         type="object",
- *                         @OA\Property(property="labels", type="array", @OA\Items(type="string", example="01 Jul")),
- *                         @OA\Property(property="dailyBookings", type="array", @OA\Items(type="integer", example=3)),
- *                         @OA\Property(property="dailyTransfers", type="array", @OA\Items(type="integer", example=1))
- *                     )
- *                 )
- *             }
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=403,
- *         description="Unauthorized access",
- *         @OA\JsonContent(
- *             @OA\Property(property="error", type="string", example="Unauthorized")
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=500,
- *         description="Internal Server Error",
- *         @OA\JsonContent(
- *             @OA\Property(property="status", type="string", example="error"),
- *             @OA\Property(property="message", type="string", example="Error message")
- *         )
- *     )
- * )
- */
+    /**
+     * @OA\Get(
+     *     path="/dashboard",
+     *     tags={"Authentication"},
+     *     summary="Get dashboard statistics",
+     *     description="Returns dashboard statistics based on the authenticated user's role (Hotel Owner or Hotel Employee).",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response with dashboard data",
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Schema(
+     *                     type="object",
+     *                     @OA\Property(property="totalEmployees", type="integer", example=12),
+     *                     @OA\Property(property="totalBooking", type="integer", example=200),
+     *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=5),
+     *                     @OA\Property(property="todayTransferredBookings", type="integer", example=3),
+     *                     @OA\Property(
+     *                         property="graphData",
+     *                         type="object",
+     *                         @OA\Property(property="labels", type="array", @OA\Items(type="string", example="01 Jul")),
+     *                         @OA\Property(property="dailyBookings", type="array", @OA\Items(type="integer", example=5)),
+     *                         @OA\Property(property="dailyTransfers", type="array", @OA\Items(type="integer", example=2))
+     *                     )
+     *                 ),
+     *                 @OA\Schema(
+     *                     type="object",
+     *                     @OA\Property(property="totalBooking", type="integer", example=50),
+     *                     @OA\Property(property="totalTransferPendingBookings", type="integer", example=2),
+     *                     @OA\Property(property="totalTransferredBookings", type="integer", example=20),
+     *                     @OA\Property(property="todayTransferredBookings", type="integer", example=1),
+     *                     @OA\Property(
+     *                         property="graphData",
+     *                         type="object",
+     *                         @OA\Property(property="labels", type="array", @OA\Items(type="string", example="01 Jul")),
+     *                         @OA\Property(property="dailyBookings", type="array", @OA\Items(type="integer", example=3)),
+     *                         @OA\Property(property="dailyTransfers", type="array", @OA\Items(type="integer", example=1))
+     *                     )
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized access",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Unauthorized")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal Server Error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Error message")
+     *         )
+     *     )
+     * )
+     */
 
     public function dashboard(Request $request)
     {
@@ -541,6 +541,129 @@ class AuthController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+
+    /**
+ * @OA\Post(
+ *     path="/get-filter-graph-data",
+ *     tags={"Authentication"},
+ *     summary="Get filtered graph data for bookings and transfers",
+ *     description="Retrieves daily hotel bookings and transfer counts between a specified date range for the authenticated hotel owner or employee. Returns empty data for unauthorized users.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="start_date",
+ *         in="query",
+ *         required=false,
+ *         description="Start date for filtering data (Y-m-d format). Defaults to the start of the current month.",
+ *         @OA\Schema(type="string", format="date", example="2025-07-01")
+ *     ),
+ *     @OA\Parameter(
+ *         name="end_date",
+ *         in="query",
+ *         required=false,
+ *         description="End date for filtering data (Y-m-d format). Defaults to the end of the current month.",
+ *         @OA\Schema(type="string", format="date", example="2025-07-15")
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Graph data retrieved successfully",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="labels", type="array",
+ *                 @OA\Items(type="string", example="01 Jul")
+ *             ),
+ *             @OA\Property(property="dailyBookings", type="array",
+ *                 @OA\Items(type="integer", example=5)
+ *             ),
+ *             @OA\Property(property="dailyTransfers", type="array",
+ *                 @OA\Items(type="integer", example=2)
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Something went wrong")
+ *         )
+ *     )
+ * )
+ */
+
+
+    public function getFilterGraphData(Request $request)
+    {
+        $startDate = $request->start_date
+            ? Carbon::parse($request->start_date)->startOfDay()
+            : Carbon::now()->startOfMonth()->startOfDay();
+
+        $endDate = $request->end_date
+            ? Carbon::parse($request->end_date)->endOfDay()
+            : Carbon::now()->endOfMonth()->endOfDay();
+
+        $dates = collect(CarbonPeriod::create($startDate, $endDate)->toArray());
+        $labels = $dates->map(fn($date) => $date->format('d M'))->toArray();
+
+        $userType = Auth::user()->user_type_id;
+        $hotelID = null;
+        $hotelEmployeeID = null;
+
+        if ($userType == 4) {
+            $hotelID = Hotel::where('user_id', Auth::id())->value('id');
+        } elseif ($userType == 5) {
+            $hotelEmployee = HotelEmployee::where('user_id', Auth::id())->first();
+            $hotelID = $hotelEmployee->hotel_id ?? null;
+            $hotelEmployeeID = $hotelEmployee->id ?? null;
+        }
+
+        if (!in_array($userType, [4, 5])) {
+            return response()->json([
+                'labels' => [],
+                'dailyBookings' => [],
+                'dailyTransfers' => [],
+            ]);
+        }
+
+        $bookingQuery = HotelBooking::selectRaw('DATE(created_at) as date, COUNT(*) as total')
+            ->where('hotel_id', $hotelID)
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
+        if ($userType == 5) {
+            $bookingQuery->where('hotel_employee_id', $hotelEmployeeID);
+        }
+
+        $bookings = $bookingQuery->groupBy('date')->pluck('total', 'date');
+
+        $transferQuery = HotelBooking::selectRaw('DATE(transfer_date) as date, COUNT(*) as total')
+            ->where('hotel_id', $hotelID)
+            ->where('status', 1)
+            ->whereBetween('transfer_date', [$startDate, $endDate]);
+
+        if ($userType == 5) {
+            $transferQuery->where('hotel_employee_id', $hotelEmployeeID);
+        }
+
+        $transfers = $transferQuery->groupBy('date')->pluck('total', 'date');
+
+        $dailyBookings = [];
+        $dailyTransfers = [];
+
+        foreach ($dates as $date) {
+            $day = $date->format('Y-m-d');
+            $dailyBookings[] = $bookings[$day] ?? 0;
+            $dailyTransfers[] = $transfers[$day] ?? 0;
+        }
+
+        return response()->json([
+            'labels' => $labels,
+            'dailyBookings' => $dailyBookings,
+            'dailyTransfers' => $dailyTransfers,
+        ]);
     }
 
 

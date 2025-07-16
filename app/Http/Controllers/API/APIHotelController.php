@@ -1188,7 +1188,6 @@ class APIHotelController extends Controller
 
     public function addBooking(Request $request)
 {
-    // 1. Transform the given payload into a 'guests' array
     $mainGuest = [
         'guest_name' => $request->guestFullName,
         'contact_number' => $request->contactNumber,
@@ -1208,13 +1207,15 @@ class APIHotelController extends Controller
         'pincode' => $request->pincode,
         'address' => $request->address,
         'id_proof_path' => $request->file('idProof'),
-        'same_address' => null,
+        'same_address' => null, 
     ];
 
     $members = $request->input('members', []);
     $guestList = [$mainGuest];
 
     foreach ($members as $index => $member) {
+        $sameAddress = filter_var($member['sameAsAboveAddress'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
         $guestList[] = [
             'guest_name' => $member['guestFullName'],
             'contact_number' => $member['contactNumber'] ?? null,
@@ -1229,7 +1230,7 @@ class APIHotelController extends Controller
             'no_of_male' => null,
             'no_of_female' => null,
             'no_of_children' => null,
-            'same_address' => $member['sameAsAboveAddress'] ?? false,
+            'same_address' => $sameAddress ? 'true' : 'false',
             'address' => $member['address'] ?? null,
             'state_id' => $member['state_id'] ?? null,
             'city_id' => $member['city_id'] ?? null,
@@ -1238,16 +1239,13 @@ class APIHotelController extends Controller
         ];
     }
 
-    // 2. Attach to request manually for validation
     $request->merge(['guests' => $guestList]);
 
-    // 3. Validate the request using existing rules
-    $this->validateBookingData($request); // Make sure you extract your validation into this helper method
+    $this->validateBookingData($request);
 
     $guests = $request->guests;
     $firstGuest = $guests[0];
 
-    // 4. Guest count consistency check
     $totalGuests = (int) ($firstGuest['no_of_male'] ?? 0)
         + (int) ($firstGuest['no_of_female'] ?? 0)
         + (int) ($firstGuest['no_of_children'] ?? 0);
@@ -1261,7 +1259,6 @@ class APIHotelController extends Controller
         ], 422);
     }
 
-    // 5. Get hotel or employee info
     $user = Auth::user();
     $hotelId = $hotelEmployeeId = null;
 
@@ -1278,9 +1275,10 @@ class APIHotelController extends Controller
     $bookingId = $this->generateBookingId($cityId, $policeStationId, $hotelId);
     $savedIds = [];
 
-    // 6. Loop and store each guest
     foreach ($guests as $index => $guestData) {
-        if ($index > 0 && filter_var($guestData['same_address'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+        $sameAddress = filter_var($guestData['same_address'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+        if ($index > 0 && $sameAddress) {
             $guestData['address'] = $firstGuest['address'];
             $guestData['state_id'] = $firstGuest['state_id'];
             $guestData['city_id'] = $firstGuest['city_id'];
@@ -1299,10 +1297,8 @@ class APIHotelController extends Controller
             $roomNumbers = RoomNumber::whereIn('id', $roomIds)->pluck('room_number')->toArray();
         }
 
-
-        // Store the file
         $filePath = null;
-        if ($guestData['id_proof_path']) {
+        if (!empty($guestData['id_proof_path'])) {
             $filePath = $guestData['id_proof_path']->store('booking/id_proofs', 'public');
         }
 
@@ -1340,9 +1336,9 @@ class APIHotelController extends Controller
     return response()->json([
         'status' => 'success',
         'message' => 'Hotel booking added successfully',
-        'redirect' => route('bookings'),
     ]);
 }
+
 
 private function validateBookingData(Request $request)
 {
@@ -1359,7 +1355,7 @@ private function validateBookingData(Request $request)
             $prefix . 'aadhar_number' => 'required|numeric|digits:12',
             $prefix . 'email' => 'nullable|email|max:255',
             $prefix . 'id_proof_path' => 'required|file|mimes:jpeg,jpg,png,pdf',
-            $prefix . 'same_address' => 'nullable|boolean',
+            $prefix . 'same_address' => 'nullable|in:true,false,1,0',
             $prefix . 'age' => 'required|integer|min:0',
             $prefix . 'gender' => 'required|in:male,female,other',
         ];
@@ -1391,7 +1387,10 @@ private function validateBookingData(Request $request)
                 $prefix . 'room_number_id' => 'nullable',
             ];
 
-            if (!filter_var($guest['same_address'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            // ✅ Fix: cast same_address before checking (handles "true"/"false" correctly)
+            $sameAddress = filter_var($guest['same_address'] ?? false, FILTER_VALIDATE_BOOLEAN);
+
+            if (!$sameAddress) {
                 $rules += [
                     $prefix . 'address' => 'required|string|max:500',
                     $prefix . 'state_id' => 'required|integer|exists:states,id',
@@ -1407,7 +1406,7 @@ private function validateBookingData(Request $request)
             }
         }
 
-        // Custom messages (shared)
+        // ✅ Shared custom messages
         $messages += [
             $prefix . 'guest_name.required' => 'Please enter the guest name.',
             $prefix . 'guest_name.max' => 'Guest name may not exceed 255 characters.',
@@ -1448,14 +1447,16 @@ private function validateBookingData(Request $request)
                 $prefix . 'no_of_female.integer' => 'Number of females must be a valid number.',
                 $prefix . 'no_of_female.min' => 'At least one female is required.',
                 $prefix . 'no_of_children.integer' => 'Number of children must be a valid number.',
-                $prefix . 'same_address.boolean' => 'Please select a valid option.',
+                $prefix . 'same_address.in' => 'Please select a valid option.',
                 $prefix . 'room_number_id.required' => 'Please enter the room number.',
             ];
         }
     }
 
+    // ✅ Run validation
     $request->validate($rules, $messages);
 }
+
 
 
 

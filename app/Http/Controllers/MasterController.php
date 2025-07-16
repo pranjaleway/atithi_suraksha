@@ -813,7 +813,7 @@ class MasterController extends Controller
         return response()->json(['status' => 'error', 'message' => 'Room not found'], 404);
     }
 
-    public function getPolicStationByCity(Request $request)
+    public function getPoliceStationByCity(Request $request)
     {
         try {
             $policeStations = PoliceStation::where('city_id', $request->id)->get();

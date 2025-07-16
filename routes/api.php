@@ -26,13 +26,14 @@ Route::get('/user', function (Request $request) {
      Route::get('get-documents', 'getDocuments')->name('get-documents');
      Route::get('get-states', 'getStates')->name('get-states');
      Route::get('get-cities', 'getCities')->name('get-cities');
-     Route::get('get-polic-station-by-city', 'getPolicStationByCity')->name('get-polic-station-by-city');
+     Route::get('get-police-station-by-city', 'getPoliceStationByCity')->name('get-police-station-by-city');
   });
 
   Route::middleware('auth:sanctum')->group(function () {
     
     Route::controller(APIAUthController::class)->group(function () {
       Route::get('dashboard', 'dashboard')->name('dashboard');
+      Route::post('get-filter-graph-data', 'getFilterGraphData')->name('get-filter-graph-data');
       Route::post('logout', 'logout')->name('logout');
     });
 

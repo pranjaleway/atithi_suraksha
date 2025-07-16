@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('owner_contact_number');
             $table->string('aadhar_number');
             $table->string('pan_number');
-            $table->string('license_number');
+            $table->string('license_number')->nullable();
             $table->text('address');
             $table->foreignId('state_id')->constrained('states')->onDelete('cascade');
             $table->foreignId('city_id')->constrained('cities')->onDelete('cascade');

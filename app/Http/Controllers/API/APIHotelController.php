@@ -1545,6 +1545,96 @@ class APIHotelController extends Controller
         }
     }
 
+    /**
+ * @OA\Post(
+ *     path="/view-booking-details",
+ *     tags={"Hotels"},
+ *     summary="View booking details",
+ *     description="Fetches the details of a specific hotel booking by its ID.",
+ *     security={{"bearerAuth":{}}},
+ *
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="query",
+ *         required=true,
+ *         description="The ID of the booking to view",
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=200,
+ *         description="Booking details fetched successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 example={
+ *                     "id": 1,
+ *                     "guest_name": "John Doe",
+ *                     "check_in": "2025-07-16",
+ *                     "check_out": "2025-07-20",
+ *                     "room_number": "101,102",
+ *                     "contact_number": "9876543210",
+ *                     "aadhar_number": "123456789012",
+ *                     "email": "john@example.com",
+ *                     "address": "123 Main Street",
+ *                     "state_id": 1,
+ *                     "city_id": 10,
+ *                     "pincode": "400001",
+ *                     "age": 30,
+ *                     "gender": "male",
+ *                     "id_proof_path": "booking/id_proofs/sample.pdf"
+ *                 }
+ *             )
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=404,
+ *         description="Booking not found",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Booking not found")
+ *         )
+ *     ),
+ *
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Error message")
+ *         )
+ *     )
+ * )
+ */
+
+
+    public function viewBookingDetails(Request $request){
+        try{
+            $booking = HotelBooking::with([
+                'hotel:id,hotel_name,user_id',
+                'hotelEmployee:id,employee_name,user_id',
+                'state:id,name',
+                'city:id,name'
+            ])->find($request->id);
+
+            if($booking){
+                return response()->json([
+                    'status' => 'success',
+                    'data' => $booking,
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
 
 
 

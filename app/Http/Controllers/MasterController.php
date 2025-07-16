@@ -602,7 +602,7 @@ class MasterController extends Controller
         }
 
         if ($request->ajax()) {
-            $data = Document::all();
+            $data = Document::orderBy('id', 'desc')->get();
             $canAdd = hasPermission('document', 'add');
             $canEdit = hasPermission('document', 'edit');
             $canDelete = hasPermission('document', 'delete');
@@ -816,7 +816,9 @@ class MasterController extends Controller
     public function getPoliceStationByCity(Request $request)
     {
         try {
-            $policeStations = PoliceStation::where('city_id', $request->id)->get();
+            $policeStations = PoliceStation::where('city_id', $request->id)
+            ->orderBy('name', 'asc')
+            ->get();
             return response()->json(['data' => $policeStations]);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);

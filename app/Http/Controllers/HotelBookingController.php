@@ -433,7 +433,7 @@ class HotelBookingController extends Controller
         }
         $id = base64_decode($id);
         if ($request->ajax()) {
-            $data = HotelBooking::where('parent_id', $id)->get();
+            $data = HotelBooking::where('parent_id', $id)->orderBy('id', 'desc')->get();
             $canAdd = hasPermission('bookings', 'add');
             $canEdit = hasPermission('bookings', 'edit');
             $canDelete = hasPermission('bookings', 'delete');
@@ -588,60 +588,61 @@ class HotelBookingController extends Controller
 
 
     //Uploaded Entries
-    public function uploadedEntries(Request $request, $id = null, $date = null)
-    {
-        if (!hasPermission('uploaded-entries', 'view')) {
-            abort(403, 'Unauthorized');
-        }
+   public function uploadedEntries(Request $request, $id = null, $date = null)
+{
+    if (!hasPermission('uploaded-entries', 'view')) {
+        abort(403, 'Unauthorized');
+    }
 
-        if ($request->ajax()) {
-            if ($id && $date) {
-                $id = base64_decode($id);
-                $date = base64_decode($date);
+    if ($request->ajax()) {
+        if ($id && $date) {
+            $id = base64_decode($id);
+            $date = base64_decode($date);
 
-                $entry = TransferEntry::with(['hotel', 'hotelEmployee'])
-                    ->where('transfer_date', $date)
-                    ->where('transfer_type', 'uploaded')
-                    ->first();
+            $entry = TransferEntry::with(['hotel', 'hotelEmployee'])
+                ->where('transfer_date', $date)
+                ->where('transfer_type', 'uploaded')
+                ->first();
 
-                if (!$entry) {
-                    return response()->json(['error' => 'Transfer entry not found'], 404);
-                }
-
-                $query = UploadedEntry::with(['hotel', 'hotelEmployee'])
-                    ->where('transfer_date', $entry->transfer_date);
-            } else {
-                $query = UploadedEntry::with(['hotel', 'hotelEmployee']);
+            if (!$entry) {
+                return response()->json(['error' => 'Transfer entry not found'], 404);
             }
 
-            if ($id && $date && (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3)) {
-                $data = $query->where('hotel_id', $id)->get();
-            } else if (Auth::user()->user_type_id == 3) {
-                $hotelId = Hotel::where('police_station_id', Auth::user()->id)->value('id');
-                $data = $query->where('hotel_id', $hotelId)->get();
-            } else if (Auth::user()->user_type_id == 4) {
-                $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
-                $data = $query->where('hotel_id', $hotelId)->get();
-            } else if (Auth::user()->user_type_id == 5) {
-                $employeeID = HotelEmployee::where('user_id', Auth::user()->id)->value('id');
-                $data = $query->where('hotel_employee_id', $employeeID)->get();
-            } else {
-                $data = [];
-            }
-
-            return response()->json([
-                'data' => $data,
-                'canAdd' => hasPermission('uploaded-entries', 'add'),
-                'canEdit' => hasPermission('uploaded-entries', 'edit'),
-                'canDelete' => hasPermission('uploaded-entries', 'delete'),
-            ]);
+            $query = UploadedEntry::with(['hotel', 'hotelEmployee'])
+                ->where('transfer_date', $entry->transfer_date);
+        } else {
+            $query = UploadedEntry::with(['hotel', 'hotelEmployee']);
         }
 
-        return view('hotel.uploaded-entries', [
-            'hotel_id' => $id,
-            'date' => $date
+        if ($id && $date && (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3)) {
+            $data = $query->where('hotel_id', $id)->orderBy('id', 'desc')->get();
+        } elseif (Auth::user()->user_type_id == 3) {
+            $hotelId = Hotel::where('police_station_id', Auth::user()->id)->value('id');
+            $data = $query->where('hotel_id', $hotelId)->orderBy('id', 'desc')->get();
+        } elseif (Auth::user()->user_type_id == 4) {
+            $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
+            $data = $query->where('hotel_id', $hotelId)->orderBy('id', 'desc')->get();
+        } elseif (Auth::user()->user_type_id == 5) {
+            $employeeID = HotelEmployee::where('user_id', Auth::user()->id)->value('id');
+            $data = $query->where('hotel_employee_id', $employeeID)->orderBy('id', 'desc')->get();
+        } else {
+            $data = [];
+        }
+
+        return response()->json([
+            'data' => $data,
+            'canAdd' => hasPermission('uploaded-entries', 'add'),
+            'canEdit' => hasPermission('uploaded-entries', 'edit'),
+            'canDelete' => hasPermission('uploaded-entries', 'delete'),
         ]);
     }
+
+    return view('hotel.uploaded-entries', [
+        'hotel_id' => $id,
+        'date' => $date
+    ]);
+}
+
 
 
     // public function storeUploadedEntry(Request $request)
@@ -761,112 +762,113 @@ class HotelBookingController extends Controller
 
     //Transfer Entries
     public function transferEntries(Request $request)
-    {
-        if (!hasPermission('transfer-entries', 'view')) {
-            abort(403, 'Unauthorized');
-        }
+{
+    if (!hasPermission('transfer-entries', 'view')) {
+        abort(403, 'Unauthorized');
+    }
 
-        $user = Auth::user();
-        $userId = $user->id;
-        $userType = $user->user_type_id;
+    $user = Auth::user();
+    $userId = $user->id;
+    $userType = $user->user_type_id;
 
-        // Handle AJAX Request
-        if ($request->ajax()) {
-            $query = TransferEntry::with(['hotel', 'hotelEmployee']);
+    // Handle AJAX Request
+    if ($request->ajax()) {
+        $query = TransferEntry::with(['hotel', 'hotelEmployee']);
 
-            // Apply user-specific filters
-            switch ($userType) {
-                case 2:
-                    $spOffice = SpOffice::where('user_id', $userId)->first();
-                    if ($spOffice) {
-                        $policeStationIds = PoliceStation::where('sp_office_id', $spOffice->id)->pluck('id');
-                        $hotelIds = Hotel::whereIn('police_station_id', $policeStationIds)->pluck('id');
-                        $query->whereIn('hotel_id', $hotelIds);
-                    }
-                    break;
-
-                case 3:
-                    $policeStation = PoliceStation::where('user_id', $userId)->first();
-                    if ($policeStation) {
-                        $hotelIds = Hotel::where('police_station_id', $policeStation->id)->pluck('id');
-                        $query->whereIn('hotel_id', $hotelIds);
-                    }
-                    break;
-
-                case 4:
-                    $hotelIds = Hotel::where('user_id', $userId)->pluck('id');
-                    $query->whereIn('hotel_id', $hotelIds);
-                    break;
-
-                case 5:
-                    $employeeId = HotelEmployee::where('user_id', $userId)->value('id');
-                    if ($employeeId) {
-                        $query->where('hotel_employee_id', $employeeId);
-                    }
-                    break;
-            }
-
-            // Apply filters
-            if ($request->filled('from_date') && $request->filled('to_date')) {
-                $from = Carbon::parse($request->from_date)->startOfDay();
-                $to = Carbon::parse($request->to_date)->endOfDay();
-                $query->whereBetween('transfer_date', [$from, $to]);
-            }
-
-            if ($request->filled('hotel_id')) {
-                $query->where('hotel_id', $request->hotel_id);
-            }
-
-            $entries = $query->get();
-
-            // Group by hotel and date
-            $grouped = $entries->groupBy(function ($item) {
-                return $item->hotel_id . '|' . $item->transfer_date;
-            });
-
-            $result = $grouped->map(function ($items, $key) {
-                $first = $items->first();
-                [$hotelId, $transferDate] = explode('|', $key);
-                return [
-                    'id' => $first->id,
-                    'hotel_id' => $hotelId,
-                    'transfer_date' => $transferDate,
-                    'hotel' => $first->hotel,
-                    'hotelEmployee' => $first->hotelEmployee,
-                    'transfer_types' => $items->pluck('transfer_type')->unique()->values(),
-                ];
-            })->values();
-
-            return response()->json([
-                'data' => $result,
-                'canAdd' => hasPermission('transfer-entries', 'add'),
-                'canEdit' => hasPermission('transfer-entries', 'edit'),
-                'canDelete' => hasPermission('transfer-entries', 'delete'),
-            ]);
-        }
-
-        // Non-AJAX request: load hotels based on user role
+        // Apply user-specific filters
         switch ($userType) {
             case 2:
                 $spOffice = SpOffice::where('user_id', $userId)->first();
-                $hotels = $spOffice
-                    ? Hotel::whereIn('police_station_id', PoliceStation::where('sp_office_id', $spOffice->id)->pluck('id'))->get()
-                    : collect();
+                if ($spOffice) {
+                    $policeStationIds = PoliceStation::where('sp_office_id', $spOffice->id)->pluck('id');
+                    $hotelIds = Hotel::whereIn('police_station_id', $policeStationIds)->pluck('id');
+                    $query->whereIn('hotel_id', $hotelIds);
+                }
                 break;
 
             case 3:
                 $policeStation = PoliceStation::where('user_id', $userId)->first();
-                $hotels = $policeStation
-                    ? Hotel::where('police_station_id', $policeStation->id)->get()
-                    : collect();
+                if ($policeStation) {
+                    $hotelIds = Hotel::where('police_station_id', $policeStation->id)->pluck('id');
+                    $query->whereIn('hotel_id', $hotelIds);
+                }
                 break;
 
-            default:
-                $hotels = Hotel::all();
+            case 4:
+                $hotelIds = Hotel::where('user_id', $userId)->pluck('id');
+                $query->whereIn('hotel_id', $hotelIds);
+                break;
+
+            case 5:
+                $employeeId = HotelEmployee::where('user_id', $userId)->value('id');
+                if ($employeeId) {
+                    $query->where('hotel_employee_id', $employeeId);
+                }
+                break;
         }
 
-        return view('hotel.transfer-entries', compact('hotels'));
+        // Apply filters
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $from = Carbon::parse($request->from_date)->startOfDay();
+            $to = Carbon::parse($request->to_date)->endOfDay();
+            $query->whereBetween('transfer_date', [$from, $to]);
+        }
+
+        if ($request->filled('hotel_id')) {
+            $query->where('hotel_id', $request->hotel_id);
+        }
+
+        $entries = $query->orderBy('id', 'desc')->get();
+
+        // Group by hotel and date
+        $grouped = $entries->groupBy(function ($item) {
+            return $item->hotel_id . '|' . $item->transfer_date;
+        });
+
+        $result = $grouped->map(function ($items, $key) {
+            $first = $items->first();
+            [$hotelId, $transferDate] = explode('|', $key);
+            return [
+                'id' => $first->id,
+                'hotel_id' => $hotelId,
+                'transfer_date' => $transferDate,
+                'hotel' => $first->hotel,
+                'hotelEmployee' => $first->hotelEmployee,
+                'transfer_types' => $items->pluck('transfer_type')->unique()->values(),
+            ];
+        })->values();
+
+        return response()->json([
+            'data' => $result,
+            'canAdd' => hasPermission('transfer-entries', 'add'),
+            'canEdit' => hasPermission('transfer-entries', 'edit'),
+            'canDelete' => hasPermission('transfer-entries', 'delete'),
+        ]);
     }
+
+    // Non-AJAX request: load hotels based on user role
+    switch ($userType) {
+        case 2:
+            $spOffice = SpOffice::where('user_id', $userId)->first();
+            $hotels = $spOffice
+                ? Hotel::whereIn('police_station_id', PoliceStation::where('sp_office_id', $spOffice->id)->pluck('id'))->get()
+                : collect();
+            break;
+
+        case 3:
+            $policeStation = PoliceStation::where('user_id', $userId)->first();
+            $hotels = $policeStation
+                ? Hotel::where('police_station_id', $policeStation->id)->get()
+                : collect();
+            break;
+
+        default:
+            $hotels = Hotel::all();
+    }
+
+    return view('hotel.transfer-entries', compact('hotels'));
+}
+
 
 
 

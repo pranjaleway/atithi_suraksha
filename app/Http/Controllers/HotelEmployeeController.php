@@ -37,7 +37,10 @@ class HotelEmployeeController extends Controller
 
 
         if ($request->ajax()) {
-            $hotelEmployee = HotelEmployee::with('user')->where('hotel_id', $decodedId)->get();
+            $hotelEmployee = HotelEmployee::with('user')
+            ->where('hotel_id', $decodedId)
+            ->orderBy('id', 'desc')
+            ->get();
 
             return response()->json([
                 'data' => $hotelEmployee,

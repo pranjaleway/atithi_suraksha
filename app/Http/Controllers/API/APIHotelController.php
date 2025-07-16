@@ -1566,6 +1566,13 @@ class APIHotelController extends Controller
      *         @OA\Schema(type="integer", example=15)
      *     ),
      *     @OA\Parameter(
+     *         name="booking_id",
+     *         in="query",
+     *         required=false,
+     *         description="The booking ID to retrieve details for",
+     *         @OA\Schema(type="integer", example=15)
+     *     ),
+     *     @OA\Parameter(
      *         name="search",
      *         in="query",
      *         required=false,
@@ -1624,13 +1631,19 @@ class APIHotelController extends Controller
 
     public function getMembers(Request $request)
     {
-        if (!hasPermission('bookings', 'view')) {
+        try {
+            if (!hasPermission('bookings', 'view')) {
             abort(403, 'Unauthorized');
         }
 
         $id = $request->parent_id;
 
-        $query = HotelBooking::where('parent_id', $id);
+        $query = HotelBooking::with([
+                'hotel:id,hotel_name,user_id',
+                'hotelEmployee:id,employee_name,user_id',
+                'state:id,name',
+                'city:id,name'
+            ])->where('parent_id', $id);
 
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -1639,6 +1652,10 @@ class APIHotelController extends Controller
                     ->orWhere('contact_number', 'LIKE', "%{$searchTerm}%")
                     ->orWhere('room_number', 'LIKE', "%{$searchTerm}%");
             });
+        }
+
+        if($request->filled('booking_id')){ 
+            $query->where('id', $request->booking_id);
         }
 
         $data = $query->orderBy('id', 'desc')->paginate(10);
@@ -1653,6 +1670,13 @@ class APIHotelController extends Controller
             'canEdit' => $canEdit,
             'canDelete' => $canDelete
         ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     /**

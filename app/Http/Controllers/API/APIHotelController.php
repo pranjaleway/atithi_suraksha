@@ -1551,86 +1551,98 @@ class APIHotelController extends Controller
     }
 
     /**
- * @OA\Post(
- *     path="/view-booking-details",
- *     tags={"Hotels"},
- *     summary="View booking details",
- *     description="Fetches the details of a specific hotel booking by its ID.",
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Parameter(
- *         name="id",
- *         in="query",
- *         required=true,
- *         description="The ID of the booking to view",
- *         @OA\Schema(type="integer", example=1)
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Booking details fetched successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="status", type="string", example="success"),
- *             @OA\Property(
- *                 property="data",
- *                 type="object",
- *                 example={
- *                     "id": 1,
- *                     "guest_name": "John Doe",
- *                     "check_in": "2025-07-16",
- *                     "check_out": "2025-07-20",
- *                     "room_number": "101,102",
- *                     "contact_number": "9876543210",
- *                     "aadhar_number": "123456789012",
- *                     "email": "john@example.com",
- *                     "address": "123 Main Street",
- *                     "state_id": 1,
- *                     "city_id": 10,
- *                     "pincode": "400001",
- *                     "age": 30,
- *                     "gender": "male",
- *                     "id_proof_path": "booking/id_proofs/sample.pdf"
- *                 }
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=404,
- *         description="Booking not found",
- *         @OA\JsonContent(
- *             @OA\Property(property="status", type="string", example="error"),
- *             @OA\Property(property="message", type="string", example="Booking not found")
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=500,
- *         description="Internal Server Error",
- *         @OA\JsonContent(
- *             @OA\Property(property="status", type="string", example="error"),
- *             @OA\Property(property="message", type="string", example="Error message")
- *         )
- *     )
- * )
- */
+     * @OA\Post(
+     *     path="/view-booking-details",
+     *     tags={"Hotels"},
+     *     summary="View booking details",
+     *     description="Fetches the details of a specific hotel booking by its ID.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="query",
+     *         required=true,
+     *         description="The ID of the booking to view",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Booking details fetched successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 example={
+     *                     "id": 1,
+     *                     "guest_name": "John Doe",
+     *                     "check_in": "2025-07-16",
+     *                     "check_out": "2025-07-20",
+     *                     "room_number": "101,102",
+     *                     "contact_number": "9876543210",
+     *                     "aadhar_number": "123456789012",
+     *                     "email": "john@example.com",
+     *                     "address": "123 Main Street",
+     *                     "state_id": 1,
+     *                     "city_id": 10,
+     *                     "pincode": "400001",
+     *                     "age": 30,
+     *                     "gender": "male",
+     *                     "id_proof_path": "booking/id_proofs/sample.pdf"
+     *                 }
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=404,
+     *         description="Booking not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Booking not found")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal Server Error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Error message")
+     *         )
+     *     )
+     * )
+     */
 
 
-    public function viewBookingDetails(Request $request){
-        try{
+    public function viewBookingDetails(Request $request)
+    {
+        try {
             $booking = HotelBooking::with([
                 'hotel:id,hotel_name,user_id',
                 'hotelEmployee:id,employee_name,user_id',
                 'state:id,name',
                 'city:id,name'
-            ])->find($request->id);
+            ])
+                ->withCount([
+                    'visitors as visitors_count' => function ($query) {
+                        $query->whereNull('parent_id');
+                    }
+                ])
+                ->find($request->id);
 
-            if($booking){
+            if ($booking) {
                 return response()->json([
                     'status' => 'success',
                     'data' => $booking,
                 ]);
             }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Booking not found',
+            ], 404);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -1639,6 +1651,7 @@ class APIHotelController extends Controller
             ]);
         }
     }
+
 
 
 
@@ -1728,43 +1741,43 @@ class APIHotelController extends Controller
     {
         try {
             if (!hasPermission('bookings', 'view')) {
-            abort(403, 'Unauthorized');
-        }
+                abort(403, 'Unauthorized');
+            }
 
-        $id = $request->parent_id;
+            $id = $request->parent_id;
 
-        $query = HotelBooking::with([
+            $query = HotelBooking::with([
                 'hotel:id,hotel_name,user_id',
                 'hotelEmployee:id,employee_name,user_id',
                 'state:id,name',
                 'city:id,name'
             ])->where('parent_id', $id);
 
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('guest_name', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('contact_number', 'LIKE', "%{$searchTerm}%")
-                    ->orWhere('room_number', 'LIKE', "%{$searchTerm}%");
-            });
-        }
+            if ($request->filled('search')) {
+                $searchTerm = $request->search;
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('guest_name', 'LIKE', "%{$searchTerm}%")
+                        ->orWhere('contact_number', 'LIKE', "%{$searchTerm}%")
+                        ->orWhere('room_number', 'LIKE', "%{$searchTerm}%");
+                });
+            }
 
-        if($request->filled('booking_id')){ 
-            $query->where('id', $request->booking_id);
-        }
+            if ($request->filled('booking_id')) {
+                $query->where('id', $request->booking_id);
+            }
 
-        $data = $query->orderBy('id', 'desc')->paginate(10);
+            $data = $query->orderBy('id', 'desc')->paginate(10);
 
-        $canAdd = hasPermission('bookings', 'add');
-        $canEdit = hasPermission('bookings', 'edit');
-        $canDelete = hasPermission('bookings', 'delete');
+            $canAdd = hasPermission('bookings', 'add');
+            $canEdit = hasPermission('bookings', 'edit');
+            $canDelete = hasPermission('bookings', 'delete');
 
-        return response()->json([
-            'data' => $data,
-            'canAdd' => $canAdd,
-            'canEdit' => $canEdit,
-            'canDelete' => $canDelete
-        ]);
+            return response()->json([
+                'data' => $data,
+                'canAdd' => $canAdd,
+                'canEdit' => $canEdit,
+                'canDelete' => $canDelete
+            ]);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -1785,7 +1798,7 @@ class APIHotelController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"parent_id", "guest_name", "check_in", "check_out", " "age", "gender", "room_number_id", "contact_number", "aadhar_number", "address", "state_id", "city_id", "pincode", "id_proof_path"},
+     *             required={"parent_id", "guest_name", "check_in", "check_out", "age", "gender", "room_number_id", "contact_number", "aadhar_number", "address", "state_id", "city_id", "pincode", "id_proof_path"},
      *             @OA\Property(property="parent_id", type="integer", example=1, description="Parent booking ID"),
      *             @OA\Property(property="guest_name", type="string", example="John Doe"),
      *             @OA\Property(property="check_in", type="string", format="date-time", example="2025-07-14T11:43:00.000Z"),

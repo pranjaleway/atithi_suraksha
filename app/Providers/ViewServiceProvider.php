@@ -37,36 +37,57 @@ class ViewServiceProvider extends ServiceProvider
             $query = Notification::with('user:id,name')->orderBy('id', 'desc');
 
             switch ($user->user_type_id) {
-                case 2: // SP Office
+                case 2: //  SP Office
                     $spOfficeIDs = SpOffice::where('user_id', $user->id)->pluck('id');
                     $policeStationIDs = PoliceStation::whereIn('sp_office_id', $spOfficeIDs)->pluck('id');
+
                     $policeUserIDs = PoliceStation::whereIn('id', $policeStationIDs)->pluck('user_id');
-                    $query->whereIn('user_id', $policeUserIDs);
-                    break;
+                    $hotelUserIDs = Hotel::whereIn('police_station_id', $policeStationIDs)->pluck('user_id');
 
-                case 3: // Police Station
-                    $spOfficeId = optional(PoliceStation::where('user_id', $user->id)->first())->sp_office_id;
-                    $spUserID = optional(SpOffice::find($spOfficeId))->user_id;
-                    if ($spUserID) {
-                        $query->where('user_id', $spUserID);
-                    }
-                    break;
-
-                case 4: // Hotel
-                case 5: // Hotel Employee
-                    $policeStationId = optional(Hotel::where('user_id', $user->id)->first())->police_station_id;
-                    $spOfficeId = optional(PoliceStation::find($policeStationId))->sp_office_id;
-                    $spUserID = optional(SpOffice::find($spOfficeId))->user_id;
-                    $policeUserIDs = PoliceStation::where('id', $policeStationId)->pluck('user_id');
-
-                    $query->where(function ($q) use ($spUserID, $policeUserIDs) {
-                        $q->where('user_id', $spUserID)
-                            ->orWhereIn('user_id', $policeUserIDs);
+                    $query->where(function ($q) use ($policeUserIDs, $hotelUserIDs) {
+                        $q->whereIn('user_id', $policeUserIDs)
+                            ->orWhereIn('user_id', $hotelUserIDs);
                     });
                     break;
 
-                default:
-                    // Super Admin: No filter
+                case 3: //  Police Station
+                    $policeStation = PoliceStation::where('user_id', $user->id)->first();
+                    if ($policeStation) {
+                        $spUserID = optional(SpOffice::find($policeStation->sp_office_id))->user_id;
+                        $hotelUserIDs = Hotel::where('police_station_id', $policeStation->id)->pluck('user_id');
+
+                        $query->where(function ($q) use ($spUserID, $hotelUserIDs) {
+                            if ($spUserID) {
+                                $q->where('user_id', $spUserID);
+                            }
+                            if ($hotelUserIDs->isNotEmpty()) {
+                                $q->orWhereIn('user_id', $hotelUserIDs);
+                            }
+                        });
+                    }
+                    break;
+
+                case 4: //  Hotel
+                case 5: //  Hotel Employee
+                    $hotel = Hotel::where('user_id', $user->id)->first();
+                    if ($hotel) {
+                        $policeStation = PoliceStation::find($hotel->police_station_id);
+                        $spUserID = optional(SpOffice::find(optional($policeStation)->sp_office_id))->user_id;
+                        $policeUserID = optional($policeStation)->user_id;
+
+                        $query->where(function ($q) use ($spUserID, $policeUserID) {
+                            if ($spUserID) {
+                                $q->where('user_id', $spUserID);
+                            }
+                            if ($policeUserID) {
+                                $q->orWhere('user_id', $policeUserID);
+                            }
+                        });
+                    }
+                    break;
+
+                default: // Super Admin & Others
+                    // No filter - fetch all notifications
                     break;
             }
 

@@ -14,6 +14,7 @@
                             <th>User Name</th>
                             <th>Title</th>
                             <th>Message</th>
+                            <th>Image</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -45,6 +46,16 @@
                             <label for="message">Message</label>
                         </div>
                     </div>
+                    <div class="input-group input-group-merge">
+                        <div class="form-floating form-floating-outline">
+                            <input type="file" class="form-control document-input" id="image"
+                                data-label="Image" name="image" accept="image/*">
+                            <label for="image">Upload</label>
+                        </div>
+                    </div>
+                     <!-- Preview section for all selected documents -->
+                    <div class="row mt-4" id="all-preview-row"></div>
+
                     <div class="col-sm-12">
                         <button type="submit" class="btn btn-primary data-submit me-sm-3 me-1">Submit</button>
                         <button type="reset" class="btn btn-label-secondary" data-bs-dismiss="offcanvas">Cancel</button>
@@ -63,6 +74,7 @@
     <script>
         var deleteUrl = "{{ route('delete-notification') }}";
         var listUrl = "{{ route('notifications') }}";
+        var fileUrl = "{{ asset('storage') }}/";
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-notification.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

@@ -13,80 +13,109 @@ use Illuminate\Support\Facades\Auth;
 class NotificationController extends Controller
 {
     public function notifications(Request $request)
-{
-    if (!hasPermission('notifications', 'view')) {
-        abort(403, 'Unauthorized');
+    {
+        if (!hasPermission('notifications', 'view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Load view for non-AJAX requests
+        if (!$request->ajax()) {
+            return view('master.notification');
+        }
+
+        $user = Auth::user();
+        $query = Notification::with('user:id,name')->orderBy('id', 'desc');
+
+        switch ($user->user_type_id) {
+            case 2: //  SP Office
+                $spOfficeIDs = SpOffice::where('user_id', $user->id)->pluck('id');
+                $policeStationIDs = PoliceStation::whereIn('sp_office_id', $spOfficeIDs)->pluck('id');
+
+                $policeUserIDs = PoliceStation::whereIn('id', $policeStationIDs)->pluck('user_id');
+                $hotelUserIDs = Hotel::whereIn('police_station_id', $policeStationIDs)->pluck('user_id');
+
+                $query->where(function ($q) use ($policeUserIDs, $hotelUserIDs) {
+                    $q->whereIn('user_id', $policeUserIDs)
+                        ->orWhereIn('user_id', $hotelUserIDs);
+                });
+                break;
+
+            case 3: //  Police Station
+                $policeStation = PoliceStation::where('user_id', $user->id)->first();
+                if ($policeStation) {
+                    $spUserID = optional(SpOffice::find($policeStation->sp_office_id))->user_id;
+                    $hotelUserIDs = Hotel::where('police_station_id', $policeStation->id)->pluck('user_id');
+
+                    $query->where(function ($q) use ($spUserID, $hotelUserIDs) {
+                        if ($spUserID) {
+                            $q->where('user_id', $spUserID);
+                        }
+                        if ($hotelUserIDs->isNotEmpty()) {
+                            $q->orWhereIn('user_id', $hotelUserIDs);
+                        }
+                    });
+                }
+                break;
+
+            case 4: //  Hotel
+            case 5: //  Hotel Employee
+                $hotel = Hotel::where('user_id', $user->id)->first();
+                if ($hotel) {
+                    $policeStation = PoliceStation::find($hotel->police_station_id);
+                    $spUserID = optional(SpOffice::find(optional($policeStation)->sp_office_id))->user_id;
+                    $policeUserID = optional($policeStation)->user_id;
+
+                    $query->where(function ($q) use ($spUserID, $policeUserID) {
+                        if ($spUserID) {
+                            $q->where('user_id', $spUserID);
+                        }
+                        if ($policeUserID) {
+                            $q->orWhere('user_id', $policeUserID);
+                        }
+                    });
+                }
+                break;
+
+            default: // Super Admin & Others
+                // No filter - fetch all notifications
+                break;
+        }
+
+        $data = $query->get();
+
+        return response()->json([
+            'data' => $data,
+            'canAdd' => hasPermission('notifications', 'add'),
+            'canEdit' => hasPermission('notifications', 'edit'),
+            'canDelete' => hasPermission('notifications', 'delete'),
+        ]);
     }
 
-    if (!$request->ajax()) {
-        return view('master.notification');
-    }
-
-    $user = Auth::user();
-    $query = Notification::with('user:id,name')->orderBy('id', 'desc');
-
-    switch ($user->user_type_id) {
-        case 2: // SP Office
-            $spOfficeIDs = SpOffice::where('user_id', $user->id)->pluck('id');
-            $policeStationIDs = PoliceStation::whereIn('sp_office_id', $spOfficeIDs)->pluck('id');
-            $policeUserIDs = PoliceStation::whereIn('id', $policeStationIDs)->pluck('user_id');
-            $query->whereIn('user_id', $policeUserIDs);
-            break;
-
-        case 3: // Police Station
-            $spUserID = optional(
-                SpOffice::find(optional(PoliceStation::where('user_id', $user->id)->first())->sp_office_id)
-            )->user_id;
-            if ($spUserID) {
-                $query->where('user_id', $spUserID);
-            } else {
-                $query->whereNull('user_id'); // No matching SP Office
-            }
-            break;
-
-        case 4: // Hotel
-        case 5: // Hotel Employee
-            $policeStationID = optional(Hotel::where('user_id', $user->id)->first())->police_station_id;
-            $spOfficeID = optional(PoliceStation::find($policeStationID))->sp_office_id;
-            $spUserID = optional(SpOffice::find($spOfficeID))->user_id;
-            $policeUserID = PoliceStation::where('id', $policeStationID)->pluck('user_id');
-
-            $query->where(function ($q) use ($spUserID, $policeUserID) {
-                $q->where('user_id', $spUserID)
-                  ->orWhereIn('user_id', $policeUserID);
-            });
-            break;
-
-        default: // Super Admin, others
-            // No user filter, fetch all notifications
-            break;
-    }
-
-    $data = $query->get();
-
-    return response()->json([
-        'data' => $data,
-        'canAdd' => hasPermission('notifications', 'add'),
-        'canEdit' => hasPermission('notifications', 'edit'),
-        'canDelete' => hasPermission('notifications', 'delete'),
-    ]);
-}
 
 
-    public function storeNotification(Request $request) {
+    public function storeNotification(Request $request)
+    {
         $request->validate([
             'title' => 'required',
             'message' => 'required',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg',
         ]);
         $notification = new Notification();
         $notification->title = $request->title;
         $notification->message = $request->message;
         $notification->user_id = Auth::user()->id;
+
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imagePath = $image->store('notifications', 'public');
+            $notification->image = $imagePath;
+        }
         $notification->save();
         return response()->json(['message' => 'Notification added successfully', 'status' => 'success']);
     }
 
-    public function deleteNotification(Request $request) {
+    public function deleteNotification(Request $request)
+    {
         $notification = Notification::find($request->id);
         $notification->delete();
         return response()->json(['message' => 'Notification deleted successfully', 'status' => 'success']);

@@ -16,6 +16,7 @@ use App\Models\UploadedEntry;
 use App\Models\User;
 use App\Models\UserType;
 use App\Models\Visitor;
+use App\Notifications\CredentialsNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -668,6 +669,10 @@ class APIHotelController extends Controller
             ]);
 
             $employee->update(['user_id' => $user->id]);
+
+            $plainPassword = $request->password;
+
+            $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword));
 
             activiyLog('Hotel employee ' . $employee->employee_name . ' created by ' . ucfirst(Auth::user()->name));
 
@@ -1780,11 +1785,11 @@ class APIHotelController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"parent_id", "guest_name", "check_in", "age", "gender", "room_number_id", "contact_number", "aadhar_number", "address", "state_id", "city_id", "pincode", "id_proof_path"},
+     *             required={"parent_id", "guest_name", "check_in", "check_out", " "age", "gender", "room_number_id", "contact_number", "aadhar_number", "address", "state_id", "city_id", "pincode", "id_proof_path"},
      *             @OA\Property(property="parent_id", type="integer", example=1, description="Parent booking ID"),
      *             @OA\Property(property="guest_name", type="string", example="John Doe"),
-     *             @OA\Property(property="check_in", type="string", format="date", example="2025-06-01"),
-     *             @OA\Property(property="check_out", type="string", format="date", nullable=true, example="2025-06-05"),
+     *             @OA\Property(property="check_in", type="string", format="date-time", example="2025-07-14T11:43:00.000Z"),
+     *             @OA\Property(property="check_out", type="string", format="date-time", example="2025-07-15T11:43:00.000Z"),
      *             @OA\Property(property="age", type="integer", example=30),
      *             @OA\Property(property="gender", type="string", enum={"male", "female", "other"}, example="male"),
      *             @OA\Property(property="room_number_id", type="string", example="1,2", description="Comma-separated room number IDs"),
@@ -1825,8 +1830,8 @@ class APIHotelController extends Controller
             $request->validate([
                 'parent_id' => 'required',
                 'guest_name' => 'required',
-                'check_in' => 'required|date',
-                'check_out' => 'nullable|date',
+                'check_in' => 'required|date_format:Y-m-d\TH:i',
+                'check_out' => 'required|date_format:Y-m-d\TH:i|after_or_equal:check_in',
                 'age' => 'required|numeric',
                 'gender' => 'required|in:male,female,other',
                 'room_number_id' => 'required',

@@ -16,6 +16,7 @@ use App\Models\TransferEntry;
 use App\Models\UploadedEntry;
 use App\Models\User;
 use App\Models\UserType;
+use App\Notifications\CredentialsNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -135,6 +136,10 @@ class HotelController extends Controller
         ]);
 
         $hotels->update(['user_id' => $user->id]);
+
+        $plainPassword = $request->password;
+
+        $user->notify(new CredentialsNotification($hotels->hotel_name, $user->email, $plainPassword));
 
         activiyLog('New hotel ' . $hotels->hotel_name . ' registered by ' . ucfirst(Auth::user()->name));
 

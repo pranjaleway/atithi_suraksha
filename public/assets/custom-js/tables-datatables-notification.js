@@ -102,11 +102,21 @@ $(function () {
                 },
                 { data: "title", name: "title" },
                 { data: "message", name: "message" },
+                { data: "image", name: "image",
+                    render: function (data, type, row, meta) {
+                        if (data != null) {
+                            var imageUrl = fileUrl + data;
+                            return '<a href="' + imageUrl + '" target="_blank" class="preview-file" data-url="' + imageUrl + '" data-type="image">View</a>';
+                        } else {
+                            return "N/A";
+                        }
+                    }
+                 },
             ],
             columnDefs: [
                 {
                     // Actions
-                    targets: 4,
+                    targets: 5,
                     title: "Actions",
                     orderable: false,
                     searchable: false,
@@ -158,7 +168,7 @@ $(function () {
                     ],
                 },
                 {
-                    text: '<i class="mdi mdi-plus me-sm-1"></i> <span class="d-none d-sm-inline-block">Add New Record</span>',
+                    text: '<i class="mdi mdi-plus me-sm-1"></i> <span class="d-none d-sm-inline-block">Add Alert</span>',
                     className:
                         "create-new btn btn-primary waves-effect waves-light d-none",
                 },
@@ -177,6 +187,7 @@ $(function () {
         var url = $("#addForm").attr("action");
         var submitButton = $("button[type='submit']");
         $(".invalid-feedback").empty();
+        $('#all-preview-row').empty();
 
         toggleButtonLoadingState(submitButton, true);
 

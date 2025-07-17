@@ -483,8 +483,8 @@ class HotelBookingController extends Controller
         //dd($request->all());
         $request->validate([
             'guest_name' => 'required',
-            'check_in' => 'required|date',
-            'check_out' => 'nullable|date',
+            'check_in' => 'required|date_format:Y-m-d\TH:i',
+            'check_out' => 'required|date_format:Y-m-d\TH:i|after_or_equal:check_in',
             'age' => 'required|numeric',
             'gender' => 'required|in:male,female,other',
             'room_number_id' => 'required',

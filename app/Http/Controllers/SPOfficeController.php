@@ -8,6 +8,7 @@ use App\Models\SpOffice;
 use App\Models\State;
 use App\Models\User;
 use App\Models\UserType;
+use App\Notifications\CredentialsNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -75,6 +76,10 @@ class SPOfficeController extends Controller
         ]);
 
         $spOffice->update(['user_id' => $user->id]);
+
+        $plainPassword = $request->password;
+
+        $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword));
 
         activiyLog('SP Office ' . $spOffice->office_name . ' created by ' . ucfirst(Auth::user()->name));
 

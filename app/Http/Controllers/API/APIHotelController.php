@@ -1997,7 +1997,7 @@ class APIHotelController extends Controller
      *     @OA\Parameter(
      *         name="id",
      *         in="query",
-     *         required=true,
+     *         required=false,
      *         description="The booking ID to retrieve visitors for",
      *         @OA\Schema(type="integer", example=1)
      *     ),

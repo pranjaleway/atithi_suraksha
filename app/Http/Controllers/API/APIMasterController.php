@@ -423,7 +423,7 @@ class APIMasterController extends Controller
      * )
      */
 
-    public function getPolicStationByCity(Request $request)
+    public function getPoliceStationByCity(Request $request)
     {
         try {
             $policeStations = PoliceStation::where('city_id', $request->id)->orderBy('id', 'desc')->get();

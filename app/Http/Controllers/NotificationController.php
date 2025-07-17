@@ -27,18 +27,20 @@ class NotificationController extends Controller
         $query = Notification::with('user:id,name')->orderBy('id', 'desc');
 
         switch ($user->user_type_id) {
-            case 2: //  SP Office
-                $spOfficeIDs = SpOffice::where('user_id', $user->id)->pluck('id');
-                $policeStationIDs = PoliceStation::whereIn('sp_office_id', $spOfficeIDs)->pluck('id');
+            case 2: // SP Office
+            $spOfficeIDs = SpOffice::where('user_id', $user->id)->pluck('id');
+            $policeStationIDs = PoliceStation::whereIn('sp_office_id', $spOfficeIDs)->pluck('id');
 
-                $policeUserIDs = PoliceStation::whereIn('id', $policeStationIDs)->pluck('user_id');
-                $hotelUserIDs = Hotel::whereIn('police_station_id', $policeStationIDs)->pluck('user_id');
+            $policeUserIDs = PoliceStation::whereIn('id', $policeStationIDs)->pluck('user_id');
+            $hotelUserIDs = Hotel::whereIn('police_station_id', $policeStationIDs)->pluck('user_id');
 
-                $query->where(function ($q) use ($policeUserIDs, $hotelUserIDs) {
-                    $q->whereIn('user_id', $policeUserIDs)
-                        ->orWhereIn('user_id', $hotelUserIDs);
-                });
-                break;
+            $query->where(function ($q) use ($policeUserIDs, $hotelUserIDs, $spOfficeIDs) {
+                $q->whereIn('user_id', $policeUserIDs)
+                ->orWhereIn('user_id', $hotelUserIDs)
+                ->orWhereIn('sp_id', $spOfficeIDs);
+            });
+            break;
+
 
             case 3: //  Police Station
                 $policeStation = PoliceStation::where('user_id', $user->id)->first();
@@ -51,7 +53,7 @@ class NotificationController extends Controller
                             $q->where('user_id', $spUserID);
                         }
                         if ($hotelUserIDs->isNotEmpty()) {
-                            $q->orWhereIn('user_id', $hotelUserIDs);
+                            $q->orWhereIn('user_id', $hotelUserIDs)->whereNull('sp_id');
                         }
                     });
                 }

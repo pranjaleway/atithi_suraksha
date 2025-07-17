@@ -38,7 +38,7 @@ class CredentialsNotification extends Notification
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail($notifiable)
+    public function toMail($notifiable): MailMessage
 {
     return (new MailMessage)
         ->subject('Welcome to ' . config('app.name') . ' - Your Login Credentials')

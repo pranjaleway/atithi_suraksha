@@ -15,6 +15,7 @@ class Notification extends Model
         'title',
         'message',
         'image',
+        'sp_id',
         'is_read',
         'status',
     ];

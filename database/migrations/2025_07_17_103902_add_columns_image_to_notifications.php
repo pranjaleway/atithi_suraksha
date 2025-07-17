@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('notifications', function (Blueprint $table) {
             $table->text('image')->nullable()->after('message');
+            $table->foreignId('sp_id')->nullable()->constrained('sp_offices')->onDelete('cascade');
         });
     }
 
@@ -23,6 +24,8 @@ return new class extends Migration
     {
         Schema::table('notifications', function (Blueprint $table) {
             $table->dropColumn('image');
+            $table->dropForeign(['sp_id']);
+            $table->dropColumn('sp_id');
         });
     }
 };

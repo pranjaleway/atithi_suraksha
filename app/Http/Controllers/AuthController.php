@@ -9,6 +9,7 @@ use App\Models\Hotel;
 use App\Models\HotelBooking;
 use App\Models\HotelEmployee;
 use App\Models\HotelOwnerDoc;
+use App\Models\Notification;
 use App\Models\PoliceStation;
 use App\Models\Referral;
 use App\Models\SpOffice;
@@ -562,6 +563,14 @@ class AuthController extends Controller
         ]);
 
         $hotels->update(['user_id' => $user->id, 'status' => 0]);
+        $spId = PoliceStation::where('id', $request->police_station_id)->value('sp_office_id');
+
+        Notification::create([
+            'user_id' => $user->id,
+            'title' => 'New Hotel Registration',
+            'message' => 'New hotel ' . $hotels->hotel_name . ' has been registered.',
+            'sp_id' => $spId
+        ]);
 
         if ($user) {
             $ipAddress = $request->ip() ?? '127.0.0.1';

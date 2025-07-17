@@ -17,6 +17,7 @@ use App\Models\UploadedEntry;
 use App\Models\User;
 use App\Models\UserType;
 use App\Notifications\CredentialsNotification;
+use App\Notifications\HotelStatusChangeNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -345,6 +346,7 @@ class HotelController extends Controller
             $user = User::find($hotel->user_id);
             if ($user) {
                 $user->update(['status' => $newStatus]);
+                 $user->notify(new HotelStatusChangeNotification($newStatus, $hotel->hotel_name));
             }
             activiyLog('Hotel status ' . $hotel->hotel_name . ' changed to ' . ($newStatus == 1 ? 'Active' : 'Inactive') . ' by ' . ucfirst(Auth::user()->name));
             return response()->json(['status' => 'success', 'message' => 'Hotel status updated successfully']);

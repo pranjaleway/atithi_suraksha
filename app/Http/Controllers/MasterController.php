@@ -817,7 +817,7 @@ class MasterController extends Controller
     {
         try {
             $policeStations = PoliceStation::where('city_id', $request->id)
-            ->orderBy('name', 'asc')
+            ->orderBy('police_station_name', 'asc')
             ->get();
             return response()->json(['data' => $policeStations]);
         } catch (\Exception $e) {

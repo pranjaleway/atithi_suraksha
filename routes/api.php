@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\APIHotelController;
 use App\Http\Controllers\API\APIMasterController;
+use App\Http\Controllers\API\APINotificationController;
 use App\Http\Controllers\API\APIProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\API\AuthController as APIAUthController;
@@ -79,5 +80,10 @@ Route::get('/user', function (Request $request) {
         Route::post('add-transfer-bookings', 'addTransferBookings')->name('add-transfer-bookings');
         Route::post('upload-register', 'uploadRegister')->name('upload-register');
         Route::post('get-uploaded-registers', 'getUploadedRegisters')->name('get-uploaded-registers');
+    });
+
+    Route::controller(APINotificationController::class)->group(function () {
+        Route::post('get-notifications', 'getNotifications')->name('get-notifications');
+        Route::post('add-notification', 'storeNotification')->name('store-notification');
     });
   });

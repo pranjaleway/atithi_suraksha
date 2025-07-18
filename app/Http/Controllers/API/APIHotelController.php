@@ -2068,7 +2068,7 @@ class APIHotelController extends Controller
 
         $bookingId = $request->booking_id;
 
-        $query = Visitor::where('booking_id', $bookingId);
+        $query = Visitor::with('state:id,name', 'city:id,name')->where('booking_id', $bookingId);
 
         // Search filter
         if ($request->filled('search')) {

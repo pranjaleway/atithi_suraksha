@@ -283,14 +283,18 @@ class APIHotelController extends Controller
     public function deleteRoom(Request $request)
     {
         try {
-            $room = RoomNumber::where('id', $request->id);
+            $room = RoomNumber::findOrFail($request->id);
+
             activiyLog(ucfirst(Auth::user()->name) . ' deleted room number ' . $room->room_number);
+
             $room->delete();
+
             return response()->json(['status' => 'success', 'message' => 'Room Number deleted successfully']);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
         }
     }
+
 
     /**
      * @OA\Post(

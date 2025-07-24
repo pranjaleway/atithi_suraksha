@@ -36,14 +36,17 @@
                     <div class="input-group input-group-merge">
                         <div class="form-floating form-floating-outline">
                             <select class="form-control" name="state_id" id="state_id">
-                                <option value="">Select State</option>
+                                <option value="" disabled selected>Select State</option>
                                 @foreach ($states as $state)
-                                    <option value="{{ $state->id }}">{{ $state->name }}</option>
+                                    <option value="{{ $state->id }}" {{ old('state_id', $selectedStateId ?? '') == $state->id ? 'selected' : '' }}>
+                                        {{ $state->name }}
+                                    </option>
                                 @endforeach
                             </select>
                             <label for="state_id">State</label>
                         </div>
                     </div>
+
                     <div class="input-group input-group-merge">
                         <div class="form-floating form-floating-outline">
                             <input class="form-control" type="text" name="name" id="name" placeholder="Name" />

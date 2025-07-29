@@ -103,7 +103,7 @@ class APIMasterController extends Controller
     public function getStates(Request $request)
     {
         try {
-            $data = State::where('country_id', 1)->where('status', 1)->orderBy('id', 'desc')->get();
+            $data = State::where('country_id', 1)->where('status', 1)->orderBy('name', 'asc')->get();
             return response()->json(['status' => true, 'data' => $data]);
         } catch (\Exception $e) {
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
@@ -160,7 +160,7 @@ class APIMasterController extends Controller
     {
         try {
             $data = City::where('status', 1)->where('state_id', $request->state_id)->get();
-            $data = $data->map(function ($item) {
+            $data = $data->sortBy('name')->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
@@ -170,7 +170,8 @@ class APIMasterController extends Controller
                     ],
                     'status' => $item->status
                 ];
-            });
+            })->values();
+
 
             return response()->json(['status' => true, 'data' => $data]);
         } catch (\Exception $e) {

@@ -545,55 +545,55 @@ class AuthController extends Controller
 
 
     /**
- * @OA\Post(
- *     path="/get-filter-graph-data",
- *     tags={"Authentication"},
- *     summary="Get filtered graph data for bookings and transfers",
- *     description="Retrieves daily hotel bookings and transfer counts between a specified date range for the authenticated hotel owner or employee. Returns empty data for unauthorized users.",
- *     security={{"bearerAuth":{}}},
- *
- *     @OA\Parameter(
- *         name="start_date",
- *         in="query",
- *         required=false,
- *         description="Start date for filtering data (Y-m-d format). Defaults to the start of the current month.",
- *         @OA\Schema(type="string", format="date", example="2025-07-01")
- *     ),
- *     @OA\Parameter(
- *         name="end_date",
- *         in="query",
- *         required=false,
- *         description="End date for filtering data (Y-m-d format). Defaults to the end of the current month.",
- *         @OA\Schema(type="string", format="date", example="2025-07-15")
- *     ),
- *
- *     @OA\Response(
- *         response=200,
- *         description="Graph data retrieved successfully",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="labels", type="array",
- *                 @OA\Items(type="string", example="01 Jul")
- *             ),
- *             @OA\Property(property="dailyBookings", type="array",
- *                 @OA\Items(type="integer", example=5)
- *             ),
- *             @OA\Property(property="dailyTransfers", type="array",
- *                 @OA\Items(type="integer", example=2)
- *             )
- *         )
- *     ),
- *
- *     @OA\Response(
- *         response=500,
- *         description="Internal Server Error",
- *         @OA\JsonContent(
- *             @OA\Property(property="status", type="boolean", example=false),
- *             @OA\Property(property="message", type="string", example="Something went wrong")
- *         )
- *     )
- * )
- */
+     * @OA\Post(
+     *     path="/get-filter-graph-data",
+     *     tags={"Authentication"},
+     *     summary="Get filtered graph data for bookings and transfers",
+     *     description="Retrieves daily hotel bookings and transfer counts between a specified date range for the authenticated hotel owner or employee. Returns empty data for unauthorized users.",
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="start_date",
+     *         in="query",
+     *         required=false,
+     *         description="Start date for filtering data (Y-m-d format). Defaults to the start of the current month.",
+     *         @OA\Schema(type="string", format="date", example="2025-07-01")
+     *     ),
+     *     @OA\Parameter(
+     *         name="end_date",
+     *         in="query",
+     *         required=false,
+     *         description="End date for filtering data (Y-m-d format). Defaults to the end of the current month.",
+     *         @OA\Schema(type="string", format="date", example="2025-07-15")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Graph data retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="labels", type="array",
+     *                 @OA\Items(type="string", example="01 Jul")
+     *             ),
+     *             @OA\Property(property="dailyBookings", type="array",
+     *                 @OA\Items(type="integer", example=5)
+     *             ),
+     *             @OA\Property(property="dailyTransfers", type="array",
+     *                 @OA\Items(type="integer", example=2)
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal Server Error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Something went wrong")
+     *         )
+     *     )
+     * )
+     */
 
 
     public function getFilterGraphData(Request $request)
@@ -666,5 +666,69 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/store-device-token",
+     *     summary="Update the user's device token",
+     *     tags={"Authentication"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"device_token"},
+     *             @OA\Property(property="device_token", type="string", example="fcm_device_token_123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Device token updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Device token updated successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation Error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="The device token field is required.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server Error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Something went wrong")
+     *         )
+     *     )
+     * )
+     */
 
+
+    public function storeDeviceToken(Request $request)
+    {
+        try {
+            $request->validate([
+                'device_token' => 'required|string',
+            ]);
+
+            $user = Auth::user();
+
+            $user->update([
+                'device_token' => $request->device_token
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Device token updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

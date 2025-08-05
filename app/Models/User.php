@@ -32,6 +32,7 @@ class User extends Authenticatable
         'login_via_app',
         'email_verified_at',
         'phone_verified_at',
+        'device_token',
     ];
 
     /**

@@ -130,12 +130,50 @@ class NotificationController extends Controller
 
     protected function sendNotificationToHotels($notification)
     {
-        // Assuming user_type_id: 4 = Hotel, 5 = Hotel Employee
-        $users = User::whereIn('user_type_id', [4, 5])
-            ->whereNotNull('device_token') // ensure token exists
+        $sender = Auth::user();
+        $hotelUserIDs = collect();
+
+        switch ($sender->user_type_id) {
+            case 2: // SP Office
+                $spOfficeIDs = SpOffice::where('user_id', $sender->id)->pluck('id');
+                $policeStationIDs = PoliceStation::whereIn('sp_office_id', $spOfficeIDs)->pluck('id');
+                $hotelUserIDs = Hotel::whereIn('police_station_id', $policeStationIDs)->pluck('user_id');
+                break;
+
+            case 3: // Police Station
+                $policeStation = PoliceStation::where('user_id', $sender->id)->first();
+                if ($policeStation) {
+                    $hotelUserIDs = Hotel::where('police_station_id', $policeStation->id)->pluck('user_id');
+                }
+                break;
+
+            case 4: // Hotel
+                $hotel = Hotel::where('user_id', $sender->id)->first();
+                if ($hotel) {
+                    $hotelUserIDs = collect([$sender->id]); // Send to self
+                }
+                break;
+
+            default:
+                // Super Admin or unassociated users (send to all hotels if needed)
+                $hotelUserIDs = Hotel::pluck('user_id');
+                break;
+        }
+
+        // Get hotel employees (user_type_id 5) for these hotels
+        $employeeUserIDs = User::whereIn('hotel_id', Hotel::whereIn('user_id', $hotelUserIDs)->pluck('id'))
+            ->where('user_type_id', 5)
+            ->pluck('id');
+
+        // Merge hotel and employee IDs
+        $targetUserIDs = $hotelUserIDs->merge($employeeUserIDs)->unique();
+
+        // Get device tokens
+        $deviceTokens = User::whereIn('id', $targetUserIDs)
+            ->whereNotNull('device_token')
             ->pluck('device_token');
 
-        foreach ($users as $deviceToken) {
+        foreach ($deviceTokens as $deviceToken) {
             $this->send_push_notification($deviceToken, [
                 'title' => $notification->title,
                 'body' => $notification->message,
@@ -143,6 +181,7 @@ class NotificationController extends Controller
             ]);
         }
     }
+
 
 
     public function deleteNotification(Request $request)

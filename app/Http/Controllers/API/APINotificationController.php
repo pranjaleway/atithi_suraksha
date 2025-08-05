@@ -264,4 +264,78 @@ class APINotificationController extends Controller
     // }
 
 
+    /**
+     * @OA\Post(
+     *     path="/delete-notification",
+     *     summary="Delete user's own notification",
+     *     description="Deletes a notification belonging to the authenticated user.",
+     *     operationId="deleteNotification",
+     *     tags={"Notifications"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"id"},
+     *             @OA\Property(property="id", type="integer", example=5, description="ID of the notification to delete")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Notification deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Notification deleted successfully"),
+     *             @OA\Property(property="status", type="string", example="success")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthorized to delete this notification"),
+     *             @OA\Property(property="status", type="string", example="error")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Not Found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Notification not found"),
+     *             @OA\Property(property="status", type="string", example="error")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal Server Error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Some error occurred"),
+     *             @OA\Property(property="status", type="string", example="error")
+     *         )
+     *     )
+     * )
+     */
+
+
+
+    public function deleteNotification(Request $request)
+    {
+        try {
+            $notification = Notification::find($request->id);
+
+            if (!$notification) {
+                return response()->json(['message' => 'Notification not found', 'status' => 'error'], 404);
+            }
+
+            if ($notification->user_id !== Auth::user()->id) {
+                return response()->json(['message' => 'Unauthorized to delete this notification', 'status' => 'error'], 403);
+            }
+
+            $notification->delete();
+
+            return response()->json(['message' => 'Notification deleted successfully', 'status' => 'success']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(), 'status' => 'error'], 500);
+        }
+    }
 }

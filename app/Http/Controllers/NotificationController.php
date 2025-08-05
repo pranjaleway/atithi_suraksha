@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Hotel;
+use App\Models\HotelEmployee;
 use App\Models\Notification;
 use App\Models\PoliceStation;
 use App\Models\SpOffice;
@@ -132,43 +133,49 @@ class NotificationController extends Controller
     {
         $sender = Auth::user();
         $hotelUserIDs = collect();
+        $hotelIDs = collect(); // for fetching hotel employees
 
         switch ($sender->user_type_id) {
             case 2: // SP Office
                 $spOfficeIDs = SpOffice::where('user_id', $sender->id)->pluck('id');
                 $policeStationIDs = PoliceStation::whereIn('sp_office_id', $spOfficeIDs)->pluck('id');
-                $hotelUserIDs = Hotel::whereIn('police_station_id', $policeStationIDs)->pluck('user_id');
+                $hotels = Hotel::whereIn('police_station_id', $policeStationIDs)->get(['id', 'user_id']);
+                $hotelUserIDs = $hotels->pluck('user_id');
+                $hotelIDs = $hotels->pluck('id');
                 break;
 
             case 3: // Police Station
                 $policeStation = PoliceStation::where('user_id', $sender->id)->first();
                 if ($policeStation) {
-                    $hotelUserIDs = Hotel::where('police_station_id', $policeStation->id)->pluck('user_id');
+                    $hotels = Hotel::where('police_station_id', $policeStation->id)->get(['id', 'user_id']);
+                    $hotelUserIDs = $hotels->pluck('user_id');
+                    $hotelIDs = $hotels->pluck('id');
                 }
                 break;
 
             case 4: // Hotel
                 $hotel = Hotel::where('user_id', $sender->id)->first();
                 if ($hotel) {
-                    $hotelUserIDs = collect([$sender->id]); // Send to self
+                    $hotelUserIDs = collect([$sender->id]); // send to self
+                    $hotelIDs = collect([$hotel->id]);       // send to own hotel employees
                 }
                 break;
 
-            default:
-                // Super Admin or unassociated users (send to all hotels if needed)
-                $hotelUserIDs = Hotel::pluck('user_id');
+            default: // Super Admin or others
+                $hotels = Hotel::all(['id', 'user_id']);
+                $hotelUserIDs = $hotels->pluck('user_id');
+                $hotelIDs = $hotels->pluck('id');
                 break;
         }
 
-        // Get hotel employees (user_type_id 5) for these hotels
-        $employeeUserIDs = User::whereIn('hotel_id', Hotel::whereIn('user_id', $hotelUserIDs)->pluck('id'))
-            ->where('user_type_id', 5)
-            ->pluck('id');
+        // Get hotel employee user IDs from HotelEmployee model
+        $employeeUserIDs = HotelEmployee::whereIn('hotel_id', $hotelIDs)
+            ->pluck('user_id');
 
-        // Merge hotel and employee IDs
+        // Merge and deduplicate
         $targetUserIDs = $hotelUserIDs->merge($employeeUserIDs)->unique();
 
-        // Get device tokens
+        // Get device tokens for users with device_token
         $deviceTokens = User::whereIn('id', $targetUserIDs)
             ->whereNotNull('device_token')
             ->pluck('device_token');
@@ -181,6 +188,7 @@ class NotificationController extends Controller
             ]);
         }
     }
+
 
 
 

@@ -88,5 +88,6 @@ Route::middleware('auth:sanctum')->group(function () {
   Route::controller(APINotificationController::class)->group(function () {
     Route::post('get-notifications', 'getNotifications')->name('get-notifications');
     Route::post('add-notification', 'storeNotification')->name('store-notification');
+    Route::post('delete-notification', 'deleteNotification')->name('delete-notification');
   });
 });

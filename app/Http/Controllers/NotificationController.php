@@ -132,6 +132,11 @@ class NotificationController extends Controller
     protected function sendNotificationToHotels($notification)
     {
         $sender = Auth::user();
+
+        if (in_array($sender->user_type_id, [4, 5])) {
+            return;
+        }
+
         $hotelUserIDs = collect();
         $hotelIDs = collect(); // for fetching hotel employees
 

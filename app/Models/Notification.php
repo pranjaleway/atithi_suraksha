@@ -17,6 +17,8 @@ class Notification extends Model
         'image',
         'sp_id',
         'is_read',
+        'read_by',
+        'deleted_by',
         'status',
     ];
 
@@ -24,5 +26,4 @@ class Notification extends Model
     {
         return $this->belongsTo(User::class);
     }
-
 }

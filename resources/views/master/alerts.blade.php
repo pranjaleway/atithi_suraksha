@@ -1,5 +1,5 @@
 @extends('layouts.main')
-@section('title', 'Notifications')
+@section('title', 'Alerts')
 @section('content')
 
     <!-- Content -->
@@ -15,7 +15,6 @@
                             <th>Title</th>
                             <th>Message</th>
                             <th>Image</th>
-                            <th>Read Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -26,9 +25,9 @@
         <!--/ DataTable with Buttons -->
 
         <!-- Modal to add new record -->
-        {{-- <div class="offcanvas offcanvas-end" id="add-new-record">
+        <div class="offcanvas offcanvas-end" id="add-new-record">
             <div class="offcanvas-header border-bottom">
-                <h5 class="offcanvas-title" id="exampleModalLabel">New Notification</h5>
+                <h5 class="offcanvas-title" id="exampleModalLabel">New Alert</h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
             </div>
             <div class="offcanvas-body flex-grow-1">
@@ -64,7 +63,7 @@
                     </div>
                 </form>
             </div>
-        </div> --}}
+        </div>
         <!--/ Modal to add new record -->
 
 
@@ -74,11 +73,10 @@
 @endsection
 @section('scripts')
     <script>
-        var deleteUrl = "{{ route('delete-notification') }}";
-        var listUrl = "{{ route('notifications') }}";
+        var deleteUrl = "{{ route('delete-alert') }}";
+        var listUrl = "{{ route('alerts') }}";
         var fileUrl = "{{ asset('storage') }}/";
-        var markAsReadUrl = "{{ route('mark-notification-as-read') }}";
     </script>
-    <script src="{{ asset('assets/custom-js/tables-datatables-notification.js') }}"></script>
+    <script src="{{ asset('assets/custom-js/tables-datatables-alert.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>
 @endsection

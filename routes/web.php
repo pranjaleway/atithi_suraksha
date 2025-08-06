@@ -32,11 +32,10 @@ Route::group(['middleware' => ['web']], function () {
         Route::get('hotel-signup', 'hotelSignup')->name('hotel-signup');
         Route::post('post-hotel-signup', 'postHotelSignup')->name('post-hotel-signup');
     });
-     Route::controller(MasterController::class)->group(function () {
+    Route::controller(MasterController::class)->group(function () {
         Route::get('get-cities', 'getCitiesByState')->name('get-cities');
         Route::get('get-police-station-by-city', 'getPoliceStationByCity')->name('get-police-station-by-city');
     });
-
 });
 Route::group(['middleware' => ['auth']], function () {
 
@@ -44,7 +43,6 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('dashboard', 'dashboard')->name('dashboard');
         Route::get('get-filtered-data', 'getFilterGraphData')->name('get-filtered-data');
         Route::get('logout', 'logout')->name('logout');
-
     });
 
     Route::controller(ProfileController::class)->group(function () {
@@ -140,18 +138,17 @@ Route::group(['middleware' => ['auth']], function () {
         Route::delete('delete-police-station', 'deletePoliceStation')->name('delete-police-station')->middleware('checkPermission:police-stations,delete');
 
         Route::post('update-police-station-profile', 'updatePoliceStation')->name('update-police-station-profile');
-
     });
 
     Route::controller(HotelController::class)->group(function () {
-        Route::get('hotels', 'hotels')->name('hotels')->middleware('checkPermission:hotels,view');      
+        Route::get('hotels', 'hotels')->name('hotels')->middleware('checkPermission:hotels,view');
         Route::get('add-hotel', 'addHotel')->name('add-hotel')->middleware('checkPermission:hotels,add');
         Route::post('store-hotel', 'storeHotel')->name('store-hotel')->middleware('checkPermission:hotels,add');
-        Route::get('edit-hotel/{id}', 'editHotel')->name('edit-hotel')->middleware('checkPermission:hotels,edit'); 
+        Route::get('edit-hotel/{id}', 'editHotel')->name('edit-hotel')->middleware('checkPermission:hotels,edit');
         Route::post('update-hotel', 'updateHotel')->name('update-hotel')->middleware('checkPermission:hotels,edit');
         Route::post('change-hotel-status', 'changeHotelStatus')->name('change-hotel-status')->middleware('checkPermission:hotels,edit');
         Route::delete('delete-hotel', 'deleteHotel')->name('delete-hotel')->middleware('checkPermission:hotels,delete');
-        Route::get('view-hotel-details/{id}', 'viewHotelDetails')->name('view-hotel-details')->middleware('checkPermission:hotels,view'); 
+        Route::get('view-hotel-details/{id}', 'viewHotelDetails')->name('view-hotel-details')->middleware('checkPermission:hotels,view');
         Route::post('assign-police-station', 'assignPoliceStation')->name('assign-police-station')->middleware('checkPermission:hotels,edit');
 
         Route::get('hotel-booking-entries', 'hotelBookingEntries')->name('hotel-booking-entries')->middleware('checkPermission:hotels,view');
@@ -168,8 +165,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('update-hotel-employee', 'updateHotelEmployee')->name('update-hotel-employee')->middleware('checkPermission:hotel-employees,edit');
         Route::post('change-hotel-employee-status', 'changeHotelEmployeeStatus')->name('change-hotel-employee-status')->middleware('checkPermission:hotel-employees,edit');
         Route::delete('delete-hotel-employee', 'deleteHotelEmployee')->name('delete-hotel-employee')->middleware('checkPermission:hotel-employees,delete');
-        Route::get('view-hotel-employee-details/{id}', 'viewHotelEmployeeDetails')->name('view-hotel-employee-details')->middleware('checkPermission:hotel-employees,view'); 
-        
+        Route::get('view-hotel-employee-details/{id}', 'viewHotelEmployeeDetails')->name('view-hotel-employee-details')->middleware('checkPermission:hotel-employees,view');
+
         Route::post('update-hotel-employee-profile', 'updateHotelEmployee')->name('update-hotel-employee-profile');
     });
 
@@ -212,5 +209,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('notifications', 'notifications')->name('notifications');
         Route::post('store-notification', 'storeNotification')->name('store-notification');
         Route::delete('delete-notification', 'deleteNotification')->name('delete-notification');
+        Route::post('mark-notification-as-read', 'markNotificationAsRead')->name('mark-notification-as-read');
+
+        Route::get('alerts', 'alerts')->name('alerts');
+        Route::delete('delete-alert', 'deleteAlert')->name('delete-alert');
     });
 });

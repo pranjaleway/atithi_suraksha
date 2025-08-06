@@ -9,10 +9,7 @@ use App\Models\PoliceStation;
 use App\Models\SpOffice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use GuzzleHttp\Client;
-use Google\Auth\Credentials\ServiceAccountCredentials;
-use Google\Auth\HttpHandler\Guzzle6HttpHandler;
-use Illuminate\Support\Facades\Log;
+
 
 class APINotificationController extends Controller
 {
@@ -80,8 +77,13 @@ class APINotificationController extends Controller
         }
 
         $user = Auth::user();
+        $currentUserId = $user->id;
 
-        $query = Notification::with('user:id,name')->latest('id');
+        $query = Notification::with('user:id,name')->latest('id')
+            ->where(function ($q) use ($currentUserId) {
+                $q->whereNull('deleted_by')
+                    ->orWhereRaw("FIND_IN_SET(?, deleted_by) = 0", [$currentUserId]);
+            });
 
         if (in_array($user->user_type_id, [4, 5])) { // Hotel or Hotel Employee
             $hotel = Hotel::where('user_id', $user->id)->first(['police_station_id']);
@@ -105,13 +107,31 @@ class APINotificationController extends Controller
             }
         }
 
+        // Fetch and format data
+        $notifications = $query->get()->map(function ($notification) use ($currentUserId) {
+            $readBy = $notification->read_by ? explode(',', $notification->read_by) : [];
+
+            return [
+                'id'        => $notification->id,
+                'is_read'      => in_array($currentUserId, $readBy),
+                'title'     => $notification->title,
+                'message'   => $notification->message,
+                'image'     => $notification->image,
+                'created'   => $notification->created_at->format('Y-m-d H:i:s'),
+                'user_id'   => $notification->user_id,
+                'user'      => $notification->user,
+                'status'    => $notification->status,
+            ];
+        });
+
         return response()->json([
-            'data' => $query->get(),
+            'data' => $notifications,
             'canAdd' => hasPermission('notifications', 'add'),
             'canEdit' => hasPermission('notifications', 'edit'),
             'canDelete' => hasPermission('notifications', 'delete'),
         ]);
     }
+
 
 
     /**
@@ -327,15 +347,205 @@ class APINotificationController extends Controller
                 return response()->json(['message' => 'Notification not found', 'status' => 'error'], 404);
             }
 
-            if ($notification->user_id !== Auth::user()->id) {
-                return response()->json(['message' => 'Unauthorized to delete this notification', 'status' => 'error'], 403);
+            $currentUserId = Auth::id();
+
+            $deletedBy = $notification->deleted_by
+                ? explode(',', $notification->deleted_by)
+                : [];
+
+            if (!in_array($currentUserId, $deletedBy)) {
+                $deletedBy[] = $currentUserId;
+                $notification->deleted_by = implode(',', $deletedBy);
+                $notification->save();
+            }
+            return response()->json(['message' => 'Notification deleted successfully', 'status' => 'success']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(), 'status' => 'error'], 500);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/mark-notification-as-read",
+     *     summary="Mark notification as read",
+     *     description="Marks a specific notification as read by the authenticated user.",
+     *     operationId="markNotificationAsRead",
+     *     tags={"Notifications"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"id"},
+     *             @OA\Property(property="id", type="integer", example=1, description="Notification ID")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Notification marked as read",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Notification marked as read"),
+     *             @OA\Property(property="status", type="string", example="success")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Notification not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Notification not found"),
+     *             @OA\Property(property="status", type="string", example="error")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="An error occurred"),
+     *             @OA\Property(property="status", type="string", example="error")
+     *         )
+     *     )
+     * )
+     */
+
+    public function markNotificationAsRead(Request $request)
+    {
+        try {
+            $notification = Notification::find($request->id);
+            if (!$notification) {
+                return response()->json(['message' => 'Notification not found', 'status' => 'error'], 404);
+            }
+            $currentUserId = Auth::id();
+
+            $readBy = $notification->read_by
+                ? explode(',', $notification->read_by)
+                : [];
+
+            if (!in_array($currentUserId, $readBy)) {
+                $readBy[] = $currentUserId;
+                $notification->read_by = implode(',', $readBy);
+                $notification->save();
+            }
+            return response()->json(['message' => 'Notification marked as read', 'status' => 'success']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(), 'status' => 'error'], 500);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/get-sent-notifications",
+     *     summary="Get all notifications sent by the authenticated user",
+     *     tags={"Notifications"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of notifications sent by the user",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Notification Title"),
+     *                     @OA\Property(property="message", type="string", example="This is the notification message"),
+     *                     @OA\Property(property="image", type="string", nullable=true, example="path/to/image.jpg"),
+     *                     @OA\Property(property="user_id", type="integer", example=5),
+     *                     @OA\Property(property="read_by", type="string", example="1,2,3"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2025-08-05T14:00:00Z"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-08-05T14:30:00Z")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Internal Server Error")
+     *         )
+     *     )
+     * )
+     */
+
+
+    public function getSentNotifications(Request $request)
+    {
+        try {
+            $notifications = Notification::where('user_id', Auth::id())->get();
+            return response()->json(['message' => $notifications, 'status' => 'success']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(), 'status' => 'error'], 500);
+        }
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/delete-sent-notification",
+     *     summary="Delete a sent notification",
+     *     tags={"Notifications"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"id"},
+     *             @OA\Property(property="id", type="integer", example=1, description="ID of the notification to delete")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Notification deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Notification deleted successfully"),
+     *             @OA\Property(property="status", type="string", example="success")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Notification not found or unauthorized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Notification not found or unauthorized"),
+     *             @OA\Property(property="status", type="string", example="error")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Internal server error"),
+     *             @OA\Property(property="status", type="string", example="error")
+     *         )
+     *     )
+     * )
+     */
+
+
+    public function deleteSentNotification(Request $request)
+    {
+        try {
+            $notification = Notification::where('id', $request->id)
+                ->where('user_id', Auth::id())
+                ->first();
+
+            if (!$notification) {
+                return response()->json([
+                    'message' => 'Notification not found or unauthorized',
+                    'status' => 'error'
+                ], 404);
             }
 
             $notification->delete();
 
-            return response()->json(['message' => 'Notification deleted successfully', 'status' => 'success']);
+            return response()->json([
+                'message' => 'Notification deleted successfully',
+                'status' => 'success'
+            ]);
         } catch (\Exception $e) {
-            return response()->json(['message' => $e->getMessage(), 'status' => 'error'], 500);
+            return response()->json([
+                'message' => $e->getMessage(),
+                'status' => 'error'
+            ], 500);
         }
     }
 }

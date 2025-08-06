@@ -89,5 +89,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('get-notifications', 'getNotifications')->name('get-notifications');
     Route::post('add-notification', 'storeNotification')->name('store-notification');
     Route::post('delete-notification', 'deleteNotification')->name('delete-notification');
+    Route::post('mark-notification-as-read', 'markNotificationAsRead')->name('mark-notification-as-read');
+    Route::post('get-sent-notifications', 'getSentNotifications')->name('get-sent-notifications');
+    Route::post('delete-sent-notification', 'deleteSentNotification')->name('delete-sent-notification');
   });
 });

@@ -30,7 +30,12 @@ class NotificationController extends Controller
         }
 
         $user = Auth::user();
-        $query = Notification::with('user:id,name')->orderBy('id', 'desc');
+        $currentUserId = $user->id;
+        $query = Notification::with('user:id,name')->latest('id')
+            ->where(function ($q) use ($user) {
+                $q->whereNull('deleted_by')
+                    ->orWhereRaw("FIND_IN_SET(?, deleted_by) = 0", [$user->id]);
+            });
 
         switch ($user->user_type_id) {
             case 2: // SP Office
@@ -89,10 +94,24 @@ class NotificationController extends Controller
                 break;
         }
 
-        $data = $query->get();
+        $notifications = $query->get()->map(function ($notification) use ($currentUserId) {
+            $readBy = $notification->read_by ? explode(',', $notification->read_by) : [];
+
+            return [
+                'id'        => $notification->id,
+                'is_read'      => in_array($currentUserId, $readBy),
+                'title'     => $notification->title,
+                'message'   => $notification->message,
+                'image'     => $notification->image,
+                'created'   => $notification->created_at->format('Y-m-d H:i:s'),
+                'user_id'   => $notification->user_id,
+                'user'      => $notification->user,
+                'status'    => $notification->status,
+            ];
+        });
 
         return response()->json([
-            'data' => $data,
+            'data' => $notifications,
             'canAdd' => hasPermission('notifications', 'add'),
             'canEdit' => hasPermission('notifications', 'edit'),
             'canDelete' => hasPermission('notifications', 'delete'),
@@ -200,7 +219,22 @@ class NotificationController extends Controller
     public function deleteNotification(Request $request)
     {
         $notification = Notification::find($request->id);
-        $notification->delete();
+
+        if (!$notification) {
+            return response()->json(['message' => 'Notification not found', 'status' => 'error'], 404);
+        }
+
+        $currentUserId = Auth::id();
+
+        $deletedBy = $notification->deleted_by
+            ? explode(',', $notification->deleted_by)
+            : [];
+
+        if (!in_array($currentUserId, $deletedBy)) {
+            $deletedBy[] = $currentUserId;
+            $notification->deleted_by = implode(',', $deletedBy);
+            $notification->save();
+        }
         return response()->json(['message' => 'Notification deleted successfully', 'status' => 'success']);
     }
 
@@ -256,7 +290,69 @@ class NotificationController extends Controller
             );
         } catch (\Exception $e) {
             Log::error('FCM Error: ' . $e->getMessage());
-            // Optional: You can notify dev/admin via logs, Slack, email, etc.
+        }
+    }
+
+    public function alerts(Request $request)
+    {
+        if (!hasPermission('notifications', 'view')) {
+            abort(403, 'Unauthorized');
+        }
+        if ($request->ajax()) {
+            $data = Notification::with('user:id,name')->where('user_id', Auth::id())->orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'data' => $data,
+                'canAdd' => hasPermission('notifications', 'add'),
+                'canEdit' => hasPermission('notifications', 'edit'),
+                'canDelete' => hasPermission('notifications', 'delete'),
+            ]);
+        }
+        return view('master.alerts');
+    }
+
+    public function deleteAlert(Request $request)
+    {
+        $notification = Notification::where('id', $request->id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if (!$notification) {
+            return response()->json([
+                'message' => 'Notification not found or unauthorized',
+                'status' => 'error'
+            ], 404);
+        }
+
+        $notification->delete();
+
+        return response()->json([
+            'message' => 'Notification deleted successfully',
+            'status' => 'success'
+        ]);
+    }
+
+    public function markNotificationAsRead(Request $request)
+    {
+        try {
+            $notification = Notification::find($request->id);
+            if (!$notification) {
+                return response()->json(['message' => 'Notification not found', 'status' => 'error'], 404);
+            }
+            $currentUserId = Auth::id();
+
+            $readBy = $notification->read_by
+                ? explode(',', $notification->read_by)
+                : [];
+
+            if (!in_array($currentUserId, $readBy)) {
+                $readBy[] = $currentUserId;
+                $notification->read_by = implode(',', $readBy);
+                $notification->save();
+            }
+            return response()->json(['message' => 'Notification marked as read', 'status' => 'success']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage(), 'status' => 'error'], 500);
         }
     }
 }

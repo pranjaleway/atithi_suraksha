@@ -108,7 +108,7 @@ class APINotificationController extends Controller
         }
 
         // Fetch and format data
-        $notifications = $query->get()->map(function ($notification) use ($currentUserId) {
+        $notifications = $query->paginate(10)->through(function ($notification) use ($currentUserId) {
             $readBy = $notification->read_by ? explode(',', $notification->read_by) : [];
 
             return [
@@ -473,7 +473,7 @@ class APINotificationController extends Controller
     public function getSentNotifications(Request $request)
     {
         try {
-            $notifications = Notification::where('user_id', Auth::id())->get();
+            $notifications = Notification::where('user_id', Auth::id())->orderBy('id', 'desc')->paginate(10);
             return response()->json(['message' => $notifications, 'status' => 'success']);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(), 'status' => 'error'], 500);

@@ -32,6 +32,7 @@ class NotificationController extends Controller
         $user = Auth::user();
         $currentUserId = $user->id;
         $query = Notification::with('user:id,name')->latest('id')
+            ->where('created_at', '>=', $user->created_at)
             ->where(function ($q) use ($user) {
                 $q->whereNull('deleted_by')
                     ->orWhereRaw("FIND_IN_SET(?, deleted_by) = 0", [$user->id]);

@@ -37,8 +37,8 @@ class AuthController extends Controller
      * @OA\Post(
      *     path="/login",
      *     tags={"Authentication"},
-     *     summary="User login",
-     *     description="Logs in a user (only for user types 4 and 5). Users can log in using either email or phone number.",
+     *     summary="User login (email or phone)",
+     *     description="Logs in a user (only for user types 4 and 5). Users can log in using either their email address or a 10-digit phone number.",
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
@@ -49,7 +49,7 @@ class AuthController extends Controller
      *                     property="login",
      *                     type="string",
      *                     example="user@example.com",
-     *                     description="Email or phone number"
+     *                     description="Email or 10-digit phone number. Example: 'user@example.com' or '9876543210'."
      *                 ),
      *                 @OA\Property(
      *                     property="password",
@@ -70,7 +70,13 @@ class AuthController extends Controller
      *             @OA\Property(
      *                 property="data",
      *                 type="object",
-     *                 description="Authenticated user details"
+     *                 description="Authenticated user details",
+     *                 @OA\Property(property="id", type="integer", example=12),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="user@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="9876543210"),
+     *                 @OA\Property(property="user_type_id", type="integer", example=4),
+     *                 @OA\Property(property="status", type="integer", example=1)
      *             )
      *         )
      *     ),
@@ -94,7 +100,8 @@ class AuthController extends Controller
      *         response=422,
      *         description="Validation error",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Please enter a valid email or phone number"),
      *             @OA\Property(
      *                 property="errors",
      *                 type="object",
@@ -105,64 +112,65 @@ class AuthController extends Controller
      *     )
      * )
      */
+
     public function login(Request $request)
     {
         $request->validate([
-            'login' => 'required', // can be email or phone
+            'login' => 'required|string',
             'password' => 'required|min:6',
         ]);
 
-        // Find user by email or phone
-        $user = User::where(function ($q) use ($request) {
-            $q->where('email', $request->login)
-                ->orWhere('phone', $request->login);
-        })->first();
-
-        if ($user) {
-            // Check if password is correct
-            if (Hash::check($request->password, $user->password)) {
-                // Allow login only for user_type_id 4 or 5
-                if (!in_array($user->user_type_id, [4, 5])) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'You do not have permission to login via the app.'
-                    ], 403);
-                }
-
-                // Check if account is deactivated
-                if ($user->status == 0) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Your account is deactivated, please contact the administrator.'
-                    ], 403);
-                }
-
-                // Allow login
-                Auth::login($user);
-                $token = $user->createToken('auth_token')->plainTextToken;
-                activiyLog(ucfirst($user->name) . ' logged in');
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Login successful',
-                    'token' => $token,
-                    'data' => $user
-                ]);
-            }
-
-            // If password is incorrect
+        // Detect whether login is email or phone
+        if (filter_var($request->login, FILTER_VALIDATE_EMAIL)) {
+            $loginType = 'email';
+        } elseif (preg_match('/^[0-9]{10}$/', $request->login)) { // strict 10-digit phone
+            $loginType = 'phone';
+        } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid credentials'
-            ], 401);
+                'message' => 'Please enter a valid email or phone number'
+            ], 422);
         }
 
-        // If user not found
+        // Find user by email or phone
+        $user = User::where($loginType, $request->login)->first();
+
+        if ($user && Hash::check($request->password, $user->password)) {
+            // Allow login only for user_type_id 4 or 5
+            if (!in_array($user->user_type_id, [4, 5])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to login via the app.'
+                ], 403);
+            }
+
+            // Check if account is deactivated
+            if ($user->status == 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account is deactivated, please contact the administrator.'
+                ], 403);
+            }
+
+            // Allow login
+            Auth::login($user);
+            $token = $user->createToken('auth_token')->plainTextToken;
+            activiyLog(ucfirst($user->name) . ' logged in');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'token' => $token,
+                'data' => $user
+            ]);
+        }
+
         return response()->json([
             'success' => false,
             'message' => 'Invalid credentials'
         ], 401);
     }
+
 
 
     /**

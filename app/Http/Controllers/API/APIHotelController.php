@@ -9,6 +9,8 @@ use App\Models\Hotel;
 use App\Models\HotelBooking;
 use App\Models\HotelEmployee;
 use App\Models\HotelEmployeeDoc;
+use App\Models\Notification;
+use App\Models\PoliceStation;
 use App\Models\RoomNumber;
 use App\Models\State;
 use App\Models\TransferEntry;
@@ -2509,6 +2511,19 @@ class APIHotelController extends Controller
                 'transfer_type' => 'manual',
             ]);
 
+            if ($transferEntries) {
+                $police_station_id = Hotel::where('id', $hotelId)->value('police_station_id');
+                $spId = PoliceStation::where('id', $police_station_id)->value('sp_office_id');
+                $hotel = Hotel::where('id', $hotelId)->first();
+                Notification::create([
+                    'user_id' => $user->id,
+                    'title' => 'New Transferred Bookings',
+                    'message' => $hotel->hotel_name . ' transfered bookings.',
+                    'sp_id' => $spId,
+                    'police_station_id' => $police_station_id
+                ]);
+            }
+
             // Log the action
             activiyLog('Manual Entries Transferred by ' . ucfirst(Auth::user()->name));
 
@@ -2625,6 +2640,17 @@ class APIHotelController extends Controller
                     'hotel_employee_id' => $hotel_employee_id,
                     'transfer_date' => now(),
                     'transfer_type' => 'uploaded',
+                ]);
+
+                $police_station_id = Hotel::where('id', $hotelId)->value('police_station_id');
+                $spId = PoliceStation::where('id', $police_station_id)->value('sp_office_id');
+                $hotel = Hotel::where('id', $hotelId)->first();
+                Notification::create([
+                    'user_id' => $user->id,
+                    'title' => 'New Uploaded Register Transfer Bookings',
+                    'message' => $hotel->hotel_name . ' transfered bookings.',
+                    'sp_id' => $spId,
+                    'police_station_id' => $police_station_id
                 ]);
             }
 

@@ -16,6 +16,7 @@ class Notification extends Model
         'message',
         'image',
         'sp_id',
+        'police_station_id',
         'is_read',
         'read_by',
         'deleted_by',

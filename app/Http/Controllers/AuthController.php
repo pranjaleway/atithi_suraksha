@@ -493,35 +493,35 @@ class AuthController extends Controller
 
     public function postHotelSignup(Request $request)
     {
-       $request->validate([
-        'hotel_name' => 'required|string|max:255',
-        'owner_name' => 'required|string|max:255',
-        'email' => 'required|email|unique:users,email',
-        'contact_number' => 'required|numeric|digits:10|unique:hotels,contact_number',
-        'owner_contact_number' => 'required|numeric|digits:10|unique:users,phone',
-        'aadhar_number' => 'required|numeric|digits:12',
-        'pan_number' => 'required|string|max:10',
-        'license_number' => 'nullable|string|max:255|unique:hotels,license_number',
-        'address' => 'required|string',
-        'state_id' => 'required|exists:states,id',
-        'city_id' => 'required|exists:cities,id',
-        'police_station_id' => 'required|exists:police_stations,id',
-        'pincode' => 'required|numeric|digits:6',
-        'password' => 'required|string|min:6|confirmed',
-        'document_id' => 'required',
-        'document' => 'required|array',
-        'document.*' => 'required|file|mimes:jpg,jpeg,png,pdf',
-    ], [
-        'email.unique' => 'This email has already been taken.',
-        'contact_number.unique' => 'This contact number has already been taken.',
-        'city_id.exists' => 'The selected city is invalid.',
-        'state_id.exists' => 'The selected state is invalid.',
-        'password.confirmed' => 'The confirmed password does not match.',
-        'document.*.required' => 'Please upload at least one document.',
-        'document.*.file' => 'Each document must be a valid file.',
-        'document.*.mimes' => 'Only JPG, JPEG, PNG, or PDF files are allowed.',
-        'police_station_id.exists' => 'The selected police station is invalid.'
-    ]);
+        $request->validate([
+            'hotel_name' => 'required|string|max:255',
+            'owner_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'contact_number' => 'required|numeric|digits:10|unique:hotels,contact_number',
+            'owner_contact_number' => 'required|numeric|digits:10|unique:users,phone',
+            'aadhar_number' => 'required|numeric|digits:12',
+            'pan_number' => 'required|string|max:10',
+            'license_number' => 'nullable|string|max:255|unique:hotels,license_number',
+            'address' => 'required|string',
+            'state_id' => 'required|exists:states,id',
+            'city_id' => 'required|exists:cities,id',
+            'police_station_id' => 'required|exists:police_stations,id',
+            'pincode' => 'required|numeric|digits:6',
+            'password' => 'required|string|min:6|confirmed',
+            'document_id' => 'required',
+            'document' => 'required|array',
+            'document.*' => 'required|file|mimes:jpg,jpeg,png,pdf',
+        ], [
+            'email.unique' => 'This email has already been taken.',
+            'contact_number.unique' => 'This contact number has already been taken.',
+            'city_id.exists' => 'The selected city is invalid.',
+            'state_id.exists' => 'The selected state is invalid.',
+            'password.confirmed' => 'The confirmed password does not match.',
+            'document.*.required' => 'Please upload at least one document.',
+            'document.*.file' => 'Each document must be a valid file.',
+            'document.*.mimes' => 'Only JPG, JPEG, PNG, or PDF files are allowed.',
+            'police_station_id.exists' => 'The selected police station is invalid.'
+        ]);
 
 
         $hotels = Hotel::create($request->only([
@@ -592,188 +592,210 @@ class AuthController extends Controller
     }
 
     public function dashboard()
-{
-    if (!hasPermission('dashboard', 'view')) {
-        abort(403, 'Unauthorized');
+    {
+        if (!hasPermission('dashboard', 'view')) {
+            abort(403, 'Unauthorized');
+        }
+
+        if (!Auth::check()) {
+            return redirect()->route('login');
+        }
+
+        $user = Auth::user();
+        $userType = $user->user_type_id;
+
+        switch ($userType) {
+            case 1: // Super Admin
+                $totalSPOffice = User::where('user_type_id', 2)->count();
+                $totalPoliceStation = User::where('user_type_id', 3)->count();
+                $hotels = Hotel::all();
+                $totalHotel = $hotels->count();
+                $todayTransferredBookings = $this->getTodayTransferredBookings();
+                $graphData = $this->generateGraphData();
+
+                return view('auth.super-admin-dashboard', compact(
+                    'totalSPOffice',
+                    'totalPoliceStation',
+                    'totalHotel',
+                    'todayTransferredBookings',
+                    'graphData',
+                    'hotels'
+                ));
+
+            case 2: // SP Office
+                $spOfficeID = SpOffice::where('user_id', $user->id)->value('id');
+                $policeStationIds = PoliceStation::where('sp_office_id', $spOfficeID)->pluck('id')->toArray();
+                $hotels = Hotel::whereIn('police_station_id', $policeStationIds)->get();
+                $hotelIDs = $hotels->pluck('id')->toArray();
+
+                $totalPoliceStation = count($policeStationIds);
+                $totalTransferredBookings = $this->countDistinctTransfers($hotelIDs);
+                $todayTransferredBookings = $this->getTodayTransferredBookings($hotelIDs);
+                $graphData = $this->generateGraphData($hotelIDs);
+
+                return view('auth.sp-office-dashboard', compact(
+                    'totalPoliceStation',
+                    'totalTransferredBookings',
+                    'todayTransferredBookings',
+                    'graphData',
+                    'hotels'
+                ));
+
+            case 3: // Police Station
+                $policeStationID = PoliceStation::where('user_id', $user->id)->value('id');
+                $hotels = Hotel::where('police_station_id', $policeStationID)->get();
+                $hotelIDs = $hotels->pluck('id')->toArray();
+
+                $totalHotel = count($hotelIDs);
+                $totalTransferredBookings = $this->countDistinctTransfers($hotelIDs);
+                $todayTransferredBookings = $this->getTodayTransferredBookings($hotelIDs);
+                $graphData = $this->generateGraphData($hotelIDs);
+
+                return view('auth.police-station-dashboard', compact(
+                    'totalHotel',
+                    'totalTransferredBookings',
+                    'todayTransferredBookings',
+                    'graphData',
+                    'hotels'
+                ));
+
+            case 4: // Hotel
+                $hotelID = Hotel::where('user_id', $user->id)->value('id');
+
+                $totalEmployees = HotelEmployee::where('hotel_id', $hotelID)->count();
+                $totalBooking = $this->countBookings($hotelID);
+                $totalTransferPendingBookings = $this->countPendingTransfers($hotelID);
+                $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID]);
+                $graphData = $this->generateHotelGraphData($hotelID);
+
+                return view('auth.hotel-dashboard', compact(
+                    'totalEmployees',
+                    'totalBooking',
+                    'totalTransferPendingBookings',
+                    'todayTransferredBookings',
+                    'graphData'
+                ));
+
+            case 5: // Hotel Employee
+                $hotelEmployeeID = HotelEmployee::where('user_id', $user->id)->value('id');
+                $hotelID = HotelEmployee::where('id', $hotelEmployeeID)->value('hotel_id');
+
+                $totalBooking = $this->countBookings($hotelID, $hotelEmployeeID);
+                $totalTransferPendingBookings = $this->countPendingTransfers($hotelID, $hotelEmployeeID);
+                $totalTransferredBookings = $this->countDistinctTransfers([$hotelID], $hotelEmployeeID);
+                $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID], $hotelEmployeeID);
+                $graphData = $this->generateHotelGraphData($hotelID, $hotelEmployeeID);
+
+                return view('auth.hotel-employee-dashboard', compact(
+                    'totalBooking',
+                    'totalTransferPendingBookings',
+                    'totalTransferredBookings',
+                    'todayTransferredBookings',
+                    'graphData'
+                ));
+
+            default:
+                return redirect()->route('dashboard');
+        }
     }
 
-    if (!Auth::check()) {
-        return redirect()->route('login');
-    }
+    private function getTodayTransferredBookings(array $hotelIDs = [], $hotelEmployeeID = null)
+    {
+        $query = TransferEntry::whereDate('transfer_date', Carbon::today());
 
-    $user = Auth::user();
-    $userType = $user->user_type_id;
-
-    switch ($userType) {
-        case 1: // Super Admin
-            $totalSPOffice = User::where('user_type_id', 2)->count();
-            $totalPoliceStation = User::where('user_type_id', 3)->count();
-            $hotels = Hotel::all();
-            $totalHotel = $hotels->count();
-            $todayTransferredBookings = $this->getTodayTransferredBookings();
-            $graphData = $this->generateGraphData();
-
-            return view('auth.super-admin-dashboard', compact(
-                'totalSPOffice', 'totalPoliceStation', 'totalHotel', 'todayTransferredBookings', 'graphData', 'hotels'
-            ));
-
-        case 2: // SP Office
-            $spOfficeID = SpOffice::where('user_id', $user->id)->value('id');
-            $policeStationIds = PoliceStation::where('sp_office_id', $spOfficeID)->pluck('id')->toArray();
-            $hotels = Hotel::whereIn('police_station_id', $policeStationIds)->get();
-            $hotelIDs = $hotels->pluck('id')->toArray();
-
-            $totalPoliceStation = count($policeStationIds);
-            $totalTransferredBookings = $this->countDistinctTransfers($hotelIDs);
-            $todayTransferredBookings = $this->getTodayTransferredBookings($hotelIDs);
-            $graphData = $this->generateGraphData($hotelIDs);
-
-            return view('auth.sp-office-dashboard', compact(
-                'totalPoliceStation', 'totalTransferredBookings', 'todayTransferredBookings', 'graphData', 'hotels'
-            ));
-
-        case 3: // Police Station
-            $policeStationID = PoliceStation::where('user_id', $user->id)->value('id');
-            $hotels = Hotel::where('police_station_id', $policeStationID)->get();
-            $hotelIDs = $hotels->pluck('id')->toArray();
-
-            $totalHotel = count($hotelIDs);
-            $totalTransferredBookings = $this->countDistinctTransfers($hotelIDs);
-            $todayTransferredBookings = $this->getTodayTransferredBookings($hotelIDs);
-            $graphData = $this->generateGraphData($hotelIDs);
-
-            return view('auth.police-station-dashboard', compact(
-                'totalHotel', 'totalTransferredBookings', 'todayTransferredBookings', 'graphData', 'hotels'
-            ));
-
-        case 4: // Hotel
-            $hotelID = Hotel::where('user_id', $user->id)->value('id');
-
-            $totalEmployees = HotelEmployee::where('hotel_id', $hotelID)->count();
-            $totalBooking = $this->countBookings($hotelID);
-            $totalTransferPendingBookings = $this->countPendingTransfers($hotelID);
-            $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID]);
-            $graphData = $this->generateHotelGraphData($hotelID);
-
-            return view('auth.hotel-dashboard', compact(
-                'totalEmployees', 'totalBooking', 'totalTransferPendingBookings', 'todayTransferredBookings', 'graphData'
-            ));
-
-        case 5: // Hotel Employee
-            $hotelEmployeeID = HotelEmployee::where('user_id', $user->id)->value('id');
-            $hotelID = HotelEmployee::where('id', $hotelEmployeeID)->value('hotel_id');
-
-            $totalBooking = $this->countBookings($hotelID, $hotelEmployeeID);
-            $totalTransferPendingBookings = $this->countPendingTransfers($hotelID, $hotelEmployeeID);
-            $totalTransferredBookings = $this->countDistinctTransfers([$hotelID], $hotelEmployeeID);
-            $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID], $hotelEmployeeID);
-            $graphData = $this->generateHotelGraphData($hotelID, $hotelEmployeeID);
-
-            return view('auth.hotel-employee-dashboard', compact(
-                'totalBooking', 'totalTransferPendingBookings', 'totalTransferredBookings', 'todayTransferredBookings', 'graphData'
-            ));
-
-        default:
-            return redirect()->route('dashboard');
-    }
-}
-
-private function getTodayTransferredBookings(array $hotelIDs = [], $hotelEmployeeID = null)
-{
-    $query = TransferEntry::whereDate('transfer_date', Carbon::today());
-
-    if (!empty($hotelIDs)) {
-        $query->whereIn('hotel_id', $hotelIDs);
-    }
-
-    if ($hotelEmployeeID) {
-        $query->where('hotel_employee_id', $hotelEmployeeID);
-    }
-
-    return $query->count();
-}
-
-private function countDistinctTransfers(array $hotelIDs = [], $hotelEmployeeID = null)
-{
-    $query = TransferEntry::whereIn('hotel_id', $hotelIDs);
-
-    if ($hotelEmployeeID) {
-        $query->where('hotel_employee_id', $hotelEmployeeID);
-    }
-
-    return $query->count(DB::raw('DISTINCT hotel_id, transfer_date'));
-}
-
-private function countBookings($hotelID, $hotelEmployeeID = null)
-{
-    $query = HotelBooking::where('hotel_id', $hotelID)->whereNull('parent_id');
-
-    if ($hotelEmployeeID) {
-        $query->where('hotel_employee_id', $hotelEmployeeID);
-    }
-
-    return $query->count();
-}
-
-private function countPendingTransfers($hotelID, $hotelEmployeeID = null)
-{
-    $query = HotelBooking::where('hotel_id', $hotelID)
-        ->whereNull('transfer_date')
-        ->where('status', 0);
-
-    if ($hotelEmployeeID) {
-        $query->where('hotel_employee_id', $hotelEmployeeID);
-    }
-
-    return $query->count();
-}
-
-private function generateHotelGraphData($hotelID, $hotelEmployeeID = null)
-{
-    $dates = CarbonPeriod::create(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth());
-    $labels = [];
-    $dailyBookings = [];
-    $dailyTransfers = [];
-
-    foreach ($dates as $date) {
-        $labels[] = $date->format('d M');
-
-        $bookingQuery = HotelBooking::where('hotel_id', $hotelID)->whereDate('created_at', $date);
-        $transferQuery = HotelBooking::where('hotel_id', $hotelID)->whereDate('transfer_date', $date);
+        if (!empty($hotelIDs)) {
+            $query->whereIn('hotel_id', $hotelIDs);
+        }
 
         if ($hotelEmployeeID) {
-            $bookingQuery->where('hotel_employee_id', $hotelEmployeeID);
-            $transferQuery->where('hotel_employee_id', $hotelEmployeeID);
+            $query->where('hotel_employee_id', $hotelEmployeeID);
         }
 
-        $dailyBookings[] = $bookingQuery->count();
-        $dailyTransfers[] = $transferQuery->count();
+        return $query->count();
     }
 
-    return [
-        'labels' => $labels,
-        'dailyBookings' => $dailyBookings,
-        'dailyTransfers' => $dailyTransfers
-    ];
-}
+    private function countDistinctTransfers(array $hotelIDs = [], $hotelEmployeeID = null)
+    {
+        $query = TransferEntry::whereIn('hotel_id', $hotelIDs);
 
-private function generateGraphData(array $hotelIds = [])
-{
-    $dates = CarbonPeriod::create(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth());
-    $labels = [];
-    $bookingCounts = [];
-
-    foreach ($dates as $date) {
-        $query = TransferEntry::whereDate('transfer_date', $date);
-        if (!empty($hotelIds)) {
-            $query->whereIn('hotel_id', $hotelIds);
+        if ($hotelEmployeeID) {
+            $query->where('hotel_employee_id', $hotelEmployeeID);
         }
-        $labels[] = $date->format('d M');
-        $bookingCounts[] = $query->count();
+
+        return $query->count(DB::raw('DISTINCT hotel_id, transfer_date'));
     }
 
-    return ['labels' => $labels, 'data' => $bookingCounts];
-}
+    private function countBookings($hotelID, $hotelEmployeeID = null)
+    {
+        $query = HotelBooking::where('hotel_id', $hotelID)->whereNull('parent_id');
+
+        if ($hotelEmployeeID) {
+            $query->where('hotel_employee_id', $hotelEmployeeID);
+        }
+
+        return $query->count();
+    }
+
+    private function countPendingTransfers($hotelID, $hotelEmployeeID = null)
+    {
+        $query = HotelBooking::where('hotel_id', $hotelID)
+            ->whereNull('parent_id')
+            ->whereNull('transfer_date')
+            ->where('status', 0);
+
+        if ($hotelEmployeeID) {
+            $query->where('hotel_employee_id', $hotelEmployeeID);
+        }
+
+        return $query->count();
+    }
+
+    private function generateHotelGraphData($hotelID, $hotelEmployeeID = null)
+    {
+        $dates = CarbonPeriod::create(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth());
+        $labels = [];
+        $dailyBookings = [];
+        $dailyTransfers = [];
+
+        foreach ($dates as $date) {
+            $labels[] = $date->format('d M');
+
+            $bookingQuery = HotelBooking::where('hotel_id', $hotelID)->whereDate('created_at', $date);
+            $transferQuery = HotelBooking::where('hotel_id', $hotelID)->whereDate('transfer_date', $date);
+
+            if ($hotelEmployeeID) {
+                $bookingQuery->where('hotel_employee_id', $hotelEmployeeID);
+                $transferQuery->where('hotel_employee_id', $hotelEmployeeID);
+            }
+
+            $dailyBookings[] = $bookingQuery->count();
+            $dailyTransfers[] = $transferQuery->count();
+        }
+
+        return [
+            'labels' => $labels,
+            'dailyBookings' => $dailyBookings,
+            'dailyTransfers' => $dailyTransfers
+        ];
+    }
+
+    private function generateGraphData(array $hotelIds = [])
+    {
+        $dates = CarbonPeriod::create(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth());
+        $labels = [];
+        $bookingCounts = [];
+
+        foreach ($dates as $date) {
+            $query = TransferEntry::whereDate('transfer_date', $date);
+            if (!empty($hotelIds)) {
+                $query->whereIn('hotel_id', $hotelIds);
+            }
+            $labels[] = $date->format('d M');
+            $bookingCounts[] = $query->count();
+        }
+
+        return ['labels' => $labels, 'data' => $bookingCounts];
+    }
 
 
 

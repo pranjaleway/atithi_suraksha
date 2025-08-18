@@ -37,19 +37,19 @@ class ViewServiceProvider extends ServiceProvider
             $query = Notification::with('user:id,name')->orderBy('id', 'desc');
 
             switch ($user->user_type_id) {
-               case 2: // SP Office
-                $spOfficeIDs = SpOffice::where('user_id', $user->id)->pluck('id');
-                $policeStationIDs = PoliceStation::whereIn('sp_office_id', $spOfficeIDs)->pluck('id');
+                case 2: // SP Office
+                    $spOfficeIDs = SpOffice::where('user_id', $user->id)->pluck('id');
+                    $policeStationIDs = PoliceStation::whereIn('sp_office_id', $spOfficeIDs)->pluck('id');
 
-                $policeUserIDs = PoliceStation::whereIn('id', $policeStationIDs)->pluck('user_id');
-                $hotelUserIDs = Hotel::whereIn('police_station_id', $policeStationIDs)->pluck('user_id');
+                    $policeUserIDs = PoliceStation::whereIn('id', $policeStationIDs)->pluck('user_id');
+                    $hotelUserIDs = Hotel::whereIn('police_station_id', $policeStationIDs)->pluck('user_id');
 
-                $query->where(function ($q) use ($policeUserIDs, $hotelUserIDs, $spOfficeIDs) {
-                    $q->whereIn('user_id', $policeUserIDs)
-                    ->orWhereIn('user_id', $hotelUserIDs)
-                    ->orWhereIn('sp_id', $spOfficeIDs); // ✅ include notifications by sp_id
-                });
-                break;
+                    $query->where(function ($q) use ($policeUserIDs, $hotelUserIDs, $spOfficeIDs) {
+                        $q->whereIn('user_id', $policeUserIDs)
+                            ->orWhereIn('user_id', $hotelUserIDs)
+                            ->orWhereIn('sp_id', $spOfficeIDs); // ✅ include notifications by sp_id
+                    });
+                    break;
 
 
                 case 3: //  Police Station
@@ -58,13 +58,14 @@ class ViewServiceProvider extends ServiceProvider
                         $spUserID = optional(SpOffice::find($policeStation->sp_office_id))->user_id;
                         $hotelUserIDs = Hotel::where('police_station_id', $policeStation->id)->pluck('user_id');
 
-                        $query->where(function ($q) use ($spUserID, $hotelUserIDs) {
+                        $query->where(function ($q) use ($spUserID, $hotelUserIDs, $policeStation) {
                             if ($spUserID) {
                                 $q->where('user_id', $spUserID);
                             }
                             if ($hotelUserIDs->isNotEmpty()) {
                                 $q->orWhereIn('user_id', $hotelUserIDs)->where('sp_id', null);
                             }
+                            $q->orWhere('police_station_id', $policeStation->id);
                         });
                     }
                     break;

@@ -60,13 +60,14 @@ class NotificationController extends Controller
                     $spUserID = optional(SpOffice::find($policeStation->sp_office_id))->user_id;
                     $hotelUserIDs = Hotel::where('police_station_id', $policeStation->id)->pluck('user_id');
 
-                    $query->where(function ($q) use ($spUserID, $hotelUserIDs) {
+                    $query->where(function ($q) use ($spUserID, $hotelUserIDs, $policeStation) {
                         if ($spUserID) {
                             $q->where('user_id', $spUserID);
                         }
                         if ($hotelUserIDs->isNotEmpty()) {
                             $q->orWhereIn('user_id', $hotelUserIDs)->whereNull('sp_id');
                         }
+                        $q->orWhere('police_station_id', $policeStation->id);
                     });
                 }
                 break;
@@ -99,15 +100,15 @@ class NotificationController extends Controller
             $readBy = $notification->read_by ? explode(',', $notification->read_by) : [];
 
             return [
-                'id'        => $notification->id,
-                'is_read'      => in_array($currentUserId, $readBy),
-                'title'     => $notification->title,
-                'message'   => $notification->message,
-                'image'     => $notification->image,
-                'created'   => $notification->created_at->format('Y-m-d H:i:s'),
-                'user_id'   => $notification->user_id,
-                'user'      => $notification->user,
-                'status'    => $notification->status,
+                'id' => $notification->id,
+                'is_read' => in_array($currentUserId, $readBy),
+                'title' => $notification->title,
+                'message' => $notification->message,
+                'image' => $notification->image,
+                'created' => $notification->created_at->format('Y-m-d H:i:s'),
+                'user_id' => $notification->user_id,
+                'user' => $notification->user,
+                'status' => $notification->status,
             ];
         });
 

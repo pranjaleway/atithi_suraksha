@@ -84,7 +84,12 @@ class APINotificationController extends Controller
             ->where(function ($q) use ($currentUserId) {
                 $q->whereNull('deleted_by')
                     ->orWhereRaw("FIND_IN_SET(?, deleted_by) = 0", [$currentUserId]);
+            })
+            ->where(function ($q) {
+                $q->where('title', '!=', 'New Hotel Registration')
+                    ->orWhereNull('title');
             });
+
 
         if (in_array($user->user_type_id, [4, 5])) { // Hotel or Hotel Employee
             $hotel = Hotel::where('user_id', $user->id)->first(['police_station_id']);
@@ -113,15 +118,15 @@ class APINotificationController extends Controller
             $readBy = $notification->read_by ? explode(',', $notification->read_by) : [];
 
             return [
-                'id'        => $notification->id,
-                'is_read'      => in_array($currentUserId, $readBy),
-                'title'     => $notification->title,
-                'message'   => $notification->message,
-                'image'     => $notification->image,
-                'created'   => $notification->created_at->format('Y-m-d H:i:s'),
-                'user_id'   => $notification->user_id,
-                'user'      => $notification->user,
-                'status'    => $notification->status,
+                'id' => $notification->id,
+                'is_read' => in_array($currentUserId, $readBy),
+                'title' => $notification->title,
+                'message' => $notification->message,
+                'image' => $notification->image,
+                'created' => $notification->created_at->format('Y-m-d H:i:s'),
+                'user_id' => $notification->user_id,
+                'user' => $notification->user,
+                'status' => $notification->status,
             ];
         });
 
@@ -474,7 +479,12 @@ class APINotificationController extends Controller
     public function getSentNotifications(Request $request)
     {
         try {
-            $notifications = Notification::where('user_id', Auth::id())->orderBy('id', 'desc')->paginate(10);
+            $notifications = Notification::where('user_id', Auth::id())
+                ->where(function ($q) {
+                    $q->where('title', '!=', 'New Hotel Registration')
+                        ->orWhereNull('title');
+                })
+                ->orderBy('id', 'desc')->paginate(10);
             return response()->json(['message' => $notifications, 'status' => 'success']);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage(), 'status' => 'error'], 500);

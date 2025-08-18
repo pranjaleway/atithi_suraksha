@@ -116,6 +116,14 @@ $(function () {
                 url: listUrl,
                 type: "GET",
                 datatype: "json",
+                data: function (d) {
+                    let dateRange = $("#flatpickr-range").val();
+                    if (dateRange) {
+                        const dates = dateRange.split(" to ");
+                        d.from_date = dates[0];
+                        d.to_date = dates[1];
+                    }
+                },
                 dataSrc: function (json) {
                     json.data.forEach((element, index) => {
                         element.sequence_number = index + 1;
@@ -132,8 +140,15 @@ $(function () {
             },
             columns: baseColumns,
             dom:
-                '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>>' +
-                '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6 d-flex justify-content-center justify-content-md-end"f>>' +
+                '<"card-header flex-column flex-md-row"' +
+                '<"head-label text-center">' +
+                '<"dt-action-buttons text-end pt-3 pt-md-0"B>' +
+                ">" +
+                '<"row align-items-center px-2"' +
+                '<"col-sm-12 col-md-3"l>' +
+                '<"col-sm-12 col-md-5 extra-filters">' +
+                '<"col-sm-12 col-md-3"f>' +
+                ">" +
                 "t" +
                 '<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
             displayLength: 7,
@@ -175,6 +190,22 @@ $(function () {
         });
 
         $("div.head-label").html('<h5 class="card-title mb-0">Bookings</h5>');
+
+        $(".extra-filters").html(`
+    <div class="form-floating form-floating-outline me-2">
+        <input type="text" class="form-control flatpickr-input" id="flatpickr-range"
+               placeholder="YYYY-MM-DD to YYYY-MM-DD" readonly>
+        <label for="flatpickr-range">Date Range</label>
+    </div>
+`);
+        // Flatpickr init
+        flatpickr("#flatpickr-range", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            onChange: function () {
+                dt_basic.ajax.reload();
+            },
+        });
     }
 
     // Filter form control to default size

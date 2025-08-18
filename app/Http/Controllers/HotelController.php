@@ -32,12 +32,11 @@ class HotelController extends Controller
         }
 
         if ($request->ajax()) {
-            if(Auth::user()->user_type_id == 2){
+            if (Auth::user()->user_type_id == 2) {
                 $spOffice = SpOffice::where('user_id', Auth::id())->first();
                 $policeStation = PoliceStation::where('sp_office_id', $spOffice->id)->pluck('id');
                 $data = Hotel::whereIn('police_station_id', $policeStation)->orderBy('id', 'desc')->get();
-            }
-            else if (Auth::user()->user_type_id == 3) {
+            } else if (Auth::user()->user_type_id == 3) {
                 $policeStation = PoliceStation::where('user_id', Auth::id())->first();
 
                 if ($policeStation) {
@@ -140,7 +139,7 @@ class HotelController extends Controller
 
         $plainPassword = $request->password;
 
-        $user->notify(new CredentialsNotification($hotels->hotel_name, $user->email, $plainPassword));
+        $user->notify(new CredentialsNotification($hotels->hotel_name, $user->email, $plainPassword, $user->phone));
 
         activiyLog('New hotel ' . $hotels->hotel_name . ' registered by ' . ucfirst(Auth::user()->name));
 
@@ -296,45 +295,45 @@ class HotelController extends Controller
 
 
     public function deleteHotel(Request $request)
-{
-    try {
-        $hotel = Hotel::find($request->id);
+    {
+        try {
+            $hotel = Hotel::find($request->id);
 
-        if (!$hotel) {
+            if (!$hotel) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Hotel not found',
+                ], 404);
+            }
+
+            // Log activity before deletion
+            activiyLog('Hotel ' . $hotel->hotel_name . ' deleted by ' . ucfirst(Auth::user()->name));
+
+            // Delete associated user if exists
+            if ($hotel->user_id) {
+                $user = User::find($hotel->user_id);
+                if ($user) {
+                    $user->delete();
+                }
+            }
+
+            // Delete associated documents and hotel
+            $hotel->ownerDocuments()->delete();
+            $hotel->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Hotel deleted successfully',
+            ]);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Hotel not found',
-            ], 404);
+                'message' => 'Something went wrong while deleting the hotel.',
+                'error' => $e->getMessage(), // Remove this in production if needed
+            ], 500);
         }
-
-        // Log activity before deletion
-        activiyLog('Hotel ' . $hotel->hotel_name . ' deleted by ' . ucfirst(Auth::user()->name));
-
-        // Delete associated user if exists
-        if ($hotel->user_id) {
-            $user = User::find($hotel->user_id);
-            if ($user) {
-                $user->delete();
-            }
-        }
-
-        // Delete associated documents and hotel
-        $hotel->ownerDocuments()->delete();
-        $hotel->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Hotel deleted successfully',
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Something went wrong while deleting the hotel.',
-            'error' => $e->getMessage(), // Remove this in production if needed
-        ], 500);
     }
-}
 
 
     public function changehotelStatus(Request $request)
@@ -346,7 +345,7 @@ class HotelController extends Controller
             $user = User::find($hotel->user_id);
             if ($user) {
                 $user->update(['status' => $newStatus]);
-                 $user->notify(new HotelStatusChangeNotification($newStatus, $hotel->hotel_name));
+                $user->notify(new HotelStatusChangeNotification($newStatus, $hotel->hotel_name));
             }
             activiyLog('Hotel status ' . $hotel->hotel_name . ' changed to ' . ($newStatus == 1 ? 'Active' : 'Inactive') . ' by ' . ucfirst(Auth::user()->name));
             return response()->json(['status' => 'success', 'message' => 'Hotel status updated successfully']);

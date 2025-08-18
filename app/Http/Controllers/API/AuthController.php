@@ -38,15 +38,25 @@ class AuthController extends Controller
      *     path="/login",
      *     tags={"Authentication"},
      *     summary="User login",
-     *     description="Logs in a user (only for user types 4 and 5).",
+     *     description="Logs in a user (only for user types 4 and 5). Users can log in using either email or phone number.",
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
      *             mediaType="application/json",
      *             @OA\Schema(
-     *                 required={"email", "password"},
-     *                 @OA\Property(property="email", type="string", format="email", example="user@example.com"),
-     *                 @OA\Property(property="password", type="string", format="password", example="secret123")
+     *                 required={"login", "password"},
+     *                 @OA\Property(
+     *                     property="login",
+     *                     type="string",
+     *                     example="user@example.com",
+     *                     description="Email or phone number"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="password",
+     *                     type="string",
+     *                     format="password",
+     *                     example="secret123"
+     *                 )
      *             )
      *         )
      *     ),
@@ -56,7 +66,12 @@ class AuthController extends Controller
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Login successful"),
-     *             @OA\Property(property="redirect", type="string", example="/dashboard")
+     *             @OA\Property(property="token", type="string", example="1|XyzAbcTokenString"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 description="Authenticated user details"
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -83,22 +98,25 @@ class AuthController extends Controller
      *             @OA\Property(
      *                 property="errors",
      *                 type="object",
-     *                 @OA\Property(property="email", type="array", @OA\Items(type="string", example="The email field is required.")),
+     *                 @OA\Property(property="login", type="array", @OA\Items(type="string", example="The login field is required.")),
      *                 @OA\Property(property="password", type="array", @OA\Items(type="string", example="The password field is required."))
      *             )
      *         )
      *     )
      * )
      */
-
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required', // can be email or phone
             'password' => 'required|min:6',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // Find user by email or phone
+        $user = User::where(function ($q) use ($request) {
+            $q->where('email', $request->login)
+                ->orWhere('phone', $request->login);
+        })->first();
 
         if ($user) {
             // Check if password is correct
@@ -145,6 +163,7 @@ class AuthController extends Controller
             'message' => 'Invalid credentials'
         ], 401);
     }
+
 
     /**
      * @OA\Post(

@@ -12,7 +12,8 @@
                         <tr>
                             <th>S.No.</th>
                             <th>Hotel Name</th>
-                            <th>Date</th>
+                            <th>Booking/Register Date</th>
+                            <th>Transfer Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -33,6 +34,15 @@
                     <form action="{{ route('store-uploaded-entry') }}" id="add-form" enctype="multipart/form-data"
                         method="POST">
                         <div class="modal-body">
+                            <div class="mb-3">
+                                <div class="input-group input-group-merge">
+                                    <div class="form-floating form-floating-outline">
+                                        <input type="date" class="form-control" id="transfer_date" name="transfer_date"
+                                            placeholder="dd/mm/yyyy">
+                                        <label for="transfer_date">Register Entry Date</label>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="mb-3">
                                 <div class="input-group input-group-merge">
                                     <div class="form-floating form-floating-outline">

@@ -699,11 +699,16 @@ class HotelBookingController extends Controller
         $validated = $request->validate([
             'file_path' => 'required|array',
             'file_path.*' => 'file|mimes:jpeg,png,jpg,pdf',
+            'transfer_date' => 'required',
         ], [
             'file_path.required' => 'Please select at least one file.',
             'file_path.*.file' => 'Please select a valid file.',
             'file_path.*.mimes' => 'Please select a file with one of the following extensions: jpeg, png, jpg, pdf.',
+            'transfer_date.required' => 'Please select a register entry date.',
         ]);
+
+        // Convert dd-mm-yyyy → yyyy-mm-dd
+        $transferDate = Carbon::createFromFormat('d/m/Y', $request->transfer_date)->format('Y-m-d');
 
         $user = Auth::user();
         $hotelId = null;
@@ -721,7 +726,6 @@ class HotelBookingController extends Controller
 
         $createdUploadIds = [];
 
-        // Upload and save each file
         foreach ($request->file('file_path') as $file) {
             $filePath = $file->store('uploaded_entries', 'public');
             $uploaded = UploadedEntry::create([
@@ -729,29 +733,27 @@ class HotelBookingController extends Controller
                 'hotel_employee_id' => $hotel_employee_id,
                 'file_path' => $filePath,
                 'status' => 1,
-                'transfer_date' => now(),
+                'transfer_date' => $transferDate, // use converted date
             ]);
-
-            // Collect the uploaded entry ID
             $createdUploadIds[] = $uploaded->id;
         }
 
-        // Update those entries and create transfer entry
         if (!empty($createdUploadIds)) {
-
             TransferEntry::create([
                 'hotel_id' => $hotelId,
                 'hotel_employee_id' => $hotel_employee_id,
-                'transfer_date' => now(),
+                'transfer_date' => $transferDate, // use converted date
                 'transfer_type' => 'uploaded',
             ]);
+
             $police_station_id = Hotel::where('id', $hotelId)->value('police_station_id');
             $spId = PoliceStation::where('id', $police_station_id)->value('sp_office_id');
             $hotel = Hotel::where('id', $hotelId)->first();
+
             Notification::create([
                 'user_id' => $user->id,
                 'title' => 'New Uploaded Register Transfer Bookings',
-                'message' => $hotel->hotel_name . ' transfered bookings.',
+                'message' => $hotel->hotel_name . ' transferred bookings.',
                 'sp_id' => $spId,
                 'police_station_id' => $police_station_id
             ]);
@@ -764,6 +766,7 @@ class HotelBookingController extends Controller
             'message' => 'File uploaded and marked as transferred successfully.',
         ]);
     }
+
 
 
     public function deleteUploadedEntry(Request $request)
@@ -854,6 +857,7 @@ class HotelBookingController extends Controller
                     'hotel' => $first->hotel,
                     'hotelEmployee' => $first->hotelEmployee,
                     'transfer_types' => $items->pluck('transfer_type')->unique()->values(),
+                    'created_at' => $items->first()->created_at,
                 ];
             })->values();
 

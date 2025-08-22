@@ -2348,6 +2348,7 @@ class APIHotelController extends Controller
                     'hotel' => $first->hotel,
                     'hotelEmployee' => $first->hotelEmployee,
                     'transfer_types' => $items->pluck('transfer_type')->unique()->values(),
+                    'created_at' => $first->created_at,
                 ];
             })->values();
 
@@ -2548,7 +2549,8 @@ class APIHotelController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"file_path"},
+     *             required={"file_path", "entry_date"},
+     *             @OA\Property(property="entry_date", type="string", example="2023-08-01"),
      *             @OA\Property(
      *                 property="file_path",
      *                 type="array",
@@ -2595,11 +2597,16 @@ class APIHotelController extends Controller
             $validated = $request->validate([
                 'file_path' => 'required|array',
                 'file_path.*' => 'file|mimes:jpeg,png,jpg,pdf',
+                'entry_date' => 'required',
             ], [
                 'file_path.required' => 'Please select at least one file.',
                 'file_path.*.file' => 'Please select a valid file.',
                 'file_path.*.mimes' => 'Please select a file with one of the following extensions: jpeg, png, jpg, pdf.',
+                'entry_date.required' => 'Please select a register entry date.',
             ]);
+
+            $transferDate = Carbon::parse($request->entry_date)->format('Y-m-d');
+
 
             $user = Auth::user();
             $hotelId = null;
@@ -2625,7 +2632,7 @@ class APIHotelController extends Controller
                     'hotel_employee_id' => $hotel_employee_id,
                     'file_path' => $filePath,
                     'status' => 1,
-                    'transfer_date' => now(),
+                    'transfer_date' => $transferDate,
                 ]);
 
                 // Collect the uploaded entry ID
@@ -2638,7 +2645,7 @@ class APIHotelController extends Controller
                 TransferEntry::create([
                     'hotel_id' => $hotelId,
                     'hotel_employee_id' => $hotel_employee_id,
-                    'transfer_date' => now(),
+                    'transfer_date' => $transferDate,
                     'transfer_type' => 'uploaded',
                 ]);
 

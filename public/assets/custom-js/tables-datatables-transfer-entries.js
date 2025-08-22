@@ -2,7 +2,13 @@
  * DataTables Basic
  */
 
-"use strict";
+flatpickr("#transfer_date", {
+    dateFormat: "d/m/Y",
+    maxDate: "today",
+    allowInput: true,
+});
+
+("use strict");
 
 var dt_basic_table = $(".datatables-basic"),
     dt_basic,
@@ -86,11 +92,23 @@ $(function () {
                 {
                     data: "transfer_date",
                     name: "transfer_date",
+                    render: function (data, type, row, meta) {
+                        if (!data) return "";
+                        return new Date(data).toLocaleDateString("en-GB");
+                    },
+                },
+                {
+                    data: "created_at",
+                    name: "created_at",
+                    render: function (data, type, row, meta) {
+                        if (!data) return "";
+                        return new Date(data).toLocaleDateString("en-GB");
+                    },
                 },
             ],
             columnDefs: [
                 {
-                    targets: 3,
+                    targets: 4,
                     title: "Actions",
                     orderable: false,
                     searchable: false,

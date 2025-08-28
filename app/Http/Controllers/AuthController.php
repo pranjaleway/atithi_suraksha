@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\City;
 use App\Models\Customer;
 use App\Models\Document;
 use App\Models\Hotel;
@@ -417,9 +418,10 @@ class AuthController extends Controller
 
     public function hotelSignup()
     {
-        $states = State::where('status', 1)->orderBy('name', 'asc')->get();
+        $states = State::where('name', 'Madhya Pradesh')->get();
+        $cities = City::where('name', 'Ujjain')->get();
         $documents = Document::where('status', 1)->get();
-        return view('auth.hotel-signup', compact('states', 'documents'));
+        return view('auth.hotel-signup', compact('states', 'documents', 'cities'));
     }
 
     /**
@@ -611,7 +613,7 @@ class AuthController extends Controller
                 $hotels = Hotel::all();
                 $totalHotel = $hotels->count();
                 $todayTransferredBookings = $this->getTodayTransferredBookings();
-                $graphData = $this->generateGraphData();
+                $graphData = $this->generateGraphData([], true);
 
                 return view('auth.super-admin-dashboard', compact(
                     'totalSPOffice',
@@ -627,7 +629,6 @@ class AuthController extends Controller
                 $policeStationIds = PoliceStation::where('sp_office_id', $spOfficeID)->pluck('id')->toArray();
                 $hotels = Hotel::whereIn('police_station_id', $policeStationIds)->get();
                 $hotelIDs = $hotels->pluck('id')->toArray();
-
                 $totalPoliceStation = count($policeStationIds);
                 $totalTransferredBookings = $this->countDistinctTransfers($hotelIDs);
                 $todayTransferredBookings = $this->getTodayTransferredBookings($hotelIDs);
@@ -779,7 +780,7 @@ class AuthController extends Controller
         ];
     }
 
-    private function generateGraphData(array $hotelIds = [])
+    private function generateGraphData(array $hotelIds = [], bool $isSuperAdmin = false)
     {
         $dates = CarbonPeriod::create(Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth());
         $labels = [];
@@ -787,16 +788,24 @@ class AuthController extends Controller
 
         foreach ($dates as $date) {
             $query = TransferEntry::whereDate('transfer_date', $date);
-            if (!empty($hotelIds)) {
-                $query->whereIn('hotel_id', $hotelIds);
+
+            // Only Super Admin sees all hotels
+            if (!$isSuperAdmin) {
+                if (empty($hotelIds)) {
+                    $count = 0; // No hotels for this role
+                } else {
+                    $count = $query->whereIn('hotel_id', $hotelIds)->count();
+                }
+            } else {
+                $count = $query->count(); // all hotels
             }
+
             $labels[] = $date->format('d M');
-            $bookingCounts[] = $query->count();
+            $bookingCounts[] = $count;
         }
 
         return ['labels' => $labels, 'data' => $bookingCounts];
     }
-
 
 
     // private function generateGraphData(array $hotelIds = [])
@@ -837,11 +846,10 @@ class AuthController extends Controller
         $dailyTransfers = [];
         $userType = Auth::user()->user_type_id;
 
-        $hotelIDs = []; // For user_type 1, 2, 3
+        $hotelIDs = [];
         $hotelID = null;
         $hotelEmployeeID = null;
 
-        // Prepare hotelID(s) based on role
         if ($userType == 1) {
             $hotelIDs = Hotel::pluck('id')->toArray();
         } elseif ($userType == 2) {
@@ -862,7 +870,6 @@ class AuthController extends Controller
             $labels[] = $date->format('d M');
 
             if (in_array($userType, [4, 5])) {
-                // Hotel / Hotel Employee
                 $bookingQuery = HotelBooking::where('hotel_id', $hotelID)
                     ->whereDate('created_at', $date);
 
@@ -878,23 +885,21 @@ class AuthController extends Controller
                 $dailyBookings[] = $bookingQuery->count();
                 $dailyTransfers[] = $transferQuery->count();
             } else {
-                // Admin / SP Office / Police Station
                 $transferQuery = TransferEntry::whereDate('transfer_date', $date);
 
-                // Hotel filter from request or derived hotelIDs
-                $hotelFilterId = $request->hotel_id;
-
-                if (!empty($hotelFilterId)) {
-                    $transferQuery->where('hotel_id', $hotelFilterId);
+                if (!empty($request->hotel_id)) {
+                    $transferQuery->where('hotel_id', $request->hotel_id);
                 } elseif (!empty($hotelIDs)) {
                     $transferQuery->whereIn('hotel_id', $hotelIDs);
+                } elseif ($userType != 1) {
+                    $dailyTransfers[] = 0;
+                    continue;
                 }
 
                 $dailyTransfers[] = $transferQuery->count();
             }
         }
 
-        // Response
         if (in_array($userType, [4, 5])) {
             return response()->json([
                 'labels' => $labels,
@@ -908,5 +913,6 @@ class AuthController extends Controller
             ]);
         }
     }
+
 
 }

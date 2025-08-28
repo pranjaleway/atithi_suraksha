@@ -678,7 +678,7 @@ class APIHotelController extends Controller
 
             $plainPassword = $request->password;
 
-            $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword));
+            $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword, $user->phone));
 
             activiyLog('Hotel employee ' . $employee->employee_name . ' created by ' . ucfirst(Auth::user()->name));
 
@@ -2549,8 +2549,8 @@ class APIHotelController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"file_path", "entry_date"},
-     *             @OA\Property(property="entry_date", type="string", example="2023-08-01"),
+     *              required={"file_path", "entry_date"},
+     *              @OA\Property(property="entry_date", type="string", example="2023-08-01"),
      *             @OA\Property(
      *                 property="file_path",
      *                 type="array",
@@ -2677,8 +2677,8 @@ class APIHotelController extends Controller
      * @OA\Post(
      *     path="/get-uploaded-registers",
      *     tags={"Hotels"},
-     *     summary="Get uploaded register entries",
-     *     description="Fetches uploaded register entries for the authenticated hotel or hotel employee. If 'hotel_id' and 'date' are provided, it filters based on a matching uploaded transfer entry.",
+     *     summary="Get uploaded register entries (paginated)",
+     *     description="Fetches uploaded register entries for the authenticated hotel or hotel employee. If 'hotel_id' and 'date' are provided, it filters based on a matching uploaded transfer entry. Results are grouped by transfer_date and paginated.",
      *     security={{"bearerAuth":{}}},
      *
      *     @OA\RequestBody(
@@ -2691,23 +2691,27 @@ class APIHotelController extends Controller
      *
      *     @OA\Response(
      *         response=200,
-     *         description="List of uploaded register entries",
+     *         description="Paginated list of uploaded register entries grouped by transfer date",
      *         @OA\JsonContent(
-     *             @OA\Property(property="data", type="array",
-     *                 @OA\Items(
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="hotel_id", type="integer", example=5),
-     *                     @OA\Property(property="hotel_employee_id", type="integer", example=3),
-     *                     @OA\Property(property="file_path", type="string", example="uploaded_entries/file123.pdf"),
-     *                     @OA\Property(property="status", type="integer", example=1),
-     *                     @OA\Property(property="transfer_date", type="string", format="date", example="2025-07-15"),
-     *                     @OA\Property(property="hotel", type="object",
-     *                         @OA\Property(property="id", type="integer", example=5),
-     *                         @OA\Property(property="hotel_name", type="string", example="Grand Palace Hotel")
-     *                     ),
-     *                     @OA\Property(property="hotelEmployee", type="object",
-     *                         @OA\Property(property="id", type="integer", example=3),
-     *                         @OA\Property(property="employee_name", type="string", example="John Smith")
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="last_page", type="integer", example=5),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="total", type="integer", example=50),
+     *                 @OA\Property(property="data", type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="transfer_date", type="string", format="date", example="2025-07-15"),
+     *                         @OA\Property(property="files", type="array",
+     *                             @OA\Items(type="string", example="uploaded_entries/file123.pdf")
+     *                         ),
+     *                         @OA\Property(property="hotel", type="object",
+     *                             @OA\Property(property="id", type="integer", example=5),
+     *                             @OA\Property(property="hotel_name", type="string", example="Grand Palace Hotel")
+     *                         ),
+     *                         @OA\Property(property="hotelEmployee", type="object",
+     *                             @OA\Property(property="id", type="integer", example=3),
+     *                             @OA\Property(property="employee_name", type="string", example="John Smith")
+     *                         )
      *                     )
      *                 )
      *             ),
@@ -2745,11 +2749,14 @@ class APIHotelController extends Controller
      * )
      */
 
+
+
     public function getUploadedRegisters(Request $request)
     {
         if (!hasPermission('uploaded-entries', 'view')) {
             abort(403, 'Unauthorized');
         }
+
         $id = $request->hotel_id;
         $date = $request->date;
 
@@ -2769,27 +2776,48 @@ class APIHotelController extends Controller
             $query = UploadedEntry::with(['hotel', 'hotelEmployee']);
         }
 
+        // Restrict by user type
         if (Auth::user()->user_type_id == 4) {
             $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
-            $data = $query->where('hotel_id', $hotelId)
-                ->orderBy('id', 'desc')
-                ->get();
-        } else if (Auth::user()->user_type_id == 5) {
+            $query->where('hotel_id', $hotelId);
+        } elseif (Auth::user()->user_type_id == 5) {
             $employeeID = HotelEmployee::where('user_id', Auth::user()->id)->value('id');
-            $data = $query->where('hotel_employee_id', $employeeID)
-                ->orderBy('id', 'desc')
-                ->get();
-        } else {
-            $data = [];
+            $query->where('hotel_employee_id', $employeeID);
         }
 
+        // Step 1: Paginate distinct transfer_date values
+        $dates = $query->select('transfer_date')
+            ->distinct()
+            ->orderBy('transfer_date', 'desc')
+            ->paginate(10);
+
+        // Step 2: Fetch grouped entries only for those paginated dates
+        $entries = UploadedEntry::with(['hotel', 'hotelEmployee'])
+            ->whereIn('transfer_date', $dates->pluck('transfer_date'))
+            ->orderBy('transfer_date', 'desc')
+            ->get()
+            ->groupBy('transfer_date')
+            ->map(function ($items, $date) {
+                return [
+                    'transfer_date' => $date,
+                    'files' => $items->pluck('file_path')->values(),
+                    'hotel' => $items->first()->hotel,
+                    'hotelEmployee' => $items->first()->hotelEmployee
+                ];
+            })
+            ->values();
+
+        // Replace paginator's data with grouped data
+        $dates->setCollection($entries);
+
         return response()->json([
-            'data' => $data,
+            'data' => $dates, // full paginator with grouped results
             'canAdd' => hasPermission('uploaded-entries', 'add'),
             'canEdit' => hasPermission('uploaded-entries', 'edit'),
             'canDelete' => hasPermission('uploaded-entries', 'delete'),
         ]);
     }
+
 
     /**
      * @OA\Post(

@@ -79,7 +79,7 @@ class SPOfficeController extends Controller
 
         $plainPassword = $request->password;
 
-        $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword));
+        $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword, $user->phone));
 
         activiyLog('SP Office ' . $spOffice->office_name . ' created by ' . ucfirst(Auth::user()->name));
 

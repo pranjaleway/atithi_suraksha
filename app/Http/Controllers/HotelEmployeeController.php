@@ -39,9 +39,9 @@ class HotelEmployeeController extends Controller
 
         if ($request->ajax()) {
             $hotelEmployee = HotelEmployee::with('user')
-            ->where('hotel_id', $decodedId)
-            ->orderBy('id', 'desc')
-            ->get();
+                ->where('hotel_id', $decodedId)
+                ->orderBy('id', 'desc')
+                ->get();
 
             return response()->json([
                 'data' => $hotelEmployee,
@@ -128,7 +128,7 @@ class HotelEmployeeController extends Controller
 
         $plainPassword = $request->password;
 
-        $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword));
+        $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword, $user->phone));
 
         activiyLog('Hotel employee ' . $employee->employee_name . ' created by ' . ucfirst(Auth::user()->name));
 

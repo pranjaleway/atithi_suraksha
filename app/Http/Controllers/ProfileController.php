@@ -31,7 +31,8 @@ class ProfileController extends Controller
             return view('profile.police-station-profile', compact('states', 'cities', 'policeStation'));
         } else if (Auth::user()->user_type_id == 4) {
             $hotel = Hotel::with('ownerDocuments.document')->where('user_id', Auth::user()->id)->first();
-            $cities = City::where('status', 1)->where('state_id', $hotel->state_id)->orderBy('name', 'asc')->get();
+            $states = State::where('name', 'Madhya Pradesh')->get();
+            $cities = City::where('name', 'Ujjain')->where('state_id', $hotel->state_id)->orderBy('name', 'asc')->get();
             $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
             return view('profile.hotel-profile', compact('states', 'cities', 'hotel', 'documents'));
         } else if (Auth::user()->user_type_id == 5) {
@@ -78,7 +79,7 @@ class ProfileController extends Controller
         ]);
     }
 
-   
+
     public function updateProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [

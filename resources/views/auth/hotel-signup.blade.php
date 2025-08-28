@@ -172,6 +172,9 @@
                                         <div class="form-floating form-floating-outline">
                                             <select class="form-select" id="city_id" name="city_id">
                                                 <option selected value="" disabled>Select City</option>
+                                                @foreach ($cities as $city)
+                                                    <option value="{{ $city->id }}">{{ $city->name }}</option>
+                                                @endforeach
                                             </select>
                                             <label for="city_id">City Name</label>
                                         </div>
@@ -187,7 +190,8 @@
 
                                     <div class="col-sm-6">
                                         <div class="form-floating form-floating-outline">
-                                            <select class="form-select" id="police_station_id" name="police_station_id">
+                                            <select class="form-select" id="police_station_id"
+                                                name="police_station_id">
                                                 <option selected value="" disabled>Select Police Station</option>
                                             </select>
                                             <label for="police_station_id">Police Station Name</label>
@@ -291,10 +295,8 @@
 @extends('layouts.scriptLinks')
 @section('scripts')
     <script>
-        var cityUrl = "{{ route('get-cities') }}";
         var signupUrl = "{{ route('post-hotel-signup') }}";
         var policeStationByCityUrl = "{{ route('get-police-station-by-city') }}";
     </script>
-    <script src="{{ asset('assets/custom-js/common.js') }}"></script>
     <script src="{{ asset('assets/custom-js/page-hotel-signup.js') }}"></script>
 @endsection

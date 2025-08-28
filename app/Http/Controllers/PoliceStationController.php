@@ -22,7 +22,7 @@ class PoliceStationController extends Controller
             abort(403, 'Unauthorized');
         }
         if ($request->ajax()) {
-            if(Auth::user()->user_type_id == 2) {
+            if (Auth::user()->user_type_id == 2) {
                 $spOfficeID = SpOffice::where('user_id', Auth::user()->id)->first()->id;
                 $data = PoliceStation::where('sp_office_id', $spOfficeID)->orderBy('id', 'desc')->get();
             } else {
@@ -110,7 +110,7 @@ class PoliceStationController extends Controller
 
         $plainPassword = $request->password;
 
-        $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword));
+        $user->notify(new CredentialsNotification($user->name, $user->email, $plainPassword, $user->phone));
 
         activiyLog('Police Station ' . $policeStation->police_station_name . ' created by ' . ucfirst(Auth::user()->name));
 

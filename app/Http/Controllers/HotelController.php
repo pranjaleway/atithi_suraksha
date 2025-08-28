@@ -58,10 +58,28 @@ class HotelController extends Controller
 
     public function addHotel()
     {
-        $states = State::where('status', 1)->orderBy('name', 'asc')->get();
-        $cities = City::where('status', 1)->orderBy('name', 'asc')->get();
+        if (Auth::user()->user_type_id == 2) {
+            $spOffice = SpOffice::where('user_id', Auth::user()->id)->first();
+            $policeStations = PoliceStation::where('sp_office_id', $spOffice->id)->orderBy('police_station_name', 'asc')->get();
+            $states = State::where('status', 1)->where('id', $spOffice->state_id)->orderBy('name', 'asc')->get();
+            $cities = City::where('status', 1)->where('id', $spOffice->city_id)->orderBy('name', 'asc')->get();
+        } else if (Auth::user()->user_type_id == 3) {
+            $policeStation = PoliceStation::where('user_id', Auth::user()->id)->first();
+            $policeStations = collect([$policeStation]);
+            $states = State::where('status', 1)
+                ->where('id', $policeStation->state_id)
+                ->orderBy('name', 'asc')
+                ->get();
+            $cities = City::where('status', 1)
+                ->where('id', $policeStation->city_id)
+                ->orderBy('name', 'asc')
+                ->get();
+        } else {
+            $policeStations = PoliceStation::where('status', 1)->orderBy('police_station_name', 'asc')->get();
+            $states = State::where('status', 1)->orderBy('name', 'asc')->get();
+            $cities = City::where('status', 1)->orderBy('name', 'asc')->get();
+        }
         $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
-        $policeStations = PoliceStation::where('status', 1)->get();
         return view('hotel.add-edit-hotel', compact('states', 'cities', 'documents', 'policeStations'));
     }
 
@@ -154,12 +172,30 @@ class HotelController extends Controller
     {
         $id = base64_decode($id);
         $hotels = Hotel::with('ownerDocuments.document', 'police_station:id,police_station_name')->find($id);
-        $states = State::where('status', 1)->orderBy('name', 'asc')->get();
-        $cities = City::where('status', 1)
-            ->where('state_id', $hotels->state_id)
-            ->orderBy('name', 'asc')->get();
+        if (AUth::user()->user_type_id == 2) {
+            $spOffice = SpOffice::where('user_id', Auth::id())->first();
+            $policeStations = PoliceStation::where('sp_office_id', $spOffice->id)->orderBy('police_station_name', 'asc')->get();
+            $states = State::where('status', 1)->where('id', $spOffice->state_id)->orderBy('name', 'asc')->get();
+            $cities = City::where('status', 1)->where('id', $spOffice->city_id)->orderBy('name', 'asc')->get();
+        } else if (Auth::user()->user_type_id == 3) {
+            $policeStation = PoliceStation::where('user_id', Auth::user()->id)->first();
+            $policeStations = collect([$policeStation]);
+            $states = State::where('status', 1)
+                ->where('id', $policeStation->state_id)
+                ->orderBy('name', 'asc')
+                ->get();
+            $cities = City::where('status', 1)
+                ->where('id', $policeStation->city_id)
+                ->orderBy('name', 'asc')
+                ->get();
+        } else {
+            $policeStations = PoliceStation::where('status', 1)->orderBy('police_station_name', 'asc')->get();
+            $states = State::where('status', 1)->orderBy('name', 'asc')->get();
+            $cities = City::where('status', 1)
+                ->where('state_id', $hotels->state_id)
+                ->orderBy('name', 'asc')->get();
+        }
         $documents = Document::where('status', 1)->orderBy('name', 'asc')->get();
-        $policeStations = PoliceStation::where('status', 1)->get();
         if (!$hotels) {
             abort(404, 'Hotel not found');
         }

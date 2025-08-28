@@ -168,7 +168,7 @@
                                 <div class="form-floating form-floating-outline">
                                     <select class="form-select" id="city_id" name="city_id">
                                         <option selected value="" disabled>Select City</option>
-                                        @isset($hotels)
+                                        @if (Auth::user()->user_type_id != 1)
                                             @foreach ($cities as $city)
                                                 <option value="{{ $city->id }}"
                                                     @isset($hotels)
@@ -176,7 +176,17 @@
                                                     @endisset>
                                                     {{ $city->name }}</option>
                                             @endforeach
-                                        @endisset
+                                        @else
+                                            @isset($hotels)
+                                                @foreach ($cities as $city)
+                                                    <option value="{{ $city->id }}"
+                                                        @isset($hotels)
+                                                        {{ $hotels->city_id == $city->id ? 'selected' : '' }} 
+                                                    @endisset>
+                                                        {{ $city->name }}</option>
+                                                @endforeach
+                                            @endisset
+                                        @endif
                                     </select>
                                     <label for="city_id">City Name</label>
                                 </div>
@@ -220,7 +230,8 @@
                                     <select class="form-select" id="document_id" name="document_id">
                                         <option selected value="" disabled>Select Document</option>
                                         @foreach ($documents as $document)
-                                            <option value="{{ $document->id }}" data-name="{{ $document->name }}">{{ $document->name }}</option>
+                                            <option value="{{ $document->id }}" data-name="{{ $document->name }}">
+                                                {{ $document->name }}</option>
                                         @endforeach
                                     </select>
                                     <label for="document_id">Select Document</label>
@@ -272,10 +283,12 @@
 @endsection
 
 @section('scripts')
-    <script>
-        cityUrl = "{{ route('get-cities') }}";
-    </script>
-    <script src="{{ asset('assets/custom-js/common.js') }}"></script>
+    @if (Auth::user()->user_type_id == 1)
+        <script>
+            cityUrl = "{{ route('get-cities') }}";
+        </script>
+        <script src="{{ asset('assets/custom-js/common.js') }}"></script>
+    @endif
     <script src="{{ asset('assets/custom-js/page-add-edit-hotel.js') }}"></script>
 
 

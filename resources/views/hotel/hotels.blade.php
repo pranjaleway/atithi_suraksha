@@ -13,7 +13,7 @@
                             <th>S.No.</th>
                             <th>Hotel Name</th>
                             <th>Owner Name</th>
-                            <th>Hotel Contact Number</th>
+                            <th>Owner Contact Number</th>
                             <th>Address</th>
                             <th>Employee</th>
                             <th>Status</th>
@@ -26,7 +26,7 @@
         </div>
         <!--/ DataTable with Buttons -->
 
-       
+
     </div>
 @endsection
 @section('scripts')

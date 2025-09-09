@@ -186,21 +186,62 @@ $(document).ready(function () {
                 error: function (xhr) {
                     if (xhr.status === 422) {
                         const errors = xhr.responseJSON.errors;
-                        $(".invalid-feedback").remove(); // Clear previous errors
+                        $(".invalid-feedback").remove();
                         $(".is-invalid").removeClass("is-invalid");
 
                         $.each(errors, function (key, messages) {
-                            const parts = key.split(".");
+                            const parts = key.split("."); // e.g. ["guests","0","guest_name"]
                             const index = parts[1];
                             const field = parts[2];
 
-                            const input = $(
-                                `[name="group-a[${index}][${field}]"]`
-                            );
-                            input.addClass("is-invalid");
-                            input.after(
-                                `<div class="invalid-feedback">${messages[0]}</div>`
-                            );
+                            // Try both cases: normal input and array input (for select2 multi)
+                            const selectorNormal = `[name="group-a[${index}][${field}]"]`;
+                            const selectorArray = `[name="group-a[${index}][${field}][]"]`;
+
+                            let input = $(selectorNormal);
+                            if (!input.length) {
+                                input = $(selectorArray);
+                            }
+
+                            if (input.length) {
+                                if (
+                                    input.hasClass("select2-hidden-accessible")
+                                ) {
+                                    // Add invalid class to select2 UI
+                                    input.addClass("is-invalid");
+                                    input
+                                        .next(".select2")
+                                        .find(".select2-selection")
+                                        .addClass("is-invalid");
+
+                                    // Also mark floating-label wrapper so label turns red
+                                    input
+                                        .closest(".form-floating")
+                                        .addClass("is-invalid");
+
+                                    if (
+                                        !input
+                                            .closest(".form-floating")
+                                            .find(".invalid-feedback").length
+                                    ) {
+                                        input
+                                            .closest(".form-floating")
+                                            .append(
+                                                `<div class="invalid-feedback d-block">${messages[0]}</div>`
+                                            );
+                                    }
+                                } else {
+                                    // Normal inputs
+                                    input.addClass("is-invalid");
+                                    if (
+                                        !input.next(".invalid-feedback").length
+                                    ) {
+                                        input.after(
+                                            `<div class="invalid-feedback">${messages[0]}</div>`
+                                        );
+                                    }
+                                }
+                            }
                         });
                     }
                 },
@@ -321,11 +362,11 @@ $(document).on("input", "#no_of_guest", function () {
         $(".count-fields").addClass("d-none");
     }
 
-    if (guestCountForVisibility > 1){
-        $('.showOtherGuestsDiv').removeClass('d-none');
-        $("#showOtherGuests").trigger("change"); 
+    if (guestCountForVisibility > 1) {
+        $(".showOtherGuestsDiv").removeClass("d-none");
+        $("#showOtherGuests").trigger("change");
     } else {
-        $('.showOtherGuestsDiv').addClass('d-none');
+        $(".showOtherGuestsDiv").addClass("d-none");
     }
 
     // // If input is empty or invalid, remove all repeater items except the first one
@@ -432,6 +473,3 @@ $(document).on("change", "#showOtherGuests", function () {
 $(document).on("input", "#no_of_guest", function () {
     $("#showOtherGuests").trigger("change");
 });
-
-
-

@@ -90,6 +90,15 @@ $(function () {
                     name: "hotel.hotel_name",
                 },
                 {
+                    data: null,
+                    render: function (data, type, row, meta) {
+                        return data.hotelEmployee?.id > 0
+                            ? "Employee"
+                            : "Owner";
+                    },
+                },
+
+                {
                     data: "transfer_date",
                     name: "transfer_date",
                     render: function (data, type, row, meta) {
@@ -108,7 +117,7 @@ $(function () {
             ],
             columnDefs: [
                 {
-                    targets: 4,
+                    targets: 5,
                     title: "Actions",
                     orderable: false,
                     searchable: false,
@@ -134,14 +143,14 @@ $(function () {
                             buttons +=
                                 '<a href="' +
                                 uploadedUrl +
-                                '" target="_blank" class="btn btn-info btn-sm rounded-pill">View Uploaded</a>';
+                                '" target="_blank" class="btn btn-info mt-1 btn-sm rounded-pill">View Uploaded</a>';
                         }
 
                         return buttons || "-";
                     },
                 },
             ],
-            // 👇 Modified layout to keep everything in a single row
+            // ðŸ‘‡ Modified layout to keep everything in a single row
             dom:
                 '<"card-header flex-column flex-md-row"<"head-label text-center"><"dt-action-buttons text-end pt-3 pt-md-0"B>>' +
                 '<"row align-items-center px-2"<"col-sm-12 col-md-3"l><"col-sm-12 col-md-5 extra-filters d-flex"><"col-sm-12 col-md-3"f>>' +
@@ -157,7 +166,7 @@ $(function () {
             '<h5 class="card-title mb-0">Transfer Bookings</h5>'
         );
 
-        // 👇 Inject Flatpickr date range picker in the middle column
+        // ðŸ‘‡ Inject Flatpickr date range picker in the middle column
         if ([1, 2, 3].includes(userRole)) {
             $(".extra-filters").html(`
         <div class="form-floating form-floating-outline me-2">

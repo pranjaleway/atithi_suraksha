@@ -230,7 +230,11 @@
                                     <select class="form-select" id="document_id" name="document_id">
                                         <option selected value="" disabled>Select Document</option>
                                         @foreach ($documents as $document)
-                                            <option value="{{ $document->id }}" data-name="{{ $document->name }}">
+                                            <option value="{{ $document->id }}"
+                                                @isset($hotels)
+                                                {{ $hotels->ownerDocuments->pluck('document_id')->contains($document->id) ? 'selected' : '' }}
+                                            @endisset
+                                                data-name="{{ $document->name }}">
                                                 {{ $document->name }}</option>
                                         @endforeach
                                     </select>

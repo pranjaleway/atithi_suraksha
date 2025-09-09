@@ -25,6 +25,13 @@ $(function () {
             { data: "contact_number", name: "contact_number" },
             { data: "room_number", name: "room_number" },
             {
+                data: null,
+                render: function (data, type, row, meta) {
+                    return data.hotel_employee_id ? "Employee" : "Owner";
+                },
+            },
+
+            {
                 data: "created_at",
                 name: "created_at",
                 render: function (data, type, row) {

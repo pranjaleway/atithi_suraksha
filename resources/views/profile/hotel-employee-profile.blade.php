@@ -27,7 +27,8 @@
             <div class="card-body p-1">
                 <div class="tab-content p-0">
                     <div class="tab-pane fade show active" id="navs-top-general-info" role="tabpanel">
-                        <form id="profile-details-form" action="{{ route('update-hotel-employee-profile') }}" method="POST">
+                        <form id="profile-details-form" action="{{ route('update-hotel-employee-profile') }}"
+                            method="POST">
                             @csrf
                             <input type="hidden" name="id" value="{{ $employee->id }}">
                             <div class="tab-content pb-1">
@@ -35,9 +36,9 @@
                                     <div class="row">
                                         <div class="mb-3 col-md-6 fv-plugins-icon-container">
                                             <div class="form-floating form-floating-outline">
-                                                <input type="text" class="form-control" id="employee_name" name="employee_name"
-                                                    placeholder="employee Name" aria-label="employee Name"
-                                                    value="{{ $employee->employee_name }}" />
+                                                <input type="text" class="form-control" id="employee_name"
+                                                    name="employee_name" placeholder="employee Name"
+                                                    aria-label="employee Name" value="{{ $employee->employee_name }}" />
                                                 <label for="employee_name">Employee Name</label>
                                             </div>
                                         </div>
@@ -121,22 +122,6 @@
                                                 <label for="pincode">Pincode</label>
                                             </div>
                                         </div>
-                                        @foreach ($documents as $document)
-                                            <div class="mb-3 col-md-6 fv-plugins-icon-container">
-                                                <div class="form-floating form-floating-outline">
-                                                    <input type="file" class="form-control document-input"
-                                                        id="document_{{ $document->id }}"
-                                                        data-label="{{ $document->name }}"
-                                                        name="document[{{ $document->id }}]"
-                                                        accept="image/*,application/pdf">
-                                                    <label
-                                                        for="document_{{ $document->id }}">{{ $document->name }}</label>
-                                                </div>
-                                            </div>
-                                        @endforeach
-
-                                        <!-- Preview section for all selected documents -->
-                                        <div class="row mt-4" id="all-preview-row"></div>
                                         <!-- Preview of already uploaded documents -->
                                         @if ($employee->employeeDocuments->count())
                                             <div class="row mt-4" id="uploaded-preview-row">

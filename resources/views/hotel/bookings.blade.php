@@ -14,6 +14,7 @@
                             <th>Guest Name</th>
                             <th>Contact Number</th>
                             <th>Room Number</th>
+                            <th>Booked By</th>
                             <th>Booking Date</th>
                             @if (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5)
                                 <th>Members</th>

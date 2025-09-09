@@ -34,7 +34,12 @@ class ViewServiceProvider extends ServiceProvider
             }
 
             $user = Auth::user();
-            $query = Notification::with('user:id,name')->orderBy('id', 'desc');
+            $query = Notification::with('user:id,name')->latest('id')
+                ->where('created_at', '>=', $user->created_at)
+                ->where(function ($q) use ($user) {
+                    $q->whereNull('deleted_by')
+                        ->orWhereRaw("FIND_IN_SET(?, deleted_by) = 0", [$user->id]);
+                });
 
             switch ($user->user_type_id) {
                 case 2: // SP Office
@@ -47,7 +52,7 @@ class ViewServiceProvider extends ServiceProvider
                     $query->where(function ($q) use ($policeUserIDs, $hotelUserIDs, $spOfficeIDs) {
                         $q->whereIn('user_id', $policeUserIDs)
                             ->orWhereIn('user_id', $hotelUserIDs)
-                            ->orWhereIn('sp_id', $spOfficeIDs); // ✅ include notifications by sp_id
+                            ->orWhereIn('sp_id', $spOfficeIDs);
                     });
                     break;
 
@@ -63,7 +68,7 @@ class ViewServiceProvider extends ServiceProvider
                                 $q->where('user_id', $spUserID);
                             }
                             if ($hotelUserIDs->isNotEmpty()) {
-                                $q->orWhereIn('user_id', $hotelUserIDs)->where('sp_id', null);
+                                $q->orWhereIn('user_id', $hotelUserIDs)->whereNull('sp_id');
                             }
                             $q->orWhere('police_station_id', $policeStation->id);
                         });

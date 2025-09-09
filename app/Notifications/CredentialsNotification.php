@@ -53,7 +53,7 @@ class CredentialsNotification extends Notification
             ->line('**📞 Phone Number:** ' . $this->phone)
             ->line('**🔒 Password:** ' . $this->password)
             ->line('')
-            ->action('Login Now', url('/login'))
+            ->action('Login Now', url('/'))
             ->line('For security, please change your password after your first login.')
             ->line('')
             ->line('If you face any issues, feel free to contact our support team.')

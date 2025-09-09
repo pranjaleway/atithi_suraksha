@@ -11,7 +11,7 @@
                         <div class="input-group input-group-merge" style="width: 180px;">
                             <div class="form-floating form-floating-outline" style="font-size: initial;">
                                 <select class="form-select" data-id="{{ $hotels->id }}" name="police_station_id"
-                                    id="police_station_id" data-url="{{ route('assign-police-station')}}">
+                                    id="police_station_id" data-url="{{ route('assign-police-station') }}">
                                     <option value="">Select Police Station</option>
                                     @foreach ($policeStations as $policeStation)
                                         <option value="{{ $policeStation->id }}">{{ $policeStation->police_station_name }}
@@ -90,9 +90,7 @@
                                         <th scope="row">Pincode</th>
                                         <td>{{ $hotels->pincode }}</td>
                                         <th scope="row">Alloted Police Station</th>
-                                        <td class="@if ($hotels->police_station_id == null)
-                                            text-danger
-                                        @endif">
+                                        <td class="@if ($hotels->police_station_id == null) text-danger @endif">
                                             {{ $hotels->police_station_id == null ? 'Not Assigned' : $hotels->police_station->police_station_name }}
                                         </td>
                                     </tr>
@@ -113,8 +111,8 @@
                                     <tr>
                                         <th scope="row">Owner Name</th>
                                         <td>{{ $hotels->owner_name }}</td>
-                                        <th scope="row">Contact Number</th>
-                                        <td>{{ $hotels->contact_number }}</td>
+                                        <th scope="row">Ower Contact Number</th>
+                                        <td>{{ $hotels->owner_contact_number }}</td>
                                     </tr>
                                     <tr>
                                         <th scope="row">Aadhar Number</th>

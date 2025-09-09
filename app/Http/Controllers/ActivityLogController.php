@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\Hotel;
+use App\Models\HotelEmployee;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,30 +19,65 @@ class ActivityLogController extends Controller
 
         if ($request->ajax()) {
             $user = Auth::user();
-            if ($user->user_type_id == 1) {
-                $query = ActivityLog::orderBy('id', 'desc');
-            } else if ($user->user_type_id == 4) {
-                $userIds = User::whereIn('user_type_id', [4, 5])->pluck('id');
 
-                $query = ActivityLog::whereIn('user_id', $userIds)
-                    ->orderBy('id', 'desc');
+            if ($user->user_type_id == 1) {
+                // Admin → see all
+                $query = ActivityLog::orderBy('id', 'desc');
+
+            } elseif ($user->user_type_id == 4) {
+                // Hotel Owner → see his + employees
+                $hotel = Hotel::where('user_id', $user->id)->first();
+
+                if ($hotel) {
+                    $employeeIds = HotelEmployee::where('hotel_id', $hotel->id)->pluck('user_id');
+                    $userIds = collect([$user->id])->merge($employeeIds);
+
+                    $query = ActivityLog::whereIn('user_id', $userIds)
+                        ->orderBy('id', 'desc');
+                } else {
+                    $query = ActivityLog::where('user_id', $user->id)
+                        ->orderBy('id', 'desc');
+                }
+
+            } elseif ($user->user_type_id == 5) {
+                // Hotel Employee → see his hotel (owner + all employees)
+                $hotelEmployee = HotelEmployee::where('user_id', $user->id)->first();
+
+                if ($hotelEmployee) {
+                    $hotel = Hotel::find($hotelEmployee->hotel_id);
+
+                    if ($hotel) {
+                        $employeeIds = HotelEmployee::where('hotel_id', $hotel->id)->pluck('user_id');
+                        $userIds = collect([$hotel->user_id]) // owner
+                            ->merge($employeeIds); // employees
+
+                        $query = ActivityLog::whereIn('user_id', $userIds)
+                            ->orderBy('id', 'desc');
+                    } else {
+                        $query = ActivityLog::where('user_id', $user->id)
+                            ->orderBy('id', 'desc');
+                    }
+                } else {
+                    $query = ActivityLog::where('user_id', $user->id)
+                        ->orderBy('id', 'desc');
+                }
+
             } else {
+                // Other users → see own logs
                 $query = ActivityLog::where('user_id', $user->id)
                     ->orderBy('id', 'desc');
             }
 
-
-            // Check for date range filter
-            if ($request->has('date_range') && !empty($request->date_range)) {
+            // Date filter
+            if ($request->filled('date_range')) {
                 $dates = explode(' to ', $request->date_range);
 
                 if (count($dates) === 2) {
-                    $startDate = $dates[0]; // already in Y-m-d format
-                    $endDate = $dates[1];
+                    $startDate = trim($dates[0]);
+                    $endDate = trim($dates[1]);
 
-                    // Apply date range filter (assuming "date" is a DATE or DATETIME column)
-                    $query->whereDate('date', '>=', $startDate)
-                        ->whereDate('date', '<=', $endDate);
+                    $query->whereDate('created_at', '>=', $startDate)
+                        ->whereDate('created_at', '<=', $endDate);
                 }
             }
 
@@ -55,19 +92,21 @@ class ActivityLogController extends Controller
 
 
 
+
+
     public function deleteActivityLog(Request $request)
-    { {
-            $request->validate([
-                'ids' => 'required|array',
-                'ids.*' => 'exists:activity_logs,id'
-            ]);
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:activity_logs,id'
+        ]);
 
-            ActivityLog::whereIn('id', $request->ids)->delete();
+        ActivityLog::whereIn('id', $request->ids)->delete();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Selected activity logs have been deleted successfully.'
-            ]);
-        }
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Selected activity logs have been deleted successfully.'
+        ]);
+
     }
 }

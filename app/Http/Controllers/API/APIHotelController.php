@@ -1091,8 +1091,8 @@ class APIHotelController extends Controller
                 $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
                 $query->where('hotel_id', $hotelId);
             } elseif (Auth::user()->user_type_id == 5) {
-                $employeeID = HotelEmployee::where('user_id', Auth::user()->id)->value('id');
-                $query->where('hotel_employee_id', $employeeID);
+                $hotelId = HotelEmployee::where('user_id', Auth::user()->id)->value('hotel_id');
+                $query->where('hotel_id', $hotelId);
             } else {
                 return response()->json(['status' => 'success', 'data' => []]);
             }
@@ -1639,6 +1639,9 @@ class APIHotelController extends Controller
                 ->find($request->id);
 
             if ($booking) {
+                // Add booked_by field
+                $booking->booked_by = $booking->hotel_employee_id ? 'Employee' : 'Owner';
+
                 return response()->json([
                     'status' => 'success',
                     'data' => $booking,
@@ -1657,6 +1660,7 @@ class APIHotelController extends Controller
             ]);
         }
     }
+
 
 
 
@@ -1777,6 +1781,12 @@ class APIHotelController extends Controller
             $canAdd = hasPermission('bookings', 'add');
             $canEdit = hasPermission('bookings', 'edit');
             $canDelete = hasPermission('bookings', 'delete');
+
+            $parentBooking = HotelBooking::find($id);
+            if ($parentBooking && $parentBooking->check_out <= now()) {
+                $canAdd = false;
+                $canDelete = false;
+            }
 
             return response()->json([
                 'data' => $data,
@@ -1919,6 +1929,13 @@ class APIHotelController extends Controller
                 'gender' => $guestData['gender'],
             ]);
 
+            $mainBooking = HotelBooking::find($guestData['parent_id']);
+            if ($mainBooking) {
+                $mainBooking->update([
+                    'no_of_guest' => $mainBooking->no_of_guest + 1
+                ]);
+            }
+
             if ($booking) {
                 activiyLog('Member added by ' . ucfirst(Auth::user()->name));
             }
@@ -1977,6 +1994,12 @@ class APIHotelController extends Controller
         try {
             $member = HotelBooking::find($request->id);
             if ($member) {
+                $mainBooking = HotelBooking::find($member->parent_id);
+                if ($mainBooking) {
+                    $mainBooking->update([
+                        'no_of_guest' => $mainBooking->no_of_guest - 1
+                    ]);
+                }
                 $member->delete();
                 activiyLog('Member deleted by ' . ucfirst(Auth::user()->name));
             }
@@ -2094,6 +2117,12 @@ class APIHotelController extends Controller
         $canAdd = hasPermission('bookings', 'add');
         $canEdit = hasPermission('bookings', 'edit');
         $canDelete = hasPermission('bookings', 'delete');
+
+        $parentBooking = HotelBooking::find($bookingId);
+        if ($parentBooking && $parentBooking->check_out <= now()) {
+            $canAdd = false;
+            $canDelete = false;
+        }
 
         return response()->json([
             'data' => $data,
@@ -2316,9 +2345,9 @@ class APIHotelController extends Controller
                     break;
 
                 case 5:
-                    $employeeId = HotelEmployee::where('user_id', $userId)->value('id');
-                    if ($employeeId) {
-                        $query->where('hotel_employee_id', $employeeId);
+                    $hotelID = HotelEmployee::where('user_id', $userId)->value('hotel_id');
+                    if ($hotelID) {
+                        $query->where('hotel_id', $hotelID);
                     }
                     break;
             }
@@ -2411,6 +2440,10 @@ class APIHotelController extends Controller
             $dayAfterTomorrow = Carbon::tomorrow()->addDay(); // Day after tomorrow's date
 
             $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
+
+            if (!$hotelId) {
+                $hotelId = HotelEmployee::where('user_id', Auth::user()->id)->value('hotel_id');
+            }
 
             $bookings = HotelBooking::where('hotel_id', $hotelId)->where('status', 0)
                 ->whereNull('parent_id')
@@ -2781,8 +2814,8 @@ class APIHotelController extends Controller
             $hotelId = Hotel::where('user_id', Auth::user()->id)->value('id');
             $query->where('hotel_id', $hotelId);
         } elseif (Auth::user()->user_type_id == 5) {
-            $employeeID = HotelEmployee::where('user_id', Auth::user()->id)->value('id');
-            $query->where('hotel_employee_id', $employeeID);
+            $hotelId = HotelEmployee::where('user_id', Auth::user()->id)->value('hotel_id');
+            $query->where('hotel_id', $hotelId);
         }
 
         // Step 1: Paginate distinct transfer_date values

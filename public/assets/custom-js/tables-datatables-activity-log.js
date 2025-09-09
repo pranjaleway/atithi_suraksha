@@ -18,7 +18,7 @@ $(function () {
             ajax: {
                 url: "/activity-log",
                 data: function (d) {
-                    d.date_range = $('#flatpickr-range').val(); 
+                    d.date_range = $("#flatpickr-range").val();
                 },
                 dataSrc: function (json) {
                     json.data.forEach((element, index) => {
@@ -103,6 +103,11 @@ $(function () {
                 },
             ],
             scrollX: true,
+            drawCallback: function () {
+                // Reset header checkbox when table redraws
+                $("#selectAllEntries").prop("checked", false);
+                toggleDeleteButton();
+            },
         });
 
         // Add delete button next to "Show entries"
@@ -113,8 +118,8 @@ $(function () {
         // Add date range picker before search input
         $(".dataTables_filter").addClass("d-flex align-items-center gap-2")
             .prepend(`
-              <input type="text" class="form-control" placeholder="Select Date Range" id="flatpickr-range" />
-          `);
+          <input type="text" class="form-control" placeholder="Select Date Range" id="flatpickr-range" />
+      `);
 
         // Select All functionality
         $(document).on("change", "#selectAllEntries", function () {
@@ -122,15 +127,22 @@ $(function () {
             toggleDeleteButton();
         });
 
-        // Toggle delete button based on checkbox selection
+        // Toggle delete button and sync header select
         $(document).on("change", ".select-entry", function () {
             toggleDeleteButton();
         });
 
         function toggleDeleteButton() {
-            $("#deleteSelected").toggleClass(
-                "d-none",
-                $(".select-entry:checked").length === 0
+            const total = $(".select-entry").length;
+            const checked = $(".select-entry:checked").length;
+
+            // Toggle delete button
+            $("#deleteSelected").toggleClass("d-none", checked === 0);
+
+            // Sync header checkbox
+            $("#selectAllEntries").prop(
+                "checked",
+                total > 0 && total === checked
             );
         }
 
@@ -190,8 +202,6 @@ $(function () {
         });
 
         const flatpickrRange = document.querySelector("#flatpickr-range");
-
-       
 
         // Range
         if (typeof flatpickrRange != undefined) {

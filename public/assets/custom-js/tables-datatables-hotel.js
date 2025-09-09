@@ -42,7 +42,7 @@ $(function () {
                 },
                 { data: "hotel_name", name: "hotel_name" },
                 { data: "owner_name", name: "owner_name" },
-                { data: "contact_number", name: "contact_number" },
+                { data: "owner_contact_number", name: "owner_contact_number" },
                 { data: "address", name: "address" },
                 {
                     data: "employee", // or the correct data field

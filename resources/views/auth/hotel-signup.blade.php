@@ -297,6 +297,7 @@
     <script>
         var signupUrl = "{{ route('post-hotel-signup') }}";
         var policeStationByCityUrl = "{{ route('get-police-station-by-city') }}";
+        var step1ValidationUrl = "{{ route('validate-hotel-step1') }}";
     </script>
     <script src="{{ asset('assets/custom-js/page-hotel-signup.js') }}"></script>
 @endsection

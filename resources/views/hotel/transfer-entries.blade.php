@@ -12,6 +12,7 @@
                         <tr>
                             <th>S.No.</th>
                             <th>Hotel Name</th>
+                            <th>Transferred By</th>
                             <th>Booking/Register Date</th>
                             <th>Transfer Date</th>
                             <th>Actions</th>

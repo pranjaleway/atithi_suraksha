@@ -180,29 +180,36 @@ document.addEventListener("DOMContentLoaded", function (e) {
                             }
                         });
 
-                       let lastDocumentField = null;
+                        let lastDocumentField = null;
 
-$("#document_id").on("change", function () {
-    $("#all-preview-row").empty();
+                        $("#document_id").on("change", function () {
+                            $("#all-preview-row").empty();
 
-    const documentId = $(this).val();
-    const documentName = $(this).find(":selected").data("name");
+                            const documentId = $(this).val();
+                            const documentName = $(this)
+                                .find(":selected")
+                                .data("name");
 
-    const fieldName = `document[${documentId}]`;
+                            const fieldName = `document[${documentId}]`;
 
-    // Safely remove previous field from FormValidation BEFORE changing DOM
-    if (lastDocumentField && multiSteps2.getFields().hasOwnProperty(lastDocumentField)) {
-        multiSteps2.removeField(lastDocumentField);
-    }
+                            // Safely remove previous field from FormValidation BEFORE changing DOM
+                            if (
+                                lastDocumentField &&
+                                multiSteps2
+                                    .getFields()
+                                    .hasOwnProperty(lastDocumentField)
+                            ) {
+                                multiSteps2.removeField(lastDocumentField);
+                            }
 
-    if (!documentId) {
-        $("#documentUploadContainer").html("");
-        lastDocumentField = null;
-        return;
-    }
+                            if (!documentId) {
+                                $("#documentUploadContainer").html("");
+                                lastDocumentField = null;
+                                return;
+                            }
 
-    // HTML should be wrapped in .col-md-6 to support Bootstrap5 plugin layout
-    const fileInputHtml = `
+                            // HTML should be wrapped in .col-md-6 to support Bootstrap5 plugin layout
+                            const fileInputHtml = `
             <div class="input-group input-group-merge">
                 <div class="form-floating form-floating-outline">
                     <input type="file" class="form-control document-input"
@@ -212,33 +219,83 @@ $("#document_id").on("change", function () {
                 </div>
             </div>`;
 
-    $("#documentUploadContainer").html(fileInputHtml);
+                            $("#documentUploadContainer").html(fileInputHtml);
 
-    // Delay required to ensure new DOM element is ready before adding to validator
-    setTimeout(() => {
-        multiSteps2.addField(fieldName, {
-            validators: {
-                notEmpty: {
-                    message: "Please upload document",
-                },
-                file: {
-                    extension: "jpg,jpeg,png,pdf",
-                    type: "image/jpeg,image/png,image/jpg,application/pdf",
-                    message: "Only JPG, PNG, or PDF files are allowed",
-                },
-            },
-        });
+                            // Delay required to ensure new DOM element is ready before adding to validator
+                            setTimeout(() => {
+                                multiSteps2.addField(fieldName, {
+                                    validators: {
+                                        notEmpty: {
+                                            message: "Please upload document",
+                                        },
+                                        file: {
+                                            extension: "jpg,jpeg,png,pdf",
+                                            type: "image/jpeg,image/png,image/jpg,application/pdf",
+                                            message:
+                                                "Only JPG, PNG, or PDF files are allowed",
+                                        },
+                                    },
+                                });
 
-        lastDocumentField = fieldName;
-    }, 50);
-});
-
-
+                                lastDocumentField = fieldName;
+                            }, 50);
+                        });
                     },
                 }
             ).on("core.form.valid", function () {
-                // Jump to the next step when all fields in the current step are valid
-                validationStepper.next();
+                let step1Data = new FormData(stepsValidationForm);
+
+                $.ajax({
+                    url: step1ValidationUrl,
+                    type: "POST",
+                    data: step1Data,
+                    processData: false,
+                    contentType: false,
+                    headers: {
+                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr(
+                            "content"
+                        ),
+                    },
+                    success: function (response) {
+                        if (response.status) {
+                            validationStepper.next();
+                        }
+                    },
+                    error: function (xhr) {
+                        if (xhr.status === 422) {
+                            let errors = xhr.responseJSON.errors;
+
+                            $(".invalid-feedback").remove();
+                            $(".is-invalid").removeClass("is-invalid");
+
+                            let firstErrorElement = null;
+
+                            $.each(errors, function (key, messages) {
+                                let inputField = $("#" + key);
+                                if (inputField.length) {
+                                    inputField.addClass("is-invalid");
+                                    inputField.after(
+                                        `<div class="invalid-feedback">${messages[0]}</div>`
+                                    );
+                                    if (!firstErrorElement) {
+                                        firstErrorElement = inputField;
+                                    }
+                                }
+                            });
+
+                            if (firstErrorElement) {
+                                $("html, body").animate(
+                                    {
+                                        scrollTop:
+                                            firstErrorElement.offset().top -
+                                            100,
+                                    },
+                                    200
+                                );
+                            }
+                        }
+                    },
+                });
             });
 
             // Personal info
@@ -354,7 +411,7 @@ $("#document_id").on("change", function () {
                             toastr.success(response.message, "Success");
                             stepsValidationForm.reset();
                             validationStepper.to(0);
-                            $('#all-preview-row').empty();
+                            $("#all-preview-row").empty();
                         }
                     },
                     error: function (xhr) {

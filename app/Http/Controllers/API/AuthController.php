@@ -44,9 +44,9 @@ class AuthController extends Controller
      *         @OA\MediaType(
      *             mediaType="application/json",
      *             @OA\Schema(
-     *                 required={"login", "password"},
+     *                 required={"email", "password"},
      *                 @OA\Property(
-     *                     property="login",
+     *                     property="email",
      *                     type="string",
      *                     example="user@example.com",
      *                     description="Email or 10-digit phone number. Example: 'user@example.com' or '9876543210'."
@@ -112,18 +112,17 @@ class AuthController extends Controller
      *     )
      * )
      */
-
     public function login(Request $request)
     {
         $request->validate([
-            'login' => 'required|string',
+            'email' => 'required|string',
             'password' => 'required|min:6',
         ]);
 
         // Detect whether login is email or phone
-        if (filter_var($request->login, FILTER_VALIDATE_EMAIL)) {
+        if (filter_var($request->email, FILTER_VALIDATE_EMAIL)) {
             $loginType = 'email';
-        } elseif (preg_match('/^[0-9]{10}$/', $request->login)) { // strict 10-digit phone
+        } elseif (preg_match('/^[0-9]{10}$/', $request->email)) { // strict 10-digit phone
             $loginType = 'phone';
         } else {
             return response()->json([
@@ -133,7 +132,7 @@ class AuthController extends Controller
         }
 
         // Find user by email or phone
-        $user = User::where($loginType, $request->login)->first();
+        $user = User::where($loginType, $request->email)->first();
 
         if ($user && Hash::check($request->password, $user->password)) {
             // Allow login only for user_type_id 4 or 5
@@ -387,31 +386,29 @@ class AuthController extends Controller
                     $totalBooking = $this->countBookings($hotelID);
                     $totalTransferPendingBookings = $this->countPendingTransfers($hotelID);
                     $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID]);
-                    $graphData = $this->generateHotelGraphData($hotelID);
+                    //$graphData = $this->generateHotelGraphData($hotelID);
 
                     return response()->json([
                         'totalEmployees' => $totalEmployees,
                         'totalBooking' => $totalBooking,
                         'totalTransferPendingBookings' => $totalTransferPendingBookings,
                         'todayTransferredBookings' => $todayTransferredBookings,
-                        'graphData' => $graphData
                     ]);
 
                 case 5: // Hotel Employee
                     $hotelEmployeeID = HotelEmployee::where('user_id', $user->id)->value('id');
                     $hotelID = HotelEmployee::where('id', $hotelEmployeeID)->value('hotel_id');
 
-                    $totalBooking = $this->countBookings($hotelID, $hotelEmployeeID);
-                    $totalTransferPendingBookings = $this->countPendingTransfers($hotelID, $hotelEmployeeID);
-                    $totalTransferredBookings = $this->countDistinctTransfers([$hotelID], $hotelEmployeeID);
-                    $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID], $hotelEmployeeID);
-                    $graphData = $this->generateHotelGraphData($hotelID, $hotelEmployeeID);
+                    $totalBooking = $this->countBookings($hotelID);
+                    $totalTransferPendingBookings = $this->countPendingTransfers($hotelID);
+                    $totalTransferredBookings = $this->countDistinctTransfers([$hotelID]);
+                    $todayTransferredBookings = $this->getTodayTransferredBookings([$hotelID]);
+                    // $graphData = $this->generateHotelGraphData($hotelID);
                     return response()->json([
                         'totalBooking' => $totalBooking,
                         'totalTransferPendingBookings' => $totalTransferPendingBookings,
                         'totalTransferredBookings' => $totalTransferredBookings,
                         'todayTransferredBookings' => $todayTransferredBookings,
-                        'graphData' => $graphData
                     ]);
 
                 default:
@@ -430,9 +427,9 @@ class AuthController extends Controller
             $query->whereIn('hotel_id', $hotelIDs);
         }
 
-        if ($hotelEmployeeID) {
-            $query->where('hotel_employee_id', $hotelEmployeeID);
-        }
+        // if ($hotelEmployeeID) {
+        //     $query->where('hotel_employee_id', $hotelEmployeeID);
+        // }
 
         return $query->count();
     }
@@ -441,9 +438,9 @@ class AuthController extends Controller
     {
         $query = TransferEntry::whereIn('hotel_id', $hotelIDs);
 
-        if ($hotelEmployeeID) {
-            $query->where('hotel_employee_id', $hotelEmployeeID);
-        }
+        // if ($hotelEmployeeID) {
+        //     $query->where('hotel_employee_id', $hotelEmployeeID);
+        // }
 
         return $query->count(DB::raw('DISTINCT hotel_id, transfer_date'));
     }
@@ -452,9 +449,9 @@ class AuthController extends Controller
     {
         $query = HotelBooking::where('hotel_id', $hotelID)->whereNull('parent_id');
 
-        if ($hotelEmployeeID) {
-            $query->where('hotel_employee_id', $hotelEmployeeID);
-        }
+        // if ($hotelEmployeeID) {
+        //     $query->where('hotel_employee_id', $hotelEmployeeID);
+        // }
 
         return $query->count();
     }
@@ -462,12 +459,13 @@ class AuthController extends Controller
     private function countPendingTransfers($hotelID, $hotelEmployeeID = null)
     {
         $query = HotelBooking::where('hotel_id', $hotelID)
+            ->whereNull('parent_id')
             ->whereNull('transfer_date')
             ->where('status', 0);
 
-        if ($hotelEmployeeID) {
-            $query->where('hotel_employee_id', $hotelEmployeeID);
-        }
+        // if ($hotelEmployeeID) {
+        //     $query->where('hotel_employee_id', $hotelEmployeeID);
+        // }
 
         return $query->count();
     }
@@ -482,13 +480,13 @@ class AuthController extends Controller
         foreach ($dates as $date) {
             $labels[] = $date->format('d M');
 
-            $bookingQuery = HotelBooking::where('hotel_id', $hotelID)->whereDate('created_at', $date);
-            $transferQuery = HotelBooking::where('hotel_id', $hotelID)->whereDate('transfer_date', $date);
+            $bookingQuery = HotelBooking::where('hotel_id', $hotelID)->whereDate('created_at', $date)->whereNull('parent_id');
+            $transferQuery = TransferEntry::where('hotel_id', $hotelID)->whereDate('transfer_date', $date);
 
-            if ($hotelEmployeeID) {
-                $bookingQuery->where('hotel_employee_id', $hotelEmployeeID);
-                $transferQuery->where('hotel_employee_id', $hotelEmployeeID);
-            }
+            // if ($hotelEmployeeID) {
+            //     $bookingQuery->where('hotel_employee_id', $hotelEmployeeID);
+            //     $transferQuery->where('hotel_employee_id', $hotelEmployeeID);
+            // }
 
             $dailyBookings[] = $bookingQuery->count();
             $dailyTransfers[] = $transferQuery->count();
@@ -643,9 +641,7 @@ class AuthController extends Controller
         if ($userType == 4) {
             $hotelID = Hotel::where('user_id', Auth::id())->value('id');
         } elseif ($userType == 5) {
-            $hotelEmployee = HotelEmployee::where('user_id', Auth::id())->first();
-            $hotelID = $hotelEmployee->hotel_id ?? null;
-            $hotelEmployeeID = $hotelEmployee->id ?? null;
+            $hotelID = HotelEmployee::where('user_id', Auth::id())->value('hotel_id');
         }
 
         if (!in_array($userType, [4, 5])) {
@@ -658,22 +654,22 @@ class AuthController extends Controller
 
         $bookingQuery = HotelBooking::selectRaw('DATE(created_at) as date, COUNT(*) as total')
             ->where('hotel_id', $hotelID)
+            ->whereNull('parent_id')
             ->whereBetween('created_at', [$startDate, $endDate]);
 
-        if ($userType == 5) {
-            $bookingQuery->where('hotel_employee_id', $hotelEmployeeID);
-        }
+        // if ($userType == 5) {
+        //     $bookingQuery->where('hotel_employee_id', $hotelEmployeeID);
+        // }
 
         $bookings = $bookingQuery->groupBy('date')->pluck('total', 'date');
 
-        $transferQuery = HotelBooking::selectRaw('DATE(transfer_date) as date, COUNT(*) as total')
+        $transferQuery = TransferEntry::selectRaw('DATE(transfer_date) as date, COUNT(*) as total')
             ->where('hotel_id', $hotelID)
-            ->where('status', 1)
             ->whereBetween('transfer_date', [$startDate, $endDate]);
 
-        if ($userType == 5) {
-            $transferQuery->where('hotel_employee_id', $hotelEmployeeID);
-        }
+        // if ($userType == 5) {
+        //     $transferQuery->where('hotel_employee_id', $hotelEmployeeID);
+        // }
 
         $transfers = $transferQuery->groupBy('date')->pluck('total', 'date');
 

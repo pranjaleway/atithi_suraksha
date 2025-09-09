@@ -31,6 +31,8 @@ Route::group(['middleware' => ['web']], function () {
         Route::post('post-reset-password', 'postResetPassword')->name('post-reset-password');
         Route::get('hotel-signup', 'hotelSignup')->name('hotel-signup');
         Route::post('post-hotel-signup', 'postHotelSignup')->name('post-hotel-signup');
+        Route::post('validate-hotel-step1', 'validateStep1')->name('validate-hotel-step1');
+
     });
     Route::controller(MasterController::class)->group(function () {
         Route::get('get-cities', 'getCitiesByState')->name('get-cities');

@@ -5,7 +5,8 @@
         <a href="{{ route('dashboard') }}" class="app-brand-link">
             <span class="app-brand-logo demo">
                 <span style="color: #fff">
-                    <svg width="268" height="150" viewBox="0 0 38 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="268" height="150" viewBox="0 0 38 20" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
                         <path
                             d="M30.0944 2.22569C29.0511 0.444187 26.7508 -0.172113 24.9566 0.849138C23.1623 1.87039 22.5536 4.14247 23.5969 5.92397L30.5368 17.7743C31.5801 19.5558 33.8804 20.1721 35.6746 19.1509C37.4689 18.1296 38.0776 15.8575 37.0343 14.076L30.0944 2.22569Z"
                             fill="currentColor" />
@@ -69,8 +70,7 @@
         @endif
 
         {{-- <!-- Hotel Booking/Upload Entries -->
-        @if (hasPermission('hotels', 'view') && (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 ||
-        Auth::user()->user_type_id == 3))
+        @if (hasPermission('hotels', 'view') && (Auth::user()->user_type_id == 1 || Auth::user()->user_type_id == 2 || Auth::user()->user_type_id == 3))
         <li
             class="menu-item {{ Request::is('hotel-booking-entries') || Request::is('uploaded-entries/*') || Request::is('bookings/*') ? 'active' : '' }}">
             <a href="{{ route('hotel-booking-entries') }}" class="text-white menu-link">
@@ -94,16 +94,17 @@
 
         <!-- Booking -->
         @if (hasPermission('bookings', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
-            <li class="menu-item {{ Request::is('bookings') ||
-            Request::is('add-booking') ||
-            Request::is('members/*') ||
-            Request::is(patterns: 'add-member/*') ||
-            Request::is('visitors/*') ||
-            Request::is(patterns: 'add-visitor/*') ||
-            Request::is('view-visitor-details/*') ||
-            Request::is('view-booking-details/*')
-            ? 'active'
-            : '' }}">
+            <li
+                class="menu-item {{ Request::is('bookings') ||
+                Request::is('add-booking') ||
+                Request::is('members/*') ||
+                Request::is(patterns: 'add-member/*') ||
+                Request::is('visitors/*') ||
+                Request::is(patterns: 'add-visitor/*') ||
+                Request::is('view-visitor-details/*') ||
+                Request::is('view-booking-details/*')
+                    ? 'active'
+                    : '' }}">
                 <a href="{{ route('bookings') }}" class="text-white menu-link">
                     <i class="menu-icon tf-icons mdi mdi-account-group-outline"></i>
                     <div data-i18n="Bookings">Bookings</div>
@@ -113,8 +114,7 @@
 
 
         {{-- <!-- Upload Entries -->
-        @if (hasPermission('uploaded-entries', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id
-        == 5))
+        @if (hasPermission('uploaded-entries', 'view') && (Auth::user()->user_type_id == 4 || Auth::user()->user_type_id == 5))
         <li class="menu-item {{ Request::is('uploaded-entries') ? 'active' : '' }}">
             <a href="{{ route('uploaded-entries') }}" class="text-white menu-link">
                 <i class="menu-icon tf-icons mdi mdi-upload-box-outline"></i>
@@ -132,10 +132,8 @@
                 Request::is('bookings/*') ||
                 Request::is('transfer-manual-entries') ||
                 Request::is('transfer-uploaded-entries') ||
-                ($userTypeId != 4 &&
-                    $userTypeId != 5 &&
-                    (Request::is('view-booking-details/*')));
-         @endphp
+                ($userTypeId != 4 && $userTypeId != 5 && Request::is('view-booking-details/*'));
+        @endphp
 
         @if (hasPermission('transfer-entries', 'view'))
             <li class="menu-item {{ $isActive ? 'active' : '' }}">
@@ -190,6 +188,14 @@
                 </a>
             </li>
         @endif
+        @if (hasPermission('report', 'view'))
+            <li class="menu-item {{ Request::is('report') ? 'active' : '' }}">
+                <a href="{{ route('report') }}" class="text-white menu-link">
+                    <i class="menu-icon tf-icons mdi mdi-file-chart-outline"></i>
+                    <div data-i18n="Report">Report</div>
+                </a>
+            </li>
+        @endif
 
         <!-- User Type -->
         @if (hasPermission('user-type', 'view'))
@@ -209,7 +215,7 @@
                 hasPermission('states', 'view') ||
                 hasPermission('cities', 'view') ||
                 hasPermission('document', 'view');
-         @endphp
+        @endphp
 
         @if ($mastersVisible)
             <li

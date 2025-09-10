@@ -9,6 +9,7 @@ use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PoliceStationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SPOfficeController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -215,5 +216,14 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('alerts', 'alerts')->name('alerts');
         Route::delete('delete-alert', 'deleteAlert')->name('delete-alert');
+    });
+
+    //Report
+    Route::controller(ReportController::class)->group(function () {
+        Route::get('hotels-by-police-station', 'getHotelsByPoliceStation')->name('hotels-by-police-station');
+        Route::get('report', 'report')->name('report');
+        Route::post('sp-office-report', 'getSpOfficeReport')->name('sp-office-report');
+        Route::post('police-station-report', 'getPoliceStationReport')->name('police-station-report');
+        Route::post('hotel-report', 'getHotelReport')->name('hotel-report');
     });
 });

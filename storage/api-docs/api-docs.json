@@ -2942,9 +2942,14 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "file_path"
+                                    "file_path",
+                                    "entry_date"
                                 ],
                                 "properties": {
+                                    "entry_date": {
+                                        "type": "string",
+                                        "example": "2023-08-01"
+                                    },
                                     "file_path": {
                                         "description": "Array of file paths (as strings) for the uploaded files",
                                         "type": "array",
@@ -3033,8 +3038,8 @@
                 "tags": [
                     "Hotels"
                 ],
-                "summary": "Get uploaded register entries",
-                "description": "Fetches uploaded register entries for the authenticated hotel or hotel employee. If 'hotel_id' and 'date' are provided, it filters based on a matching uploaded transfer entry.",
+                "summary": "Get uploaded register entries (paginated)",
+                "description": "Fetches uploaded register entries for the authenticated hotel or hotel employee. If 'hotel_id' and 'date' are provided, it filters based on a matching uploaded transfer entry. Results are grouped by transfer_date and paginated.",
                 "operationId": "0753653662caccb4ae599ec25692d9f5",
                 "requestBody": {
                     "required": false,
@@ -3061,69 +3066,77 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "List of uploaded register entries",
+                        "description": "Paginated list of uploaded register entries grouped by transfer date",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "hotel_id": {
-                                                        "type": "integer",
-                                                        "example": 5
-                                                    },
-                                                    "hotel_employee_id": {
-                                                        "type": "integer",
-                                                        "example": 3
-                                                    },
-                                                    "file_path": {
-                                                        "type": "string",
-                                                        "example": "uploaded_entries/file123.pdf"
-                                                    },
-                                                    "status": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "transfer_date": {
-                                                        "type": "string",
-                                                        "format": "date",
-                                                        "example": "2025-07-15"
-                                                    },
-                                                    "hotel": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
                                                         "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 5
-                                                            },
-                                                            "hotel_name": {
+                                                            "transfer_date": {
                                                                 "type": "string",
-                                                                "example": "Grand Palace Hotel"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    },
-                                                    "hotelEmployee": {
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 3
+                                                                "format": "date",
+                                                                "example": "2025-07-15"
                                                             },
-                                                            "employee_name": {
-                                                                "type": "string",
-                                                                "example": "John Smith"
+                                                            "files": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string",
+                                                                    "example": "uploaded_entries/file123.pdf"
+                                                                }
+                                                            },
+                                                            "hotel": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 5
+                                                                    },
+                                                                    "hotel_name": {
+                                                                        "type": "string",
+                                                                        "example": "Grand Palace Hotel"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            },
+                                                            "hotelEmployee": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 3
+                                                                    },
+                                                                    "employee_name": {
+                                                                        "type": "string",
+                                                                        "example": "John Smith"
+                                                                    }
+                                                                },
+                                                                "type": "object"
                                                             }
                                                         },
                                                         "type": "object"
                                                     }
-                                                },
-                                                "type": "object"
-                                            }
+                                                }
+                                            },
+                                            "type": "object"
                                         },
                                         "canAdd": {
                                             "type": "boolean",
@@ -4822,8 +4835,8 @@
                 "tags": [
                     "Authentication"
                 ],
-                "summary": "User login",
-                "description": "Logs in a user (only for user types 4 and 5).",
+                "summary": "User login (email or phone)",
+                "description": "Logs in a user (only for user types 4 and 5). Users can log in using either their email address or a 10-digit phone number.",
                 "operationId": "d618a255475240ba3d40cc39692cd924",
                 "requestBody": {
                     "required": true,
@@ -4836,8 +4849,8 @@
                                 ],
                                 "properties": {
                                     "email": {
+                                        "description": "Email or 10-digit phone number. Example: 'user@example.com' or '9876543210'.",
                                         "type": "string",
-                                        "format": "email",
                                         "example": "user@example.com"
                                     },
                                     "password": {
@@ -4866,9 +4879,39 @@
                                             "type": "string",
                                             "example": "Login successful"
                                         },
-                                        "redirect": {
+                                        "token": {
                                             "type": "string",
-                                            "example": "/dashboard"
+                                            "example": "1|XyzAbcTokenString"
+                                        },
+                                        "data": {
+                                            "description": "Authenticated user details",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "user@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "9876543210"
+                                                },
+                                                "user_type_id": {
+                                                    "type": "integer",
+                                                    "example": 4
+                                                },
+                                                "status": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -4922,17 +4965,21 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "The given data was invalid."
+                                            "example": "Please enter a valid email or phone number"
                                         },
                                         "errors": {
                                             "properties": {
-                                                "email": {
+                                                "login": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "The email field is required."
+                                                        "example": "The login field is required."
                                                     }
                                                 },
                                                 "password": {

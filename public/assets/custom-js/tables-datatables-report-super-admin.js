@@ -3,6 +3,47 @@ flatpickr("#flatpickr-range", {
     dateFormat: "Y-m-d",
 });
 
+$(document).on("change", "#city_id", function () {
+    var id = $(this).val();
+    if (id) {
+        $.ajax({
+            url: policeStationByCityUrl,
+            type: "GET",
+            data: { id: id },
+            dataType: "json",
+            success: function (response) {
+                $("#police_station_id")
+                    .empty()
+                    .append('<option value="">Select Police Station</option>');
+
+                if (response.data && response.data.length > 0) {
+                    $.each(response.data, function (index, city) {
+                        $("#police_station_id").append(
+                            '<option value="' +
+                                city.id +
+                                '">' +
+                                city.police_station_name +
+                                "</option>"
+                        );
+                    });
+                } else {
+                    $("#police_station_id").append(
+                        '<option value="">No Police Station Available</option>'
+                    );
+                }
+            },
+            error: function () {
+                $("#police_station_id")
+                    .empty()
+                    .append("<option>Error loading Police Stations</option>");
+            },
+        });
+    } else {
+        $("#police_station_id")
+            .empty()
+            .append('<option value="">Select Police Station</option>');
+    }
+});
 $(document).on("change", "#police_station_id", function () {
     var id = $(this).val();
     if (id) {
@@ -121,6 +162,12 @@ $(document).ready(function () {
                     },
                 },
                 {
+                    data: "city_name",
+                },
+                {
+                    data: "office_name",
+                },
+                {
                     data: "police_station_name",
                 },
                 {
@@ -134,6 +181,7 @@ $(document).ready(function () {
                         return "N/A";
                     },
                 },
+
                 {
                     data: "total_transferred_bookings",
                 },
@@ -149,14 +197,16 @@ $(document).ready(function () {
     }
 
     function handleCountReport(data) {
-        // Hide all existing tables and messages
+        if (data && typeof data === "object" && data.data !== undefined) {
+            data = data.data;
+        }
+
         dt_basic_table.hide();
         $(".lists").addClass("d-none");
         $(".all_count, .police_station_count, .hotel_count, .no-data").addClass(
             "d-none"
         );
 
-        // Destroy previous tables if they exist
         [dt_all_count, dt_police_station_count, dt_hotel_count].forEach(
             function (table) {
                 if ($.fn.DataTable.isDataTable(table)) {
@@ -165,34 +215,33 @@ $(document).ready(function () {
             }
         );
 
-        // If backend returned nothing
-        if (!data) {
+        let formattedData = Array.isArray(data) ? data : data ? [data] : [];
+
+        if (
+            !data ||
+            (Array.isArray(data) && data.length === 0) || // []
+            (typeof data === "object" && Object.keys(data).length === 0) // {}
+        ) {
             $(".no-data").removeClass("d-none");
             return;
         }
 
-        // Convert backend object -> array with serial_number
-        let formattedData = [
-            {
-                serial_number: 1,
-                ...data,
-            },
-        ];
+        formattedData = formattedData.map((item, index) => ({
+            serial_number: index + 1,
+            ...item,
+        }));
 
-        console.log("Cleaned count data:", formattedData);
+        let firstRow = formattedData[0];
 
-        // Decide which table to show
         if (
-            data.police_station_count !== undefined &&
-            data.hotel_count !== undefined
+            firstRow.city_name !== undefined &&
+            firstRow.police_station_count !== undefined &&
+            firstRow.hotel_count !== undefined
         ) {
-            // Overall summary
             initializeAllCountTable(formattedData);
-        } else if (data.hotel_count !== undefined) {
-            // Police station level (hide police station count)
+        } else if (firstRow.hotel_count !== undefined) {
             initializePoliceStationTable(formattedData);
         } else {
-            // Hotel level (hide both counts)
             initializeHotelTable(formattedData);
         }
     }
@@ -203,6 +252,7 @@ $(document).ready(function () {
             data: data,
             columns: [
                 { data: "serial_number" },
+                { data: "city_name" },
                 { data: "police_station_count" },
                 { data: "hotel_count" },
                 { data: "total_transferred_bookings" },

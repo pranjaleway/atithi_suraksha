@@ -38,6 +38,15 @@
                             </div>
                         </div>
                         <div class="col-md-4 mb-3">
+                            <div class="input-group input-group-merge">
+                                <div class="form-floating form-floating-outline">
+                                    <input type="text" class="form-control flatpickr-input" name="date_range"
+                                        id="flatpickr-range" placeholder="YYYY-MM-DD to YYYY-MM-DD" readonly>
+                                    <label for="flatpickr-range">Date Range</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <div class="mt-3">
                                 <label class="form-check-label">
                                     <input type="radio" class="form-check-input" name="reportType" value="list" checked>

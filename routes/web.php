@@ -222,6 +222,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::controller(ReportController::class)->group(function () {
         Route::get('hotels-by-police-station', 'getHotelsByPoliceStation')->name('hotels-by-police-station');
         Route::get('report', 'report')->name('report');
+        Route::post('super-admin-report', 'getSuperAdminReport')->name('super-admin-report');
         Route::post('sp-office-report', 'getSpOfficeReport')->name('sp-office-report');
         Route::post('police-station-report', 'getPoliceStationReport')->name('police-station-report');
         Route::post('hotel-report', 'getHotelReport')->name('hotel-report');

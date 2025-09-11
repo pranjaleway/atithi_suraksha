@@ -1,3 +1,8 @@
+flatpickr("#flatpickr-range", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+});
+
 ("use strict");
 $(document).ready(function () {
     var dt_basic_table = $(".datatables-basic"),

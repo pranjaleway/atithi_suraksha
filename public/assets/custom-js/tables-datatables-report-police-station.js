@@ -76,7 +76,12 @@ $(document).ready(function () {
                 {
                     data: "hotel_name",
                     render: function (data, type, row) {
-                        return data ? data : "N/A";
+                        if (data) {
+                            return row.owner_name
+                                ? `${data} (${row.owner_name})`
+                                : data;
+                        }
+                        return "N/A";
                     },
                 },
                 {

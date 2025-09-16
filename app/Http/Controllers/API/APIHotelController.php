@@ -22,6 +22,7 @@ use App\Notifications\CredentialsNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -2956,4 +2957,233 @@ class APIHotelController extends Controller
             return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * @OA\POST(
+     *     path="/get-report",
+     *     summary="Get transfer report",
+     *     description="Fetch list or count report of transfer entries (manual or uploaded) for the authenticated user's hotel.",
+     *     tags={"Reports"},
+     *     security={{"bearerAuth":{}}},
+     *
+     *     @OA\Parameter(
+     *         name="reportType",
+     *         in="query",
+     *         required=true,
+     *         description="Type of report to fetch",
+     *         @OA\Schema(type="string", enum={"list", "count"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="transfer_type",
+     *         in="query",
+     *         required=false,
+     *         description="Filter by transfer type",
+     *         @OA\Schema(type="string", enum={"manual", "uploaded", "all"}, default="all")
+     *     ),
+     *     @OA\Parameter(
+     *         name="date_range",
+     *         in="query",
+     *         required=false,
+     *         description="Date range in format 'YYYY-MM-DD to YYYY-MM-DD'",
+     *         @OA\Schema(type="string", example="2025-09-01 to 2025-09-12")
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(
+     *             oneOf={
+     *                 @OA\Schema(              
+     *                     type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="transfer_date", type="string", format="date"),
+     *                         @OA\Property(property="transfer_type", type="string", enum={"manual","uploaded"}),
+     *                         @OA\Property(property="booking_id", type="integer", nullable=true),
+     *                         @OA\Property(property="guest_name", type="string", nullable=true),
+     *                         @OA\Property(property="uploaded_id", type="integer", nullable=true),
+     *                         @OA\Property(property="file_path", type="string", nullable=true)
+     *                     )
+     *                 ),
+     *                 @OA\Schema(              
+     *                     type="array",
+     *                     @OA\Items(
+     *                         @OA\Property(property="transfer_date", type="string", format="date"),
+     *                         @OA\Property(property="manual_count", type="integer", nullable=true),
+     *                         @OA\Property(property="uploaded_count", type="integer", nullable=true),
+     *                         @OA\Property(property="transfer_type", type="string", enum={"manual","uploaded"}, nullable=true),
+     *                         @OA\Property(property="total_count", type="integer", nullable=true)
+     *                     )
+     *                 )
+     *             }
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid report type or transfer type",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Invalid report type or transfer type")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Hotel not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No Hotel found for this user")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getReport(Request $request)
+    {
+        $reportType = $request->input('reportType');
+        $transferType = strtolower($request->input('transfer_type') ?? 'all');
+        $dateRange = $request->input('date_range');
+
+        $hotel = Hotel::where('user_id', Auth::id())->first();
+        if (!$hotel) {
+            return response()->json(['message' => 'No Hotel found for this user'], 404);
+        }
+
+        // Parse date range if provided
+        [$startDate, $endDate] = [null, null];
+        if ($dateRange && strpos($dateRange, ' to ') !== false) {
+            [$startDate, $endDate] = explode(' to ', $dateRange);
+        }
+
+        // -------------------------------
+        // LIST REPORT
+        // -------------------------------
+        if ($reportType === 'list') {
+            $query = null;
+
+            // Manual query
+            if ($transferType === 'manual' || $transferType === 'all') {
+                $manual = DB::table('transfer_entries as t')
+                    ->leftJoin('hotel_bookings as b', function ($join) {
+                        $join->on('b.hotel_id', '=', 't.hotel_id')
+                            ->whereNull('b.parent_id')
+                            ->whereRaw('DATE(b.transfer_date) = DATE(t.transfer_date)')
+                            ->whereNull('b.deleted_at');
+                    })
+                    ->where('t.hotel_id', $hotel->id)
+                    ->where('t.transfer_type', 'manual')
+                    ->whereNull('t.deleted_at')
+                    ->when(
+                        $startDate && $endDate,
+                        fn($q) => $q->whereBetween(DB::raw('DATE(t.transfer_date)'), [$startDate, $endDate])
+                    )
+                    ->select(
+                        DB::raw('DATE(t.transfer_date) as transfer_date'),
+                        't.transfer_type',
+                        'b.id as booking_id',
+                        'b.guest_name',
+                        DB::raw('NULL as uploaded_id'),
+                        DB::raw('NULL as file_path')
+                    );
+
+                $query = $manual;
+            }
+
+            // Uploaded query
+            if ($transferType === 'uploaded' || $transferType === 'all') {
+                $uploaded = DB::table('transfer_entries as t')
+                    ->leftJoin('uploaded_entries as u', function ($join) {
+                        $join->on('u.hotel_id', '=', 't.hotel_id')
+                            ->whereRaw('DATE(u.transfer_date) = DATE(t.transfer_date)')
+                            ->whereNull('u.deleted_at');
+                    })
+                    ->where('t.hotel_id', $hotel->id)
+                    ->where('t.transfer_type', 'uploaded')
+                    ->whereNull('t.deleted_at')
+                    ->when(
+                        $startDate && $endDate,
+                        fn($q) => $q->whereBetween(DB::raw('DATE(t.transfer_date)'), [$startDate, $endDate])
+                    )
+                    ->select(
+                        DB::raw('DATE(t.transfer_date) as transfer_date'),
+                        't.transfer_type',
+                        DB::raw('NULL as booking_id'),
+                        DB::raw('NULL as guest_name'),
+                        'u.id as uploaded_id',
+                        'u.file_path'
+                    );
+
+                $query = $query ? $query->unionAll($uploaded) : $uploaded;
+            }
+
+            // Now paginate the UNION query
+            $results = DB::query()
+                ->fromSub($query, 'sub')
+                ->orderByDesc('transfer_date')
+                ->paginate(10);
+
+            return response()->json($results);
+        }
+
+        // -------------------------------
+        // COUNT REPORT
+        // -------------------------------
+        if ($reportType === 'count') {
+            $query = DB::table('transfer_entries as t')
+                ->where('t.hotel_id', $hotel->id)
+                ->whereNull('t.deleted_at')
+                ->when(
+                    $startDate && $endDate,
+                    fn($q) => $q->whereBetween(DB::raw('DATE(t.transfer_date)'), [$startDate, $endDate])
+                );
+
+            if ($transferType !== 'all') {
+                $query->where('t.transfer_type', $transferType);
+            }
+
+            $query->select(
+                DB::raw('DATE(t.transfer_date) as transfer_date'),
+                't.transfer_type',
+                DB::raw('COUNT(*) as total_count')
+            )
+                ->groupBy('transfer_date', 't.transfer_type')
+                ->orderByDesc('transfer_date');
+
+            $results = $query->paginate(10);
+
+            // Format "all" case
+            if ($transferType === 'all') {
+                $dateSummary = [];
+                foreach ($results as $row) {
+                    $date = $row->transfer_date;
+                    if (!isset($dateSummary[$date])) {
+                        $dateSummary[$date] = [
+                            'transfer_date' => $date,
+                            'manual_count' => 0,
+                            'uploaded_count' => 0,
+                        ];
+                    }
+                    $row->transfer_type === 'manual'
+                        ? $dateSummary[$date]['manual_count'] = $row->total_count
+                        : $dateSummary[$date]['uploaded_count'] = $row->total_count;
+                }
+
+                $dateSummary = collect(array_values($dateSummary));
+
+                // manual paginate the summary
+                $page = $request->input('page', 1);
+                $perPage = 10;
+                $paginated = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $dateSummary->forPage($page, $perPage),
+                    $dateSummary->count(),
+                    $perPage,
+                    $page,
+                    ['path' => url()->current()]
+                );
+
+                return response()->json($paginated);
+            }
+
+            return response()->json($results);
+        }
+
+        return response()->json(['message' => 'Invalid report type or transfer type'], 400);
+    }
+
 }

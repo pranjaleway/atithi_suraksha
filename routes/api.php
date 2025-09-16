@@ -83,6 +83,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('add-transfer-bookings', 'addTransferBookings')->name('add-transfer-bookings');
     Route::post('upload-register', 'uploadRegister')->name('upload-register');
     Route::post('get-uploaded-registers', 'getUploadedRegisters')->name('get-uploaded-registers');
+
+    //Report
+    Route::post('get-report', 'getReport')->name('get-report');
   });
 
   Route::controller(APINotificationController::class)->group(function () {

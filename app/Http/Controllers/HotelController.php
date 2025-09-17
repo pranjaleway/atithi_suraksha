@@ -433,4 +433,13 @@ class HotelController extends Controller
         }
         return view('hotel.hotel-booking-entries');
     }
+
+    public function resetPassword(Request $request)
+    {
+        $id = $request->input('id');
+        $modal = Hotel::find($id);
+        $user = User::find($modal->user_id);
+        $user->update(['password' => Hash::make($modal->owner_contact_number)]);
+        return response()->json(['status' => 'success', 'message' => 'Password reset successfully']);
+    }
 }

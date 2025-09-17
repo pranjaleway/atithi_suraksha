@@ -249,4 +249,13 @@ class PoliceStationController extends Controller
         }
         return response()->json(['status' => 'error', 'message' => 'Police Station not found'], 404);
     }
+
+    public function resetPassword(Request $request)
+    {
+        $id = $request->input('id');
+        $modal = PoliceStation::find($id);
+        $user = User::find($modal->user_id);
+        $user->update(['password' => Hash::make($modal->contact_number)]);
+        return response()->json(['status' => 'success', 'message' => 'Password reset successfully']);
+    }
 }

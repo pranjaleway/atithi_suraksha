@@ -25,7 +25,7 @@
         </div>
         <!--/ DataTable with Buttons -->
 
-       
+
     </div>
 @endsection
 @section('scripts')
@@ -35,6 +35,7 @@
         var listUrl = "{{ route('sp-offices') }}";
         var addUrl = "{{ route('add-sp-office') }}";
         var editUrl = "{{ route('edit-sp-office', ':id') }}";
+        var resetPasswordUrl = "{{ route('reset-sp-password') }}";
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-sp-office.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

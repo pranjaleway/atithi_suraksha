@@ -25,7 +25,7 @@
         </div>
         <!--/ DataTable with Buttons -->
 
-       
+
     </div>
 @endsection
 @section('scripts')
@@ -35,6 +35,7 @@
         var listUrl = "{{ route('police-stations') }}";
         var addUrl = "{{ route('add-police-station') }}";
         var editUrl = "{{ route('edit-police-station', ':id') }}";
+        var resetPasswordUrl = "{{ route('reset-police-station-password') }}";
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-police-station.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

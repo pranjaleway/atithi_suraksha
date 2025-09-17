@@ -16,8 +16,8 @@
                             <th>Email</th>
                             <th>Address</th>
                             <th>Status</th>
-                            @if(!$isSuperAdmin)
-                            <th>Actions</th>
+                            @if (!$isSuperAdmin)
+                                <th>Actions</th>
                             @endif
                         </tr>
                     </thead>
@@ -27,19 +27,20 @@
         </div>
         <!--/ DataTable with Buttons -->
 
-       
+
     </div>
 @endsection
 @section('scripts')
     <script>
         var changeStatusURl = "{{ route('change-hotel-employee-status') }}";
         var deleteUrl = "{{ route('delete-hotel-employee') }}";
-       var listUrl = "{{ route('hotel-employees', base64_encode($id)) }}";
-       var viewDetailsUrl = "{{ route('view-hotel-employee-details', ':id') }}";
-       var editUrl = "{{ route('edit-hotel-employee', ':id') }}";
-       var addUrl = "{{ route('add-hotel-employee') }}";
+        var listUrl = "{{ route('hotel-employees', base64_encode($id)) }}";
+        var viewDetailsUrl = "{{ route('view-hotel-employee-details', ':id') }}";
+        var editUrl = "{{ route('edit-hotel-employee', ':id') }}";
+        var addUrl = "{{ route('add-hotel-employee') }}";
+        var resetPasswordUrl = "{{ route('reset-hotel-employee-password') }}";
 
-        var isSuperAdmin ={{ $isSuperAdmin ? 'true' : 'false' }};
+        var isSuperAdmin = {{ $isSuperAdmin ? 'true' : 'false' }};
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-hotel-employee.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

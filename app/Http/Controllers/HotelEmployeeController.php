@@ -299,5 +299,13 @@ class HotelEmployeeController extends Controller
         return view('hotel.view-hotel-employee-details', compact('employee', 'documents'));
     }
 
+    public function resetPassword(Request $request)
+    {
+        $id = $request->input('id');
+        $modal = HotelEmployee::find($id);
+        $user = User::find($modal->user_id);
+        $user->update(['password' => Hash::make($modal->contact_number)]);
+        return response()->json(['status' => 'success', 'message' => 'Password reset successfully']);
+    }
 
 }

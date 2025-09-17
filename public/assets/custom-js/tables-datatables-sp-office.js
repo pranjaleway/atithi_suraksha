@@ -79,7 +79,7 @@ $(function () {
                         var editRoute = editUrl.replace(":id", id);
                         var deleteBtn = full.canDelete
                             ? '<div class="d-inline-block">' +
-                              '<a href="javascript:;" class="dropdown-item text-danger delete-record" data-url = "' +
+                              '<a href="javascript:;" class="dropdown-item text-danger delete-record" title="Delete" data-url = "' +
                               deleteUrl +
                               '"  data-id="' +
                               full.id +
@@ -87,15 +87,28 @@ $(function () {
                               "</div>"
                             : "";
                         var editBtn = full.canEdit
-                            ? '<a href="' + editRoute + '" data-id="' +
+                            ? '<a href="' +
+                              editRoute +
+                              '" data-id="' +
                               full.id +
-                              '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record"><i class="mdi mdi-pencil-outline"></i></a>'
+                              '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon edit-record" title="Edit"><i class="mdi mdi-pencil-outline"></i></a>'
                             : "";
 
-                        if (deleteBtn == "" && editBtn == "") {
+                        var resetPasswordBtn = full.canEdit
+                            ? '<a href="javascript:;" data-id="' +
+                              full.id +
+                              '" class="btn btn-sm btn-text-secondary rounded-pill btn-icon reset-password" title="Reset Password">' +
+                              '<i class="mdi mdi-key-outline"></i></a>'
+                            : "";
+
+                        if (
+                            deleteBtn == "" &&
+                            editBtn == "" &&
+                            resetPasswordBtn == ""
+                        ) {
                             return "Permission Denied";
                         } else {
-                            return editBtn + deleteBtn;
+                            return editBtn + resetPasswordBtn + deleteBtn;
                         }
                     },
                 },
@@ -132,9 +145,9 @@ $(function () {
                     text: '<i class="mdi mdi-plus me-sm-1"></i> <span class="d-none d-sm-inline-block">Add New Record</span>',
                     className:
                         "create-new btn btn-primary waves-effect waves-light d-none",
-                     action: function (e, dt, node, config) {
-                    window.location.href = addUrl;
-                },
+                    action: function (e, dt, node, config) {
+                        window.location.href = addUrl;
+                    },
                 },
             ],
             scrollX: true,
@@ -143,6 +156,47 @@ $(function () {
         $("div.head-label").html('<h5 class="card-title mb-0">SP Office</h5>');
     }
 
+    $(document).on("click", ".reset-password", function (e) {
+        e.preventDefault();
+        var id = $(this).data("id");
+        var url = resetPasswordUrl.replace(":id", id);
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "You won't be able to revert this!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, change it!",
+            cancelButtonText: "Cancel",
+            customClass: {
+                confirmButton: "btn btn-primary me-3 waves-effect waves-light",
+                cancelButton: "btn btn-outline-secondary waves-effect",
+            },
+            buttonsStyling: false,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: {
+                        id: id,
+                        _token: $('meta[name="csrf-token"]').attr("content"),
+                    },
+                    success: function (response) {
+                        if (response.status === "success") {
+                            toastr.success(response.message, "Success");
+                            dt_basic.ajax.reload();
+                        } else {
+                            toastr.error("Something went wrong", "Error");
+                        }
+                    },
+                    error: function () {
+                        toastr.error("Something went wrong", "Error");
+                    },
+                });
+            }
+        });
+    });
 
     // Filter form control to default size
     // ? setTimeout used for multilingual table initialization

@@ -3155,6 +3155,7 @@ class APIHotelController extends Controller
                     if (!isset($dateSummary[$date])) {
                         $dateSummary[$date] = [
                             'transfer_date' => $date,
+                            'transfer_type' => $row->transfer_type,
                             'manual_count' => 0,
                             'uploaded_count' => 0,
                         ];

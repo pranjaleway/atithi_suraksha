@@ -38,6 +38,7 @@
         var addUrl = "{{ route('add-hotel') }}";
         var editUrl = "{{ route('edit-hotel', ':id') }}";
         var viewDetailsUrl = "{{ route('view-hotel-details', ':id') }}";
+        var resetPasswordUrl = "{{ route('reset-hotel-password') }}";
     </script>
     <script src="{{ asset('assets/custom-js/tables-datatables-hotel.js') }}"></script>
     <script src="{{ asset('assets/custom-js/common.js') }}"></script>

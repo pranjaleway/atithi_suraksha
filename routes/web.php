@@ -23,6 +23,7 @@ Route::get('/clear', function () {
 });
 
 Route::group(['middleware' => ['web']], function () {
+    Route::view('/privacy_policy', 'privacy-policy')->name('privacy.policy');
     Route::controller(AuthController::class)->group(function () {
         Route::get('/', 'login')->name('login');
         Route::post('authenticate', 'authenticate')->name('authenticate');
